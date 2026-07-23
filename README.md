@@ -25,11 +25,11 @@
 |---|---|
 | Framework | ASP.NET Core (.NET 10) |
 | Architecture | Clean Architecture — `Domain` / `Application` / `Infrastructure` / `Host` |
-| API style | Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
+| API style | Planned for M1: Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) — source-gen CQRS dispatch |
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
 | Persistence | EF Core + PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) |
-| Observability | Serilog + OpenTelemetry, Scalar OpenAPI UI |
+| Observability | Planned for M1: Serilog + OpenTelemetry, Scalar OpenAPI UI |
 | Testing | xunit.v3 · Shouldly · Bogus · Respawn |
 
 ---
@@ -70,10 +70,10 @@ Target a single test project directly when iterating, e.g. `dotnet test tests/Sm
 ### Run locally
 
 ```bash
-dotnet run --project src/SmoothAiStockAnalysis.Host      # start the API
+dotnet run --project src/SmoothAiStockAnalysis.Host      # start the current Host skeleton
 ```
 
-Once the stack is up:
+The current Host scaffold has no mapped endpoints. Once M1 Host composition lands, it will expose:
 
 | Interface | URL |
 |---|---|
@@ -125,7 +125,7 @@ src/
   SmoothAiStockAnalysis.Domain/          # Entities, value objects, invariants — no external deps
   SmoothAiStockAnalysis.Application/     # Vertical-slice use cases (Features/<Name>/) + Mediator handlers
   SmoothAiStockAnalysis.Infrastructure/  # EF Core + PostgreSQL persistence, HTTP clients
-  SmoothAiStockAnalysis.Host/            # Minimal API composition, middleware, observability
+  SmoothAiStockAnalysis.Host/            # Minimal API composition (planned for M1), middleware, observability
 
 tests/
   SmoothAiStockAnalysis.*.UnitTest/          # L0 — no I/O, in-process
@@ -143,7 +143,7 @@ tests/
 |---|---|
 | Business requirements | [`docs/brds/brd-mvp.md`](docs/brds/brd-mvp.md) · [`docs/brds/brd-mvp-backlog.md`](docs/brds/brd-mvp-backlog.md) |
 | AI agent context & coding rules | [`AGENTS.md`](AGENTS.md) · [`.agents/`](.agents/) |
-| Architecture & design | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) |
+| Architecture & design (canonical) | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) · [`docs/wiki/architecture.md`](docs/wiki/architecture.md) |
 | Testing strategy | [`docs/wiki/testing.md`](docs/wiki/testing.md) |
 | CI/CD pipeline | [`docs/wiki/ci.md`](docs/wiki/ci.md) |
 | Architecture decisions & NFRs | [`docs/hlds/mvp/ladrs/`](docs/hlds/mvp/ladrs/) · [`docs/hlds/mvp/nfr/`](docs/hlds/mvp/nfr/) |

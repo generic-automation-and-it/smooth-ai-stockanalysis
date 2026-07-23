@@ -15,7 +15,7 @@ Skills live **flat**, one directory per skill directly under `.agents/skills/`. 
 | **ai-template-sync** | UPSERT smooth-ai-stockanalysis scaffold into an existing repo | `/ai-template-sync` |
 | **context-load-agents-context** | Load ancestor AGENTS.md context for a file | `/context-load-agents-context` |
 | **context-load-context** | Load domain context before implementation | `/context-load-context auth` |
-| **create-hld** | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` | `/create-hld <kebab-slug>` |
+| **create-hld** | Author a design-only High-Level Design under `docs/hlds/NNN-<slug>/` | `/create-hld <kebab-slug>` |
 | **git-commit** | Commit with conventional format | `/git-commit [--mansplain]` |
 | **git-commit-push** | Commit and push to remote | `/git-commit-push [--mansplain]` |
 | **git-commit-push-pr** | Commit, push, and create/update PR | `/git-commit-push-pr [--mansplain]` |
