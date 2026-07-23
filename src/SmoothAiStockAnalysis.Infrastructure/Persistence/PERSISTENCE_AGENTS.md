@@ -25,7 +25,7 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 ## Test References
 
 - **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary.
-- **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file.
+- **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file and verifies that the production connection interceptor still applies WAL and `synchronous=NORMAL`.
 
 ## Quality Constraints
 
@@ -46,3 +46,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 |:-----|:-------|:----|
 | 2026-07-23 | Documented the SQLite durability, transaction, retention, test, and migration conventions. | #6 |
 | 2026-07-23 | Restructured the context to the repository AGENTS quality standard. | #252 |
+| 2026-07-23 | Documented the L2 SQLite connection-invariant coverage. | #252 |

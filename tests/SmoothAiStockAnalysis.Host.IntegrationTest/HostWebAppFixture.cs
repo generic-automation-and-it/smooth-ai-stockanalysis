@@ -25,7 +25,11 @@ public sealed class HostWebAppFixture : WebAppFixture<HostApp::Program>
     protected override void ConfigureTestServices(IServiceCollection services)
     {
         services.RemoveAll<DbContextOptions<SmoothAiStockAnalysisDbContext>>();
-        services.AddDbContext<SmoothAiStockAnalysisDbContext>(options =>
-            options.UseSqlite(DatabaseConnectionString));
+        services.AddDbContext<SmoothAiStockAnalysisDbContext>((serviceProvider, options) =>
+        {
+            options.UseSqlite(DatabaseConnectionString);
+            options.AddInterceptors(
+                serviceProvider.GetRequiredService<SqlitePragmaConnectionInterceptor>());
+        });
     }
 }
