@@ -1,6 +1,6 @@
 ---
 name: ai-template-sync
-description: UPSERT the smooth-devex-template agentic scaffold into an existing repo. Asks which tools (Claude Code, Codex, Copilot) to configure, whether to copy .NET solutioning, and whether to overwrite existing agentic files.
+description: UPSERT the smooth-ai-stockanalysis agentic scaffold into an existing repo. Asks which tools (Claude Code, Codex, Copilot) to configure, whether to copy .NET solutioning, and whether to overwrite existing agentic files.
 allowed-tools:
   - Bash(.agents/skills/ai-template-sync/scripts/sync.sh:*)
   - Bash(git clone:*)
@@ -15,7 +15,7 @@ models:
 
 # AI Template Sync — Skill
 
-Sync the **smooth-devex-template** agentic scaffold into a landing repo (UPSERT — safe merge, not destructive replace).
+Sync the **smooth-ai-stockanalysis** agentic scaffold into a landing repo (UPSERT — safe merge, not destructive replace).
 
 ## TL;DR
 
@@ -42,7 +42,7 @@ so pulling just the skill is **not** enough. The script self-acquires the whole 
 to a temp dir and cleans up on exit. Add `--template-ref <tag|sha>` to pin for reproducibility.
 
 ```bash
-bash sync.sh --template-url https://github.com/generic-automation-and-it/smooth-devex-template \
+bash sync.sh --template-url https://github.com/generic-automation-and-it/smooth-ai-stockanalysis \
   --landing "$PWD" --tools <claude,codex,copilot> --overwrite <global|none> [--dotnet]
 ```
 
@@ -63,7 +63,7 @@ Ask the user all questions in **one message**:
    a) Claude Code   b) OpenAI Codex   c) GitHub Copilot
 
 2. Copy .NET solutioning? (only asked if the landing repo has no *.slnx / *.sln)
-   Includes: Project.slnx · Directory.Build.props · Directory.Packages.props
+   Includes: smooth-ai-stockanalysis.slnx · Directory.Build.props · Directory.Packages.props
              NuGet.Config · src/ · tests/
    [y/n]
 
@@ -182,7 +182,7 @@ What each section does (now inside the script):
 - **B — Claude Code**: `.claude`→`.agents`, `CLAUDE.md`/`GEMINI.md`→`AGENTS.md` symlinks + `git config core.symlinks true`.
 - **C — Codex**: `.codex`→`.agents` symlink.
 - **D — Copilot**: copies the real `.github/instructions/` dir, re-points `.agents/rules` symlink at it, copies `copilot-instructions.md`.
-- **E — .NET**: copies `Directory.*.props`, `NuGet.Config`, `*.slnx`, `src/`, `tests/` only when absent. **Rename `Project.*` → `<ActualProjectName>` afterwards** (the script prints this reminder; the rename itself is the agent's job).
+- **E — .NET**: copies `Directory.*.props`, `NuGet.Config`, `*.slnx`, `src/`, `tests/` only when absent. **Rename `SmoothAiStockAnalysis.*` → `<ActualProjectName>` afterwards** (the script prints this reminder; the rename itself is the agent's job).
 
 > **Selective overwrite (Phase 1 Q3 = B):** the script handles `global` and `none` only. For true per-file selection, copy the user-approved files manually first, then run the script with `--overwrite none` so it adds the remainder without clobbering anything.
 
@@ -194,7 +194,7 @@ Distribute or update the **rule system as a package** — `.github/instructions/
 
 ```bash
 .agents/skills/ai-template-sync/scripts/sync.sh \
-  --template-url https://github.com/generic-automation-and-it/smooth-devex-template \
+  --template-url https://github.com/generic-automation-and-it/smooth-ai-stockanalysis \
   --template-ref v1.2.0 \
   --landing "$PWD" \
   --rules-only \
@@ -228,7 +228,7 @@ After all copies/symlinks are done, report:
 
 □ [Copilot] Verify `.github/instructions/` is a real dir and `.agents/rules` symlinks to it:  ls -la .github/instructions .agents/rules
 
-□ [.NET] Rename Project.* → <ActualProjectName> everywhere (if .NET was copied).
+□ [.NET] Rename SmoothAiStockAnalysis.* → <ActualProjectName> everywhere (if .NET was copied).
 
 □ Commit the agentic scaffold with:  git add -A && git commit -m "chore: add smooth-devex agentic scaffold"
 ```

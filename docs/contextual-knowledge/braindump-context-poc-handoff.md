@@ -261,7 +261,7 @@ The owner uses **LADR** = lightweight architectural decision record.
 3. **Technical indicators computed internally.** See §7.
 4. **Event-driven funnel over valuation-first screening.** See §4.
 5. **`docs/` not `.docs/`.** The template ships `.docs/{wiki,adr,nfr}`, but the repo is public and a dotfolder hides the BRD and HLD from humans. Rename wholesale — two doc trees is the worse outcome. `docs/` is also what GitHub Pages serves from.
-6. **`smooth-devex-template` is a one-time fork, no upstream tracking.** This is load-bearing: it means free divergence with zero future merge cost — drop Aspire, swap PostgreSQL for SQLite, restructure at will.
+6. **`smooth-ai-stockanalysis` is a one-time fork, no upstream tracking.** This is load-bearing: it means free divergence with zero future merge cost — drop Aspire, swap PostgreSQL for SQLite, restructure at will.
 7. **Flatten `.agents` scoped rules to direct rules.** Path-scoping earns its complexity across multiple stacks; Phase 1 is backend-only .NET so a `rules-scoped/backend` set matches nearly every file — all indirection, no benefit, plus a silent-non-loading failure mode. Reintroduce when the Phase 2 dashboard adds frontend paths. Record as an ADR.
 8. **WhatsApp descoped.** See §9.
 9. **Real GitHub issues, not draft items.** Enables native issue types, sub-issues and repo milestones.
@@ -280,10 +280,10 @@ The owner uses **LADR** = lightweight architectural decision record.
 
 ## 11. Source repositories
 
-### `smooth-devex-template` — the .NET base (one-time fork)
+### `smooth-ai-stockanalysis` — the .NET base (one-time fork)
 .NET 10 / ASP.NET Core reference implementation. Clean Architecture across Domain/Application/Infrastructure/Host. Minimal API endpoints. `martinothamar/Mediator` for source-generated CQRS. FluentValidation in a fail-fast pipeline. Serilog + OpenTelemetry. Scalar OpenAPI UI. xunit.v3 / Shouldly / Bogus / Respawn. `.agents/` drives Claude Code, Copilot, Cursor and Codex from one source of truth via symlinks. `.docs/{wiki,adr,nfr}`.
 
-**Divergences required:** ships EF Core + **PostgreSQL** (Npgsql, provisioned via Aspire with a container runtime) — must become SQLite, with Aspire/Docker removed. Touches Respawn-based integration tests. Repo is **placeholder-named** (`Project.slnx`, `src/Project.*`) — a rename pass is a real task.
+**Divergences required:** ships EF Core + **PostgreSQL** (Npgsql, provisioned via Aspire with a container runtime) — must become SQLite, with Aspire/Docker removed. Touches Respawn-based integration tests. Repo is **placeholder-named** (`smooth-ai-stockanalysis.slnx`, `src/SmoothAiStockAnalysis.*`) — a rename pass is a real task.
 
 ### `smooth-ai-report-review` — CI code-review gate
 Chunked diffs through the OpenCode CLI as a provider-agnostic transport; posts one consolidated review with findings by priority. Provides `ai-review-report`, `ai-review`, `ai-analyse` skills. **Dev-time tooling only** — never touches the Pi or the runtime agentic layer.
@@ -299,7 +299,7 @@ A .NET 10 case-study repo. Aspire used as both F5 orchestrator and integration-t
 
 The repo already exists, so this is *update in place*, not *create from template*.
 
-- Update `.slnx`, projects, namespaces; strip the `Project` placeholder name.
+- Update `.slnx`, projects, namespaces; strip the placeholder name.
 - Swap PostgreSQL → SQLite; remove Aspire/container dependency.
 - Rename `.docs/` → `docs/`; fix all relative links in README and `.agents/`.
 - Replace the template's `architecture.md` with the project's own (don't edit around it).

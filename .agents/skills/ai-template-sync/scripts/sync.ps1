@@ -167,7 +167,7 @@ if ($Dotnet) {
       $destSlnx = Join-Path $Landing $_.Name
       if (Test-Path $destSlnx) { Write-Host "    skipped (exists): $($_.Name)" } else { Copy-Item $_.FullName $destSlnx }
     }
-    Write-Host "    NOTE: rename Project.* -> <ActualProjectName> in names/namespaces afterwards"
+    Write-Host "    NOTE: rename SmoothAiStockAnalysis.* -> <ActualProjectName> in names/namespaces afterwards"
   }
 }
 Write-Host "==> sync complete"

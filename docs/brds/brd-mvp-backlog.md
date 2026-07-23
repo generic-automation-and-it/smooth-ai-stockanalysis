@@ -5,7 +5,7 @@
 |---|---|
 | **Purpose** | Complete specification of every milestone, Feature and Task to be created in GitHub. Written for an agent to execute. |
 | **Target repo** | `generic-automation-and-it/smooth-ai-stockanalysis` |
-| **Target board** | `github.com/orgs/generic-automation-and-it/projects/3` |
+| **Target board** | `github.com/orgs/generic-automation-and-it/smooth-ai-stockanalysiss/3` |
 | **Source** | `docs/brd.md` (milestones, requirements), `docs/wiki/hld.md` (architecture), `docs/adr/` (decisions) |
 | **Date** | July 2026 |
 

@@ -12,7 +12,7 @@ Skills live **flat**, one directory per skill directly under `.agents/skills/`. 
 | **ai-brain-dump** | Listen-first capture session; synthesize on request | `/ai-brain-dump [--oktoask] [--thinking] [--oktoreaddocs] [--oktowebsearch]` |
 | **ai-mansplain** | Reformat this turn's reply into terse, high-density output with a TL;DR | `/ai-mansplain` |
 | **ai-review** | Analyze a posted AI PR review and execute selected fix/skip decisions | `/ai-review <pr> [N=fix|N=skip]` |
-| **ai-template-sync** | UPSERT smooth-devex-template scaffold into an existing repo | `/ai-template-sync` |
+| **ai-template-sync** | UPSERT smooth-ai-stockanalysis scaffold into an existing repo | `/ai-template-sync` |
 | **context-load-agents-context** | Load ancestor AGENTS.md context for a file | `/context-load-agents-context` |
 | **context-load-context** | Load domain context before implementation | `/context-load-context auth` |
 | **create-hld** | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` | `/create-hld <kebab-slug>` |
