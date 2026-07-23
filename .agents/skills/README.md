@@ -18,6 +18,7 @@ Skills live **flat**, one directory per skill directly under `.agents/skills/`. 
 | **create-hld** | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` | `/create-hld <kebab-slug>` |
 | **git-commit** | Commit with conventional format | `/git-commit [--mansplain]` |
 | **git-commit-push** | Commit and push to remote | `/git-commit-push [--mansplain]` |
+| **git-commit-review-push** | Commit, append `/ai-review` to the final commit, and push | `/git-commit-review-push [--issue <number>]` |
 | **git-commit-push-pr** | Commit, push, and create/update PR | `/git-commit-push-pr [--mansplain]` |
 | **git-sync** | Sync with main (optionally auto-resolve conflicts) | `/git-sync` |
 | **manage-rule-system** | Create/update rule files in `.agents/rules/` | `/manage-rule-system` |
@@ -68,6 +69,7 @@ Skills are classified by complexity tier. Each SKILL.md carries a `models` front
 | **git-commit** | low | Diff review + conventional commit; straightforward |
 | **git-sync** | low | Fetch + merge; straightforward git operations |
 | **git-commit-push** | medium | Branch rename logic + upstream tracking |
+| **git-commit-review-push** | medium | Review-trigger enforcement + branch rename logic + upstream tracking |
 | **git-commit-push-pr** | medium | PR template authoring + state management |
 | **agile-github-task-from-diff** | medium | Diff classification + issue authoring |
 | **manage-rule-system** | medium | Cross-tool frontmatter authoring |
@@ -93,7 +95,7 @@ Skills are flat under `.agents/skills/`; the category lives in the folder-name p
 | `agile-` | `agile-github-task-from-diff` |
 | `ai-` | `ai-brain-dump`, `ai-mansplain`, `ai-review`, `ai-template-sync` |
 | `context-` | `context-load-agents-context`, `context-load-context` |
-| `git-` | `git-commit`, `git-commit-push`, `git-commit-push-pr`, `git-sync` |
+| `git-` | `git-commit`, `git-commit-push`, `git-commit-review-push`, `git-commit-push-pr`, `git-sync` |
 | _(none)_ | `create-hld`, `manage-rule-system` |
 
 A skill's folder name MUST equal its `name:` frontmatter (this is the slash-command name). When adding a skill, pick the prefix of its category and keep the folder one level under `.agents/skills/`.

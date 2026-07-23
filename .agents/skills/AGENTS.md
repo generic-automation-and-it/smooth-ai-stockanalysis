@@ -32,3 +32,4 @@ require the same security review as other privileged automation.
 | 2026-06-21 | LADR-001: gate on the deterministic static scan; LLM semantic stage runs as a non-blocking advisory (policy A). Resolves the static-vs-LLM baseline mismatch that failed the gate on run 27907080342. | #52 |
 | 2026-07-23 | Recorded the `ai-review` consumer integration and its explicit human-in-the-loop boundary. | #248 |
 | 2026-07-23 | Removed the SkillSpector workflow, baseline, and report renderer; retained manual security and secret-handling guidance. | #248 |
+| 2026-07-23 | Vendored the `git-commit-review-push` supporting skill from `smooth-ai-report-review` and registered it in local skill indexes/settings. No local behavioral delta from upstream. | |
