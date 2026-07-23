@@ -123,5 +123,5 @@ To read the AGENTS.md rules at any point (agent-agnostic, no hook needed):
 
 | Date | Change | Ref |
 | :---- | :---- | :---- |
-| 2026-07-23 | Corrected the HLD scaffold contract to the visible `docs/hlds/` tree. | #74 |
+| 2026-07-23 | Corrected the HLD scaffold contract to the visible `docs/hlds/` tree. | #253 |
 | 2026-06-16 | Created — design-only HLD skill, made project-agnostic for the smooth-devex template. | — |
