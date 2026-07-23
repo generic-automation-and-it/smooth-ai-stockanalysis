@@ -1,9 +1,5 @@
 # smooth-ai-stockanalysis
 
-[![Skill Security Scan](https://github.com/generic-automation-and-it/smooth-ai-stockanalysis/actions/workflows/skill-scan.yml/badge.svg)](https://github.com/generic-automation-and-it/smooth-ai-stockanalysis/actions/workflows/skill-scan.yml)
-
-> AI agent skills in `.agents/skills/` are scanned by [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) on pull requests that touch `.agents/skills/**` (or the workflow itself), once the PR is marked ready for review. The scan is **advisory**: these are first-party skills that SkillSpector rates HIGH by design, so it reports findings for human review and never blocks the PR. A green badge means the scan ran; read the findings in the run summary and the repository's **Security → Code scanning** tab.
-
 > A self-hosted personal research service that detects market catalysts, evaluates investment candidates, and emails a small set of AI-assisted recommendations.
 
 ---

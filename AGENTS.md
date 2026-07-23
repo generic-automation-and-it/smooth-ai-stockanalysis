@@ -41,6 +41,12 @@ Keep `*AGENTS.md` files synchronised with code and documentation changes. Functi
 
 All planned work is tracked as worktasks under `.context/work-tasks/` (gitignored — local only). Use `/create worktask` to scaffold a new one from the template.
 
+## AI Skills
+
+First-party agent skills live under `.agents/skills/` and are registered in `.agents/skills/README.md`.
+
+- **`ai-review`** — consumes a posted AI pull-request review, recommends per-finding fix/skip decisions, and routes processed results back to GitHub review threads or the PR description. It does not generate reviews; generation and autonomous low/medium remediation are delegated to `generic-automation-and-it/smooth-ai-report-review`.
+
 ## Repository Layout (Navigation)
 
 | Layer | Path | Purpose |
@@ -97,7 +103,17 @@ Human-facing reviewer documentation lives in `docs/wiki/`. Detailed high-level d
 
 PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → build (Release) → Aspire-backed test with coverage via the local action `.github/actions/aspire-test-with-coverage`, then publish + upload the coverage report. Full step list, service ports, timing, and local .NET tools: `docs/wiki/ci.md`.
 
-Skill security scan — `.github/workflows/skill-scan.yml` (triggers on changes to `.agents/skills/**`, the workflow, or the report script): scans AI agent skills with [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (pinned commit; non-blocking warning when upstream `main` moves past the pin). **Advisory, non-gating — it reports, it never blocks the PR.** These are first-party skills that legitimately run shell/`gh`/`git`/template operations, which SkillSpector (correctly, for an untrusted third party) rates HIGH — so its raw risk score is pinned at 100 (exit `1`) by design, and those inherent findings cannot be removed without gutting the skill. Rather than maintain a per-finding allowlist to suppress them, the workflow surfaces every finding for human review and lets no result fail the run; novel-pattern safety comes from that review plus the optional LLM semantic scan. `.github/scripts/skillspector-report.py` renders the findings (raw score + a single findings table) to the **Actions run summary** on every run, plus a SARIF file published to the **Security → Code scanning** tab (requires GitHub Advanced Security / Code scanning enabled — otherwise the run summary is the place to read findings). Two scans run: a **deterministic static scan (`--no-llm`)** that produces the summary + SARIF, and, when a key is configured, a **separate LLM semantic scan** rendered as a clearly-labeled advisory section (self-skips otherwise); neither blocks the PR. Skills that need a secret must follow `.github/instructions/skill-secret-handling.instructions.md` (read it from the runtime env via a script; never embed the value). Provider config comes from org/repo settings: variables `SKILLSPECTOR_PROVIDER` (default `openai`), `SKILLSPECTOR_MODEL` (bare model id), `SKILLSPECTOR_OPENAI_BASE_URL` (OpenAI-compatible base, must end at `/v1`), and secret `SKILLSPECTOR_OPENAI_API_KEY`.
+AI review pipelines — `.github/workflows/pipeline-code-review-report.yml` is a thin caller that generates PR review reports through the reusable workflow in `generic-automation-and-it/smooth-ai-report-review`; `.github/workflows/pipeline-ai-analyse.yml` follows successful reports with a bounded, same-repository low/medium self-fix loop. Only the local `/ai-review` consumer skill is vendored. The generator and `ai-analyse` tooling stay upstream and are fetched at runtime.
+
+The caller repository or organization must provide the following GitHub Actions configuration:
+
+- **Required secret:** `OPENCODE_OPENAI_API_KEY`.
+- **Optional provider secrets:** `OPENCODE_GEMINI_API_KEY`, `OPENCODE_COPILOT_API_KEY`, `OPENCODE_ANTHROPIC_API_KEY`, and `OPENCODE_OPENROUTER_API_KEY`.
+- **Optional push secret:** `OPENCODE_ANALYSE_GH_TOKEN`, a PAT with `workflow` scope, only when self-fixes must push changes under `.github/workflows/**`.
+- **Required variables:** `OPENCODE_REVIEW_REPORT_PROVIDER=OPENAI`, non-empty `OPENCODE_REVIEW_REPORT_OPENAI_URL=https://api.openai.com/v1`, `OPENCODE_REVIEW_REPORT_MODEL_PRIMARY`, `OPENCODE_REVIEW_REPORT_MODEL_SECONDARY`, `OPENCODE_REVIEW_REPORT_MODEL_ORCHESTRATOR`, and `OPENCODE_REVIEW_REPORT_DISABLE_CLAUDE_CODE=1`.
+- **Optional variables:** `OPENCODE_ANALYSE_MAX_INCREMENTAL` (default `3`) and `SMOOTH_AI_REVIEW_TOOLS_REF` (upstream tooling ref override).
+
+Both workflows currently follow upstream `main` because `smooth-ai-report-review` has no release tag. This keeps consumers current but is a supply-chain trade-off; pin the reusable call and tooling checkout to a reviewed tag or commit SHA when upstream publishes a stable release.
 
 ## Git Constraints
 
