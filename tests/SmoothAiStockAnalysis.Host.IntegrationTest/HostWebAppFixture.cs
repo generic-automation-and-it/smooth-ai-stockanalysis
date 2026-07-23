@@ -22,8 +22,19 @@ public sealed class HostWebAppFixture : WebAppFixture<HostApp::Program>
     /// </summary>
     protected override bool RemoveHostedServices => false;
 
+    /// <summary>
+    /// Re-registers <see cref="SmoothAiStockAnalysisDbContext"/> options with the
+    /// fixture's <c>DatabaseConnectionString</c> and reattaches
+    /// <see cref="SqlitePragmaConnectionInterceptor"/>. Required because
+    /// <c>Program.cs</c> reads the connection string at builder construction
+    /// (before <c>ConfigureAppConfiguration</c> runs), so the earlier
+    /// configuration override cannot influence
+    /// <c>AddInfrastructurePersistence(connectionString)</c>. See
+    /// PERSISTENCE_AGENTS.md → "L2 fixture override".
+    /// </summary>
     protected override void ConfigureTestServices(IServiceCollection services)
     {
+        base.ConfigureTestServices(services);
         services.RemoveAll<DbContextOptions<SmoothAiStockAnalysisDbContext>>();
         services.AddDbContext<SmoothAiStockAnalysisDbContext>((serviceProvider, options) =>
         {
