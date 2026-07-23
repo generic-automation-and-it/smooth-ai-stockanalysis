@@ -11,7 +11,7 @@
 | NFR-065 | Cycle failure notifies the owner by email | Every failure | High |
 | NFR-066 | Failure notifications carry enough context to diagnose without device access | Self-sufficient | High |
 | NFR-067 | Provider consumption telemetry is retained for the cost decision | Retained, not just logged | High |
-| NFR-068 | No high-availability alerting, dashboard or uptime target is required | Explicitly out of scope | Accepted |
+| NFR-068 | No high-availability alerting, dashboard or uptime target is required | Explicitly out of scope | Low |
 
 ## Rationale
 
@@ -29,4 +29,4 @@ NFR-067 distinguishes telemetry from logs. Quota consumption is not operational 
 ## Related
 
 - BR-37 (failure notification), BR-42 (quota tracking)
-- `docs/nfr/005-cost-and-quota-control.md`
+- `docs/hlds/mvp/nfr/005-cost-and-quota-control.md`

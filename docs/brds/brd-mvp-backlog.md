@@ -61,23 +61,23 @@ Create these first, in this order. Descriptions are the milestone description fi
 
 | # | Title | Description |
 |---|---|---|
-| M1 | M1 - Deployable single-user platform | A deployable, documented product skeleton with nothing yet to say. |
-| M2 | M2 - Manual one-provider recommendation loop | One catalyst type, one provider, one email — end to end. |
-| M3 | M3 - Daily catalyst ingestion and de-duplication | See everything that moved today, and never look at it twice. |
-| M4 | M4 - Tradable instrument screening | Only surface companies that could realistically be bought and sold. |
-| M5 | M5 - Fundamental quality screening | Separate sound companies from speculative moves. |
-| M6 | M6 - Sector-relative valuation context | Comparisons that mean something. |
-| M7 | M7 - Technical timing screen | Is now a good moment to enter? |
-| M8 | M8 - External signal corroboration | What does everyone else think? |
-| M9 | M9 - AI-ranked recommendation generation | The product. |
-| M10 | M10 - Actionable report delivery | Output that can be acted on in under a minute. |
-| M11 | M11 - Provider cost decision evidence | Decide what is worth paying for, on evidence. |
-| M12 | M12 - Unattended production operation | It runs by itself. |
-| M13 | M13 - Optional social sentiment confidence | A confidence adjustment, nothing more. |
+| M1 | M1 — Foundation | A deployable, documented product skeleton with nothing yet to say. |
+| M2 | M2 — First recommendation | One catalyst type, one provider, one email — end to end. |
+| M3 | M3 — Catalyst coverage | See everything that moved today, and never look at it twice. |
+| M4 | M4 — Tradeability filters | Only surface companies that could realistically be bought and sold. |
+| M5 | M5 — Fundamental validation | Separate sound companies from speculative moves. |
+| M6 | M6 — Sector context | Comparisons that mean something. |
+| M7 | M7 — Timing confirmation | Is now a good moment to enter? |
+| M8 | M8 — Corroboration | What does everyone else think? |
+| M9 | M9 — Recommendation engine | The product. |
+| M10 | M10 — Reporting and alerting | Output that can be acted on in under a minute. |
+| M11 | M11 — Provider cost and ROI evaluation | Decide what is worth paying for, on evidence. |
+| M12 | M12 — Continuous operation | It runs by itself. |
+| M13 | M13 — Social sentiment *(optional)* | A confidence adjustment, nothing more. |
 
 ---
 
-## 3. M1 - Deployable single-user platform
+## 3. M1 — Foundation
 
 *Release 1 · Proof of concept · Covers BR-38, BR-47, BR-49, BR-50*
 
@@ -247,7 +247,7 @@ The entry points and the operational contract. Modest by design: structured logs
 
 ---
 
-## 4. M2 - Manual one-provider recommendation loop
+## 4. M2 — First recommendation
 
 *Release 1 · Proof of concept · Covers BR-1 (partial), BR-27 (partial), BR-31, BR-40*
 
@@ -308,7 +308,7 @@ One catalyst type, one provider, a fixed transparent score, one email. Proves th
 
 ---
 
-## 5. M3 - Daily catalyst ingestion and de-duplication
+## 5. M3 — Catalyst coverage
 
 *Release 2 · Covers BR-1 to BR-6*
 
@@ -383,7 +383,7 @@ One month of prior findings per company, retained and readable.
 
 ---
 
-## 6. M4 - Tradable instrument screening
+## 6. M4 — Tradeability filters
 
 *Release 2 · Covers BR-7 to BR-13*
 
@@ -440,7 +440,7 @@ The measure that determines whether a position can be exited. Excluding the cata
 
 ---
 
-## 7. M5 - Fundamental quality screening
+## 7. M5 — Fundamental validation
 
 *Release 2 · Covers BR-14, BR-15*
 
@@ -479,7 +479,7 @@ Separates sound companies from speculative moves, and applies the first stage ca
 
 ---
 
-## 8. M6 - Sector-relative valuation context
+## 8. M6 — Sector context
 
 *Release 2 · Covers BR-16 to BR-19*
 
@@ -519,7 +519,7 @@ Operating profitability, capital efficiency, debt service and relative scale —
 
 ---
 
-## 9. M7 - Technical timing screen
+## 9. M7 — Timing confirmation
 
 *Release 2 · Covers BR-20, BR-21*
 
@@ -576,7 +576,7 @@ Applies the second stage cap on timing grounds.
 
 ---
 
-## 10. M8 - External signal corroboration
+## 10. M8 — Corroboration
 
 *Release 2 · Covers BR-22, BR-23, BR-25, BR-26*
 
@@ -623,7 +623,7 @@ Applies the second stage cap on timing grounds.
 
 ---
 
-## 11. M9 - AI-ranked recommendation generation
+## 11. M9 — Recommendation engine
 
 *Release 2 · Covers BR-27 to BR-30, BR-41, BR-44*
 
@@ -682,7 +682,7 @@ The product. At most ten candidates, one call, a fixed output contract.
 
 ---
 
-## 12. M10 - Actionable report delivery
+## 12. M10 — Reporting and alerting
 
 *Release 3 · Covers BR-31 to BR-37*
 
@@ -732,7 +732,7 @@ Summary first, then concise factual quantitative evidence. Publishing nothing is
 
 ---
 
-## 13. M11 - Provider cost decision evidence
+## 13. M11 — Provider cost and ROI evaluation
 
 *Release 3 · Covers BR-42, BR-45*
 
@@ -766,7 +766,7 @@ No new components. Consumes the usage data accumulated since M2 to produce evide
 
 ---
 
-## 14. M12 - Unattended production operation
+## 14. M12 — Continuous operation
 
 *Release 3 · Covers BR-39, BR-43, BR-45*
 
@@ -802,7 +802,7 @@ Promotes the manual trigger to a scheduled one. Architecturally small, because e
 
 ---
 
-## 15. M13 - Optional social sentiment confidence
+## 15. M13 — Social sentiment *(optional)*
 
 *Release 3 · Covers BR-24 · Deliberately last and removable*
 
