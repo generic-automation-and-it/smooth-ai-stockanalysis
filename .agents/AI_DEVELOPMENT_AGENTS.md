@@ -37,8 +37,8 @@ This is a unified AI development experience folder that centralizes skills, prom
 | `.agents/skills/create-hld/` | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` |
 | `.agents/skills/git-commit/` | Commit with conventional format |
 | `.agents/skills/git-commit-push/` | Commit and push to remote |
-| `.agents/skills/git-commit-review-push/` | Commit (with `/ai-review` trigger on the final commit) and push to remote |
 | `.agents/skills/git-commit-push-pr/` | Commit, push, and create/update PRs |
+| `.agents/skills/git-commit-review-push/` | Commit (with `/ai-review` trigger on the final commit) and push to remote |
 | `.agents/skills/git-sync/` | Sync with main (optionally auto-resolve conflicts) |
 | `.agents/skills/manage-rule-system/` | Create/update rule files in `.agents/rules/` |
 | `.agents/templates/` | Document templates (AGENTS.md, README.md, work task promote templates) |
