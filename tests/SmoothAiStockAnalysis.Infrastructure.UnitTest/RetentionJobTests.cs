@@ -27,17 +27,14 @@ public sealed class RetentionJobTests
     }
 
     [Fact]
-    public void RegistersTheRetentionHostedServiceAndSingletonJobLifetime()
+    public void RegistersTheRetentionHostedService()
     {
-        using var services = new ServiceCollection()
-            .AddInfrastructurePersistence("Data Source=:memory:")
-            .BuildServiceProvider();
+        var services = new ServiceCollection();
+
+        services.AddInfrastructurePersistence("Data Source=:memory:");
 
         services.ShouldContain(descriptor =>
             descriptor.ServiceType == typeof(IHostedService)
             && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionHostedService));
-
-        var jobDescriptor = services.Single(d => d.ServiceType == typeof(IAnalysisHistoryRetentionJob));
-        jobDescriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
     }
 }

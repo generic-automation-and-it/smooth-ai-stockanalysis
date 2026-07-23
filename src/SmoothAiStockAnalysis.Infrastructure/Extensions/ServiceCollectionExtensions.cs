@@ -40,15 +40,13 @@ public static class ServiceCollectionExtensions
 
     private static void EnsureDatabaseDirectoryExists(string connectionString)
     {
-        var builder = new SqliteConnectionStringBuilder(connectionString);
-        if (string.Equals(builder.Mode, "Memory", StringComparison.OrdinalIgnoreCase)
-            || (builder.DataSource?.StartsWith("file::memory:", StringComparison.OrdinalIgnoreCase) ?? false)
-            || builder.DataSource == ":memory:")
+        string dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
+        if (string.IsNullOrWhiteSpace(dataSource) || dataSource == ":memory:")
         {
             return;
         }
 
-        string? directoryPath = Path.GetDirectoryName(builder.DataSource);
+        string? directoryPath = Path.GetDirectoryName(dataSource);
         if (!string.IsNullOrWhiteSpace(directoryPath))
         {
             Directory.CreateDirectory(directoryPath);
