@@ -136,7 +136,7 @@ flowchart TB
 | Declined | Why |
 |---|---|
 | Distributed cache server | The caching pattern runs memory-only. A second-level cache serves multi-instance deployments; there is one instance. |
-| Workflow orchestration server | Managed hosting exceeds the entire data budget; self-hosting requires its own database cluster. See LADR-003. |
+| Workflow orchestration server | Managed hosting exceeds the entire data budget; self-hosting requires its own database cluster. See [LADR-003](ladrs/003-defer-managed-workflow-orchestration.md). |
 
 ---
 
@@ -384,7 +384,7 @@ sequenceDiagram
     end
 ```
 
-**This diagram is the argument against an orchestration platform.** Skip-if-running, resume-after-crash and per-stage progress are the three properties that would justify one. All three come from a run lock and persisted stage state — infrastructure already required for de-duplication and analysis history. See LADR-003.
+**This diagram is the argument against an orchestration platform.** Skip-if-running, resume-after-crash and per-stage progress are the three properties that would justify one. All three come from a run lock and persisted stage state — infrastructure already required for de-duplication and analysis history. See [LADR-003](ladrs/003-defer-managed-workflow-orchestration.md).
 
 ---
 
@@ -433,37 +433,37 @@ Domain calculations — indicators, scoring, liquidity measures, currency conver
 
 ## 8. Lightweight architecture decision records
 
-Recorded in full under `docs/adr/`. Summarised here.
+Recorded in full under [`ladrs/`](ladrs/README.md). Summarised here.
 
 | # | Decision | Status |
 |---|---|---|
-| LADR-001 | Clean architecture at solution level, vertical feature slices in the application layer | Accepted |
-| LADR-002 | File-based local database on disk, not held in memory with periodic snapshots | Accepted |
-| LADR-003 | No managed workflow orchestration; scheduling and durability built on the existing store | Accepted |
-| LADR-004 | Technical indicators computed internally rather than purchased | Accepted |
-| LADR-005 | Event-driven funnel rather than valuation-led screening | Accepted |
-| LADR-006 | Template adopted as a one-time fork with no upstream tracking | Accepted |
-| LADR-007 | Documentation folder made visible rather than hidden | Accepted |
-| LADR-008 | Agent rules kept direct rather than path-scoped | Accepted |
-| LADR-009 | Email as sole delivery channel | Accepted |
-| LADR-010 | User identity and data isolation present from first release | Accepted |
-| LADR-011 | Memory-only caching, no cache server | Accepted |
-| LADR-012 | Liquidity measured as a median over prior sessions, excluding the catalyst day | Accepted |
-| LADR-013 | Reasoning provider abstracted; both major providers supported | Accepted |
+| [LADR-001](ladrs/001-clean-architecture-with-vertical-slices.md) | Clean architecture at solution level, vertical feature slices in the application layer | Accepted |
+| [LADR-002](ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md) | File-based local database on disk, not held in memory with periodic snapshots | Accepted |
+| [LADR-003](ladrs/003-defer-managed-workflow-orchestration.md) | No managed workflow orchestration; scheduling and durability built on the existing store | Accepted |
+| [LADR-004](ladrs/004-compute-technical-indicators-internally.md) | Technical indicators computed internally rather than purchased | Accepted |
+| [LADR-005](ladrs/005-event-driven-funnel-over-valuation-screening.md) | Event-driven funnel rather than valuation-led screening | Accepted |
+| [LADR-006](ladrs/006-one-time-fork-of-template.md) | Template adopted as a one-time fork with no upstream tracking | Accepted |
+| [LADR-007](ladrs/007-visible-docs-folder.md) | Documentation folder made visible rather than hidden | Accepted |
+| [LADR-008](ladrs/008-direct-agent-rules-over-path-scoped.md) | Agent rules kept direct rather than path-scoped | Accepted |
+| [LADR-009](ladrs/009-email-as-sole-delivery-channel.md) | Email as sole delivery channel | Accepted |
+| [LADR-010](ladrs/010-user-identity-from-first-release.md) | User identity and data isolation present from first release | Accepted |
+| [LADR-011](ladrs/011-memory-only-caching.md) | Memory-only caching, no cache server | Accepted |
+| [LADR-012](ladrs/012-liquidity-median-excluding-catalyst-day.md) | Liquidity measured as a median over prior sessions, excluding the catalyst day | Accepted |
+| [LADR-013](ladrs/013-abstracted-ai-reasoning-provider.md) | Reasoning provider abstracted; both major providers supported | Accepted |
 
 ### The three that most shape the system
 
-**LADR-003 — No managed orchestration.**
+**[LADR-003](ladrs/003-defer-managed-workflow-orchestration.md) — No managed orchestration.**
 *Context.* A durable workflow platform was a hoped-for requirement: it offers scheduled execution, retry of unreliable model calls, crash recovery and human-in-the-loop pauses — all directly relevant.
 *Decision.* Deferred. Managed hosting begins at roughly $100 per month with no free tier, exceeding the entire data budget for infrastructure not yet needed; self-hosting requires operating a database cluster, which will not fit the target hardware. Durability is instead built on the run lock and persisted stage state already required for de-duplication.
 *Consequences.* No human-in-the-loop capability — acceptable, since the human acts on an email rather than inside a workflow. Stages must be designed idempotent and resumable, which is good discipline regardless. Adoption later is a substitution rather than a rewrite. Revisit only if scale justifies the cost.
 
-**LADR-002 — On-disk database, not in-memory with snapshots.**
+**[LADR-002](ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md) — On-disk database, not in-memory with snapshots.**
 *Context.* The target hardware boots from a memory card with finite write endurance. Holding the database in memory and snapshotting periodically was proposed to reduce wear.
 *Decision.* Rejected. A periodic full snapshot rewrites the entire database each time; write-ahead journaling with one batched transaction per cycle writes only what changed, at a small fraction of the volume. The proposed remedy would have increased wear rather than reduced it. Separately, the operating system's own page cache already keeps frequently-read data in memory — delivering the intended read performance without consuming the runtime's memory budget on a 1 GB device.
 *Consequences.* Read-latency targets are met without special measures. Moving to solid-state storage later is a configuration change. Retention pruning is required to keep the working set small.
 
-**LADR-012 — Liquidity measured excluding the catalyst day.**
+**[LADR-012](ladrs/012-liquidity-median-excluding-catalyst-day.md) — Liquidity measured excluding the catalyst day.**
 *Context.* Candidates enter the funnel because something happened to them. Whatever happened moved their trading volume.
 *Decision.* Liquidity is assessed as a median across prior sessions, with the catalyst day excluded.
 *Consequences.* Prevents the systematic error where thinly-traded companies appear liquid precisely when being evaluated, because the event that surfaced them also inflated their volume. This choice affects candidate quality more than the threshold value does.
@@ -545,7 +545,7 @@ Brief by intent. Each expands into its own design document when it is scheduled.
 | User dashboard | 3 | The two-layer configuration pattern is what makes this an editor rather than a subsystem. |
 | Authentication and role-based access | 3 | User identity and isolation already exist from M1; this adds a front door, not a data model. |
 | User-selected currency and daily rate refresh | Future, low priority | Conversion is already a single lookup — this replaces a static table with a refreshed one. |
-| Managed workflow orchestration | Conditional | See LADR-003. Substitution, not rewrite. |
+| Managed workflow orchestration | Conditional | See [LADR-003](ladrs/003-defer-managed-workflow-orchestration.md). Substitution, not rewrite. |
 | Path-scoped agent rules | Conditional | Revisit when Phase 3 introduces a second technology stack. |
 
 ---
