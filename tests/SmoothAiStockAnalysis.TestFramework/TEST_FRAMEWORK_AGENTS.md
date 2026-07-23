@@ -21,3 +21,4 @@ Shared xunit.v3 test fixtures and helpers reused across the L0/L1/L2 test projec
 | Date | Change | Ref |
 |:-----|:-------|:----|
 | 2026-05-30 | Created — lean fixtures (`ServiceProviderFixture`, `WebAppFixture<TProgram>`), xunit output logging, and test-case ordering helpers. | — |
+| 2026-07-23 | Declared centrally versioned MessagePack 2.5.302 directly in the Aspire test-host projects to remediate Aspire’s vulnerable transitive dependency. | — |
