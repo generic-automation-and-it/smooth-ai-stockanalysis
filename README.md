@@ -1,14 +1,10 @@
-# Project
+# smooth-ai-stockanalysis
 
-[![Skill Security Scan](https://github.com/generic-automation-and-it/smooth-devex-template/actions/workflows/skill-scan.yml/badge.svg)](https://github.com/generic-automation-and-it/smooth-devex-template/actions/workflows/skill-scan.yml)
+[![Skill Security Scan](https://github.com/generic-automation-and-it/smooth-ai-stockanalysis/actions/workflows/skill-scan.yml/badge.svg)](https://github.com/generic-automation-and-it/smooth-ai-stockanalysis/actions/workflows/skill-scan.yml)
 
 > AI agent skills in `.agents/skills/` are scanned by [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) on pull requests that touch `.agents/skills/**` (or the workflow itself), once the PR is marked ready for review. A green badge means the latest scan found no HIGH/CRITICAL findings; results are published to the repository's **Security → Code scanning** tab.
 
-> One-line description of what the service does and who it is for. _(Placeholder — update once the project is named.)_
-
-`Project` is a **combined AI DevEx template** — a starting point for teams that want structured, tool-agnostic AI-assisted development from day one. It ships a ready-to-use AI agent toolchain (Claude Code, Cursor, GitHub Copilot, OpenAI Codex) wired up via a single `.agents/` directory, alongside a **.NET 10 / ASP.NET Core** reference implementation built with **Clean Architecture**.
-
-> **⚠️ Template repository.** `Project` is a placeholder name used throughout the solution (`Project.slnx`, `src/Project.*`, `tests/Project.*`), the `.agents` tree, and this README. When the project is given a real name, rename every `Project`/`project` occurrence and update the descriptions below. See the Template Notice in [`AGENTS.md`](AGENTS.md) for the full checklist.
+> A self-hosted personal research service that detects market catalysts, evaluates investment candidates, and emails a small set of AI-assisted recommendations.
 
 ---
 
@@ -25,13 +21,13 @@
 | Prompts & roles | Reusable prompt templates and multi-agent role instructions |
 | Hooks | `PostToolUse` / `UserPromptSubmit` automation via `.agents/hooks/` |
 
-### .NET Reference Implementation
+### Application
 
 | Component | Technology |
 |---|---|
 | Framework | ASP.NET Core (.NET 10) |
 | Architecture | Clean Architecture — `Domain` / `Application` / `Infrastructure` / `Host` |
-| API style | Minimal API endpoints (`src/Project.Host`) |
+| API style | Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) — source-gen CQRS dispatch |
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
 | Persistence | EF Core + PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) |
@@ -66,17 +62,17 @@ powershell -ExecutionPolicy Bypass -File .agents/setup/scripts/agents-setup.ps1
 ### Build & Test
 
 ```bash
-dotnet restore Project.slnx
-dotnet build   Project.slnx --configuration Release
-dotnet test    Project.slnx
+dotnet restore smooth-ai-stockanalysis.slnx
+dotnet build   smooth-ai-stockanalysis.slnx --configuration Release
+dotnet test    smooth-ai-stockanalysis.slnx
 ```
 
-Target a single test project directly when iterating, e.g. `dotnet test tests/Project.Domain.UnitTest`.
+Target a single test project directly when iterating, e.g. `dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest`.
 
 ### Run locally
 
 ```bash
-dotnet run --project src/Project.Host      # start the API
+dotnet run --project src/SmoothAiStockAnalysis.Host      # start the API
 ```
 
 Once the stack is up:
@@ -88,7 +84,7 @@ Once the stack is up:
 
 ---
 
-## Project Structure
+## Solution Structure
 
 ```
 .agents/                         # All AI tooling — single source of truth
@@ -101,17 +97,17 @@ Once the stack is up:
   settings.json                  # Tool permissions, compile/test commands
 
 src/
-  Project.Domain/          # Entities, value objects, invariants — no external deps
-  Project.Application/     # Vertical-slice use cases (Features/<Name>/) + Mediator handlers
-  Project.Infrastructure/  # EF Core + PostgreSQL persistence, HTTP clients
-  Project.Host/            # Minimal API composition, middleware, observability
+  SmoothAiStockAnalysis.Domain/          # Entities, value objects, invariants — no external deps
+  SmoothAiStockAnalysis.Application/     # Vertical-slice use cases (Features/<Name>/) + Mediator handlers
+  SmoothAiStockAnalysis.Infrastructure/  # EF Core + PostgreSQL persistence, HTTP clients
+  SmoothAiStockAnalysis.Host/            # Minimal API composition, middleware, observability
 
 tests/
-  Project.*.UnitTest/          # L0 — no I/O, in-process
-  Project.*.ComponentTest/     # L1 — in-memory EF Core / real isolated DB + Respawn
-  Project.*.IntegrationTest/   # L2 — full stack, real PostgreSQL
-  Project.TestFramework/       # Shared fixtures
-  Project.TestFramework.Aspire/# Aspire dependency host (PostgreSQL + WireMock)
+  SmoothAiStockAnalysis.*.UnitTest/          # L0 — no I/O, in-process
+  SmoothAiStockAnalysis.*.ComponentTest/     # L1 — in-memory EF Core / real isolated DB + Respawn
+  SmoothAiStockAnalysis.*.IntegrationTest/   # L2 — full stack, real PostgreSQL
+  SmoothAiStockAnalysis.TestFramework/       # Shared fixtures
+  SmoothAiStockAnalysis.TestFramework.Aspire/# Aspire dependency host (PostgreSQL + WireMock)
 ```
 
 ---
@@ -121,11 +117,10 @@ tests/
 | Topic | Location |
 |---|---|
 | AI agent context & coding rules | [`AGENTS.md`](AGENTS.md) · [`.agents/`](.agents/) |
-| Architecture & design | [`.docs/wiki/architecture.md`](.docs/wiki/architecture.md) |
-| AI tooling setup | [`.docs/wiki/ai-tooling.md`](.docs/wiki/ai-tooling.md) |
-| Testing strategy | [`.docs/wiki/testing.md`](.docs/wiki/testing.md) |
-| CI/CD pipeline | [`.docs/wiki/ci.md`](.docs/wiki/ci.md) |
-| Architecture decisions & NFRs | [`.docs/adr/`](.docs/adr/) · [`.docs/nfr/`](.docs/nfr/) |
+| Architecture & design | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) |
+| Testing strategy | [`docs/wiki/testing.md`](docs/wiki/testing.md) |
+| CI/CD pipeline | [`docs/wiki/ci.md`](docs/wiki/ci.md) |
+| Architecture decisions & NFRs | [`docs/hlds/mvp/ladrs/`](docs/hlds/mvp/ladrs/) · [`docs/hlds/mvp/nfr/`](docs/hlds/mvp/nfr/) |
 
 ---
 

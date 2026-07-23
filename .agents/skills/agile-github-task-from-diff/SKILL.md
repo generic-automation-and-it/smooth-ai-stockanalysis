@@ -1,6 +1,6 @@
 ---
 name: agile-github-task-from-diff
-description: Create a GitHub Task (sub-issue) from the current git diff vs main and link it as a sub-issue of a parent Feature in the local GitHub Project. Use when Codex needs to summarize branch changes into a horizontally sliced task with acceptance criteria and create it via `gh`.
+description: Create a GitHub Task (sub-issue) from the current git diff vs main and link it as a sub-issue of a parent Feature in the local GitHub SmoothAiStockAnalysis. Use when Codex needs to summarize branch changes into a horizontally sliced task with acceptance criteria and create it via `gh`.
 models:
   claude: sonnet      # medium-complexity; diff analysis + issue authoring across layers
   copilot: auto
@@ -44,7 +44,7 @@ python3 .agents/skills/agile-github-task-from-diff/scripts/create_github_task_fr
 | `--title` | _(generated)_ | Override the auto-generated task title. |
 | `--repo` | _(from remote)_ | GitHub repo as `owner/repo`. Auto-detected when omitted. |
 | `--project` | `1` | GitHub project number under the org. |
-| `--no-project` | — | Create the issue only; skip adding it to any GitHub Project. |
+| `--no-project` | — | Create the issue only; skip adding it to any GitHub SmoothAiStockAnalysis. |
 | `--org` | _(repo owner)_ | GitHub org that owns the project. Defaults to the repo owner detected from the git remote. |
 | `--label` | `task` | Label applied to the created issue. |
 | `--base-ref` | `origin/main` → `main` | Override base ref for the diff. |

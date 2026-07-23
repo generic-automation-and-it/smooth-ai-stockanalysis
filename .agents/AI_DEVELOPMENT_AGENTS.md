@@ -31,7 +31,7 @@ This is a unified AI development experience folder that centralizes skills, prom
 | `.agents/skills/agile-github-task-from-diff/` | Create a GitHub Task (sub-issue) from the current git diff vs main |
 | `.agents/skills/ai-brain-dump/` | Listen-first capture session; synthesize on request |
 | `.agents/skills/ai-mansplain/` | Reformat this turn's reply into terse, high-density output with a TL;DR |
-| `.agents/skills/ai-template-sync/` | UPSERT the smooth-devex-template agentic scaffold into an existing repo |
+| `.agents/skills/ai-template-sync/` | UPSERT the smooth-ai-stockanalysis agentic scaffold into an existing repo |
 | `.agents/skills/context-load-context/` | Load or create functional `*AGENTS.md` context files |
 | `.agents/skills/context-load-agents-context/` | Load ancestor AGENTS.md context for a target file |
 | `.agents/skills/create-hld/` | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` |
@@ -65,7 +65,7 @@ This is a unified AI development experience folder that centralizes skills, prom
 
 - **Date**: 2026-02-12
 - **Status**: Accepted
-- **Context**: Project was using `.claude` folder, but team wanted to support multiple AI coding tools without duplicating configuration or creating vendor lock-in
+- **Context**: The repository was using a `.claude` folder, but the team wanted to support multiple AI coding tools without duplicating configuration or creating vendor lock-in
 - **Decision**: Create tool-agnostic `.agents` folder as single source of truth, with symbolic links for tool-specific compatibility
 - **Consequences**:
   - Single configuration folder to maintain

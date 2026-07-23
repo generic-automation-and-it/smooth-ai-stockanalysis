@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ai-template-sync — deterministic file-sync for the smooth-devex-template scaffold.
+# ai-template-sync — deterministic file-sync for the smooth-ai-stockanalysis scaffold.
 #
 # Executes the mechanical copy/symlink steps (Sections A–E of SKILL.md). All
 # DECISIONS (which tools, overwrite scope, dotnet opt-in, per-file selection)
@@ -179,7 +179,7 @@ if [ "$DOTNET" -eq 1 ]; then
       fi
       cp "$slnx" "$dest"
     done
-    echo "    NOTE: rename Project.* -> <ActualProjectName> in names/namespaces afterwards"
+    echo "    NOTE: rename SmoothAiStockAnalysis.* -> <ActualProjectName> in names/namespaces afterwards"
   fi
 fi
 

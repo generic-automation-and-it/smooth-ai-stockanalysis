@@ -81,7 +81,7 @@ touch .agents/rules/backend/my-rule.instructions.md        # backend category
 Then add frontmatter + content. After saving:
 
 - Add a one-line changelog entry inside the rule file's `## Changelog` table (this repo retains in-file changelogs; the AI loading note tells agents to skip the section at runtime)
-- If you created a new category folder, reflect it in root `AGENTS.md` (Rules section) and in `Project.slnx`
+- If you created a new category folder, reflect it in root `AGENTS.md` (Rules section) and in `smooth-ai-stockanalysis.slnx`
 
 ## Tool Compatibility Matrix
 
