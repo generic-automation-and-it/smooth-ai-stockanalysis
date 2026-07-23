@@ -2,6 +2,8 @@
 
 > A self-hosted personal research service that detects market catalysts, evaluates investment candidates, and emails a small set of AI-assisted recommendations.
 
+> ⚠️ **Disclaimer.** This is a personal research tool, not financial advice. It surfaces trading ideas for one user's own consideration — nothing it produces is a recommendation to buy or sell any security, and responsibility for every investment decision remains entirely with the person making it.
+
 ---
 
 ## Tech Stack
@@ -23,7 +25,7 @@
 |---|---|
 | Framework | ASP.NET Core (.NET 10) |
 | Architecture | Clean Architecture — `Domain` / `Application` / `Infrastructure` / `Host` |
-| API style | Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
+| API style | Planned for M1: Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) — source-gen CQRS dispatch |
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
 | Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
@@ -68,15 +70,42 @@ Target a single test project directly when iterating, e.g. `dotnet test tests/Sm
 ### Run locally
 
 ```bash
-dotnet run --project src/SmoothAiStockAnalysis.Host      # start the API
+dotnet run --project src/SmoothAiStockAnalysis.Host      # start the current Host skeleton
 ```
 
-Once the stack is up:
+The current Host scaffold has no mapped endpoints. Once M1 Host composition lands, it will expose:
 
 | Interface | URL |
 |---|---|
 | Scalar API Docs | `/scalar/v1` on the Host |
 | OpenAPI schema | `/openapi/v1.json` on the Host |
+
+---
+
+## External Providers
+
+The product's design depends on the following third-party services.
+Each requires its own account and API key; credentials are supplied via environment variables, never committed to the repository.
+
+### Data providers (see [`docs/brds/brd-mvp.md` §8](docs/brds/brd-mvp.md) for free-tier limits and paid-upgrade analysis)
+
+| Provider | Used for | Create an account |
+|---|---|---|
+| Polygon.io *(now Massive)* | Market data — prices, volume, market movers | <https://massive.com> |
+| Finnhub | Company fundamentals, analyst ratings, earnings, insider activity, event calendar | <https://finnhub.io/register> |
+| Financial Modeling Prep | Company financials | <https://site.financialmodelingprep.com/developer/docs> |
+| Alpha Vantage | News sentiment (free tier per BRD §8.3) | <https://www.alphavantage.co/support/#api-key> |
+| Benzinga | Market news | <https://www.benzinga.com/apis> |
+| Reddit API *(optional — social sentiment, Phase 2)* | Confidence-adjusting sentiment signal | <https://www.reddit.com/prefs/apps> |
+
+### AI reasoning providers (see [LADR-013](docs/hlds/mvp/ladrs/013-abstracted-ai-reasoning-provider.md))
+
+| Provider | Used for | Create an account |
+|---|---|---|
+| OpenAI | AI reasoning (primary) | <https://platform.openai.com/signup> |
+| Anthropic | AI reasoning (alternative) | <https://platform.claude.com> |
+
+Begin on each provider's free tier — the product is designed to run within free allowances at proof-of-concept scale; upgrade only where the BRD's ROI analysis justifies it.
 
 ---
 
@@ -111,8 +140,9 @@ tests/
 
 | Topic | Location |
 |---|---|
+| Business requirements | [`docs/brds/brd-mvp.md`](docs/brds/brd-mvp.md) · [`docs/brds/brd-mvp-backlog.md`](docs/brds/brd-mvp-backlog.md) |
 | AI agent context & coding rules | [`AGENTS.md`](AGENTS.md) · [`.agents/`](.agents/) |
-| Architecture & design | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) |
+| Architecture & design (canonical) | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) · [`docs/wiki/architecture.md`](docs/wiki/architecture.md) |
 | Testing strategy | [`docs/wiki/testing.md`](docs/wiki/testing.md) |
 | CI/CD pipeline | [`docs/wiki/ci.md`](docs/wiki/ci.md) |
 | Architecture decisions & NFRs | [`docs/hlds/mvp/ladrs/`](docs/hlds/mvp/ladrs/) · [`docs/hlds/mvp/nfr/`](docs/hlds/mvp/nfr/) |
