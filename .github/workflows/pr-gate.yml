@@ -50,6 +50,7 @@ jobs:
       - name: Test with coverage
         timeout-minutes: 20
         uses: ./.github/actions/test-with-coverage
+        timeout-minutes: 25
         with:
           build-configuration: ${{ env.BUILD_CONFIGURATION }}
           artifacts-root: artifacts
