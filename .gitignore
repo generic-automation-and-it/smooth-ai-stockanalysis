@@ -405,6 +405,12 @@ MigrationBackup/
 # Local AI context / work tasks (not tracked in source control)
 .context/
 
+# Local SQLite runtime files
+/data/
+*.db
+*.db-wal
+*.db-shm
+
 # Ionide (cross platform F# VS Code tools) working folder
 **/.ionide/
 
