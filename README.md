@@ -94,7 +94,7 @@ Each requires its own account and API key; credentials are supplied via environm
 | Polygon.io *(now Massive)* | Market data — prices, volume, market movers | <https://massive.com> |
 | Finnhub | Company fundamentals, analyst ratings, earnings, insider activity, event calendar | <https://finnhub.io/register> |
 | Financial Modeling Prep | Company financials | <https://site.financialmodelingprep.com/developer/docs> |
-| Alpha Vantage | News sentiment (free tier per BRD §8.4) | <https://www.alphavantage.co/support/#api-key> |
+| Alpha Vantage | News sentiment (free tier per BRD §8.3) | <https://www.alphavantage.co/support/#api-key> |
 | Benzinga | Market news | <https://www.benzinga.com/apis> |
 | Reddit API *(optional — social sentiment, Phase 2)* | Confidence-adjusting sentiment signal | <https://www.reddit.com/prefs/apps> |
 
