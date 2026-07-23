@@ -72,3 +72,4 @@ tests/
 | Date | Change |
 |:-----|:-------|
 | 2026-05-30 | Initial version. |
+| 2026-07-23 | Switched persistence from EF Core + PostgreSQL to EF Core + SQLite; dropped Respawn in favour of isolated SQLite test files. | #6 |

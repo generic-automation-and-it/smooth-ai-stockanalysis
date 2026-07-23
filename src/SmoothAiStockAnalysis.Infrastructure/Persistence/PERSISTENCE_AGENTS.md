@@ -29,8 +29,12 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 
 ## Quality Constraints
 
-- NFR-034 requires one transaction per analysis cycle.
-- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service.
+- NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/02-nfrs/persistence.md) for the single-transaction boundary.
+- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/02-nfrs/local-operation.md) and [NFR-079](../../../docs/hlds/02-nfrs/observability.md).
+
+## Package Notes
+
+- `Microsoft.Data.Sqlite` is the only `Directory.Packages.props` entry referenced exclusively from `tests/SmoothAiStockAnalysis.TestFramework/`. The runtime still pulls it transitively through `Microsoft.EntityFrameworkCore.Sqlite`, but the test framework needs it directly to construct the `SqliteConnectionStringBuilder` used in `SqliteTestDatabase`. Bump and audit together.
 
 ## Migration Plans
 

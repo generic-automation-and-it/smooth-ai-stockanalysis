@@ -98,6 +98,9 @@ public sealed class SqlitePersistenceTests
         return services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Reads a single scalar value. Supported types: <see cref="string"/>, <see cref="long"/>.
+    /// </summary>
     private static async Task<T> ExecuteScalarAsync<T>(
         DbConnection connection,
         string sql,

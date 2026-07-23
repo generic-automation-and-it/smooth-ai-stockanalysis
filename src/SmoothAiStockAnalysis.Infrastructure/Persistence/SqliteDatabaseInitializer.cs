@@ -14,13 +14,15 @@ internal sealed class SqliteDatabaseInitializer(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Initializing the local SQLite database.");
-
         await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        string connectionString = dbContext.Database.GetConnectionString();
+
+        logger.LogInformation("Initializing the local SQLite database '{DatabasePath}'.", connectionString);
+
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
-        logger.LogInformation("Local SQLite database initialized.");
+        logger.LogInformation("Local SQLite database '{DatabasePath}' initialized.", connectionString);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

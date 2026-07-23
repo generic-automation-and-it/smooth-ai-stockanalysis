@@ -5,13 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SmoothAiStockAnalysis.Application\SmoothAiStockAnalysis.Application.csproj" />
+    <ProjectReference Include="..\SmoothAiStockAnalysis.Domain\SmoothAiStockAnalysis.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
-    <ProjectReference Include="..\SmoothAiStockAnalysis.Application\SmoothAiStockAnalysis.Application.csproj" />
-    <ProjectReference Include="..\SmoothAiStockAnalysis.Domain\SmoothAiStockAnalysis.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

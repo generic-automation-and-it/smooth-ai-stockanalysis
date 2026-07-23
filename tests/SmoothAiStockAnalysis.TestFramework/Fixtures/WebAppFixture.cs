@@ -65,7 +65,7 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
         await PostInitializeAsync();
     }
 
-    /// <summary>Override to inject app-specific configuration (connection strings, WireMock URL, etc.).</summary>
+    /// <summary>Override to inject app-specific configuration (connection strings, etc.).</summary>
     protected virtual Task EnrichConfigurationAsync(Dictionary<string, string?> overrides) => Task.CompletedTask;
 
     /// <summary>Override to replace application services for an isolated integration test.</summary>

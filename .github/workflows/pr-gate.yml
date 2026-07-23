@@ -48,6 +48,7 @@ jobs:
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
 
       - name: Test with coverage
+        timeout-minutes: 20
         uses: ./.github/actions/test-with-coverage
         with:
           build-configuration: ${{ env.BUILD_CONFIGURATION }}

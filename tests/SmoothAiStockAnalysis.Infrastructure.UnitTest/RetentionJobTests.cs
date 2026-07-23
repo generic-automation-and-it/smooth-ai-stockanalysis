@@ -9,24 +9,35 @@ namespace SmoothAiStockAnalysis.Infrastructure.UnitTest;
 public sealed class RetentionJobTests
 {
     [Fact]
-    public async Task RetainsOneMonthAndPerformsNoPruningUntilHistoryExists()
+    public void DefaultsRetentionMonthsToOneMonth()
     {
         var job = new AnalysisHistoryRetentionJob(
             Options.Create(new AnalysisHistoryRetentionOptions()));
 
         job.RetentionMonths.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task PruneCompletesWithoutHistory()
+    {
+        var job = new AnalysisHistoryRetentionJob(
+            Options.Create(new AnalysisHistoryRetentionOptions()));
+
         await job.PruneExpiredHistoryAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
-    public void RegistersTheRetentionHostedService()
+    public void RegistersTheRetentionHostedServiceAndSingletonJobLifetime()
     {
-        var services = new ServiceCollection();
-
-        services.AddInfrastructurePersistence("Data Source=:memory:");
+        using var services = new ServiceCollection()
+            .AddInfrastructurePersistence("Data Source=:memory:")
+            .BuildServiceProvider();
 
         services.ShouldContain(descriptor =>
             descriptor.ServiceType == typeof(IHostedService)
             && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionHostedService));
+
+        var jobDescriptor = services.Single(d => d.ServiceType == typeof(IAnalysisHistoryRetentionJob));
+        jobDescriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
     }
 }

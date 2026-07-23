@@ -435,3 +435,9 @@ FodyWeavers.xsd
 # macOS Finder metadata
 .DS_Store
 **/.DS_Store
+
+# Local SQLite runtime artifacts
+data/
+**/*.db
+**/*.db-wal
+**/*.db-shm

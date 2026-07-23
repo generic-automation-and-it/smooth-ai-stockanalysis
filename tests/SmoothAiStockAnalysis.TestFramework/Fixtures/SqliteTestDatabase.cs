@@ -31,17 +31,27 @@ public sealed class SqliteTestDatabase : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        DeleteIfPresent(DatabasePath);
-        DeleteIfPresent(DatabasePath + "-wal");
-        DeleteIfPresent(DatabasePath + "-shm");
+        TryDelete(DatabasePath);
+        TryDelete(DatabasePath + "-wal");
+        TryDelete(DatabasePath + "-shm");
         return ValueTask.CompletedTask;
     }
 
-    private static void DeleteIfPresent(string path)
+    private static void TryDelete(string path)
     {
-        if (File.Exists(path))
+        try
         {
-            File.Delete(path);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+            // best-effort cleanup; lingering file is acceptable
+        }
+        catch (UnauthorizedAccessException)
+        {
         }
     }
 }
