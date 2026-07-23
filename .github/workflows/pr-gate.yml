@@ -47,9 +47,8 @@ jobs:
       - name: Build
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
 
-      - name: Aspire test with coverage
-        uses: ./.github/actions/aspire-test-with-coverage
-        timeout-minutes: 25
+      - name: Test with coverage
+        uses: ./.github/actions/test-with-coverage
         with:
           build-configuration: ${{ env.BUILD_CONFIGURATION }}
           artifacts-root: artifacts

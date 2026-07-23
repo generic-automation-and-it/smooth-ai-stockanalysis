@@ -26,9 +26,9 @@
 | API style | Minimal API endpoints (`src/SmoothAiStockAnalysis.Host`) |
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) — source-gen CQRS dispatch |
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
-| Persistence | EF Core + PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) |
+| Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
 | Observability | Serilog + OpenTelemetry, Scalar OpenAPI UI |
-| Testing | xunit.v3 · Shouldly · Bogus · Respawn |
+| Testing | xunit.v3 · Shouldly · Bogus · isolated SQLite files |
 
 ---
 
@@ -37,7 +37,7 @@
 ### Prerequisites
 
 - **.NET 10 SDK**
-- A container runtime — Docker Desktop, Rancher Desktop, Colima, or Podman (for PostgreSQL via Aspire)
+- Nothing beyond the .NET SDK — local development and tests use SQLite files.
 
 ### One-time AI-agent setup
 
@@ -95,15 +95,14 @@ Once the stack is up:
 src/
   SmoothAiStockAnalysis.Domain/          # Entities, value objects, invariants — no external deps
   SmoothAiStockAnalysis.Application/     # Vertical-slice use cases (Features/<Name>/) + Mediator handlers
-  SmoothAiStockAnalysis.Infrastructure/  # EF Core + PostgreSQL persistence, HTTP clients
+  SmoothAiStockAnalysis.Infrastructure/  # EF Core + SQLite persistence, HTTP clients
   SmoothAiStockAnalysis.Host/            # Minimal API composition, middleware, observability
 
 tests/
   SmoothAiStockAnalysis.*.UnitTest/          # L0 — no I/O, in-process
-  SmoothAiStockAnalysis.*.ComponentTest/     # L1 — in-memory EF Core / real isolated DB + Respawn
-  SmoothAiStockAnalysis.*.IntegrationTest/   # L2 — full stack, real PostgreSQL
+  SmoothAiStockAnalysis.*.ComponentTest/     # L1 — in-memory EF Core / real isolated SQLite
+  SmoothAiStockAnalysis.*.IntegrationTest/   # L2 — full stack, isolated local SQLite
   SmoothAiStockAnalysis.TestFramework/       # Shared fixtures
-  SmoothAiStockAnalysis.TestFramework.Aspire/# Aspire dependency host (PostgreSQL + WireMock)
 ```
 
 ---

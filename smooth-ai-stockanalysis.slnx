@@ -7,7 +7,6 @@
   </Folder>
   <Folder Name="/tests/TestFramework/">
     <Project Path="tests/SmoothAiStockAnalysis.TestFramework/SmoothAiStockAnalysis.TestFramework.csproj" />
-    <Project Path="tests/SmoothAiStockAnalysis.TestFramework.Aspire/SmoothAiStockAnalysis.TestFramework.Aspire.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/L0/">

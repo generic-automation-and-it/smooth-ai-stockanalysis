@@ -10,7 +10,7 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 
 /// <summary>
 /// Generic in-process web-host fixture built on <see cref="WebApplicationFactory{TProgram}"/> and
-/// backed by <see cref="AspireFixture"/> (PostgreSQL + WireMock containers).
+/// backed by an isolated on-disk SQLite database.
 /// Close it for a Host's entry point in an integration test:
 /// <c>public sealed class HostWebAppFixture : WebAppFixture&lt;Program&gt;;</c>
 /// Override <see cref="EnrichConfigurationAsync"/> to inject app-specific connection strings and
@@ -19,7 +19,7 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 public abstract class WebAppFixture<TProgram> : IAsyncLifetime
     where TProgram : class
 {
-    private readonly AspireFixture _aspire = new();
+    private readonly SqliteTestDatabase _database = SqliteTestDatabase.Create();
     private WebApplicationFactory<TProgram>? _factory;
     private IServiceScope? _serviceScope;
 
@@ -27,29 +27,18 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
 
     public IServiceProvider Services { get; private set; } = default!;
 
-    protected AspireFixture Aspire => _aspire;
-
-    protected virtual string DatabaseName => $"host-integration-{Guid.NewGuid():N}";
-
     protected virtual bool RemoveHostedServices => true;
 
-    protected virtual bool RecreateDatabaseOnInitialize => false;
+    protected string DatabaseConnectionString => _database.ConnectionString;
+
+    public string DatabasePath => _database.DatabasePath;
 
     protected virtual Dictionary<string, string?> ConfigurationOverrides => [];
 
-    public void SetOutput(ITestOutputHelper? output) => _aspire.SetOutput(output);
-
     public async ValueTask InitializeAsync()
     {
-        await _aspire.InitializeAsync();
-
-        if (RecreateDatabaseOnInitialize)
-        {
-            string maintenance = _aspire.CreateDatabaseConnectionString("postgres");
-            await PostgreSqlDatabaseManager.RecreateDatabaseAsync(maintenance, DatabaseName);
-        }
-
         Dictionary<string, string?> overrides = new(ConfigurationOverrides);
+        overrides["ConnectionStrings:SmoothAiStockAnalysis"] = _database.ConnectionString;
         await EnrichConfigurationAsync(overrides);
 
         _factory = new WebApplicationFactory<TProgram>()
@@ -61,6 +50,8 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
                     {
                         services.RemoveAll<IHostedService>();
                     }
+
+                    ConfigureTestServices(services);
                 });
 
                 builder.ConfigureAppConfiguration((_, config) =>
@@ -77,6 +68,11 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
     /// <summary>Override to inject app-specific configuration (connection strings, WireMock URL, etc.).</summary>
     protected virtual Task EnrichConfigurationAsync(Dictionary<string, string?> overrides) => Task.CompletedTask;
 
+    /// <summary>Override to replace application services for an isolated integration test.</summary>
+    protected virtual void ConfigureTestServices(IServiceCollection services)
+    {
+    }
+
     /// <summary>Override to run post-boot setup (e.g. trigger a sync cycle before tests run).</summary>
     protected virtual Task PostInitializeAsync() => Task.CompletedTask;
 
@@ -90,6 +86,6 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
             await _factory.DisposeAsync();
         }
 
-        await _aspire.DisposeAsync();
+        await _database.DisposeAsync();
     }
 }

@@ -1,5 +1,9 @@
 extern alias HostApp;
 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.TestFramework.Fixtures;
 
 namespace SmoothAiStockAnalysis.Host.IntegrationTest;
@@ -11,4 +15,12 @@ namespace SmoothAiStockAnalysis.Host.IntegrationTest;
 /// </summary>
 public sealed class HostWebAppFixture : WebAppFixture<HostApp::Program>
 {
+    protected override bool RemoveHostedServices => false;
+
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
+        services.RemoveAll<DbContextOptions<SmoothAiStockAnalysisDbContext>>();
+        services.AddDbContext<SmoothAiStockAnalysisDbContext>(options =>
+            options.UseSqlite(DatabaseConnectionString));
+    }
 }

@@ -20,9 +20,9 @@ Updated: 2026-05-09
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) (in-process request/response dispatch with pipeline support) |
 | Messaging durability options | Message Queue / Message Streaming can be introduced when durability, retries, or asynchronous decoupling are required |
 | Validation | FluentValidation in Mediator pipeline (fail fast) |
-| Persistence | EF Core + PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) |
+| Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
 | Logging/Observability | Serilog + OpenTelemetry |
-| Testing | xunit.v3 + Shouldly + Bogus + Respawn |
+| Testing | xunit.v3 + Shouldly + Bogus + isolated SQLite files |
 
 ## Commands
 
