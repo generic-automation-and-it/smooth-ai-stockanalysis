@@ -19,7 +19,7 @@ Updated: 2026-05-10
   using System.Diagnostics.CodeAnalysis;
   using Microsoft.EntityFrameworkCore.Migrations;
 
-  namespace Project.Infrastructure.Persistence.Migrations;
+  namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Migrations;
 
   /// <inheritdoc />
   [ExcludeFromCodeCoverage]

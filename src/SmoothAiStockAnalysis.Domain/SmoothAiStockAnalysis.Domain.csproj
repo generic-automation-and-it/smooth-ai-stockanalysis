@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>SmoothAiStockAnalysis.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SmoothAiStockAnalysis.Domain.UnitTest" />
+  </ItemGroup>
+
+</Project>

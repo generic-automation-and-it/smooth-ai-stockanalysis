@@ -1,12 +1,12 @@
 ---
-description: 'Project backend tech stack, architecture, and commands for AI coding tasks'
+description: 'smooth-ai-stockanalysis backend tech stack, architecture, and commands for AI coding tasks'
 globs: "**"
 paths:
   - "**"
 applyTo: '**'
 alwaysApply: true
 ---
-# Project Overview
+# Product Overview
 
 Updated: 2026-05-09
 
@@ -16,7 +16,7 @@ Updated: 2026-05-09
 |-----------|-----------|
 | Framework | ASP.NET Core (.NET 10) |
 | Architecture | Clean Architecture (`Domain` / `Application` / `Infrastructure` / `Host`) |
-| API style | Minimal API endpoints in `src/Project.Host` |
+| API style | Minimal API endpoints in `src/SmoothAiStockAnalysis.Host` |
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) (in-process request/response dispatch with pipeline support) |
 | Messaging durability options | Message Queue / Message Streaming can be introduced when durability, retries, or asynchronous decoupling are required |
 | Validation | FluentValidation in Mediator pipeline (fail fast) |
@@ -27,33 +27,33 @@ Updated: 2026-05-09
 ## Commands
 
 ```bash
-dotnet build Project.slnx
-dotnet test Project.slnx
+dotnet build smooth-ai-stockanalysis.slnx
+dotnet test smooth-ai-stockanalysis.slnx
 
 # Targeted test projects
-dotnet test tests/Project.Domain.UnitTest
-dotnet test tests/Project.Application.UnitTest
-dotnet test tests/Project.Infrastructure.UnitTest
-dotnet test tests/Project.Host.UnitTest
-dotnet test tests/Project.Application.ComponentTest
-dotnet test tests/Project.Infrastructure.ComponentTest
-dotnet test tests/Project.Host.IntegrationTest
+dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest
+dotnet test tests/SmoothAiStockAnalysis.Application.UnitTest
+dotnet test tests/SmoothAiStockAnalysis.Infrastructure.UnitTest
+dotnet test tests/SmoothAiStockAnalysis.Host.UnitTest
+dotnet test tests/SmoothAiStockAnalysis.Application.ComponentTest
+dotnet test tests/SmoothAiStockAnalysis.Infrastructure.ComponentTest
+dotnet test tests/SmoothAiStockAnalysis.Host.IntegrationTest
 ```
 
-## Project Structure
+## Solution Structure
 
 ```
 src/
-  Project.Domain/          # Entities, value objects, invariants
-  Project.Application/     # Feature slices + Mediator handlers/pipelines
-  Project.Infrastructure/  # EF Core persistence + external integrations
-  Project.Host/            # Minimal API composition, middleware, observability
+  SmoothAiStockAnalysis.Domain/          # Entities, value objects, invariants
+  SmoothAiStockAnalysis.Application/     # Feature slices + Mediator handlers/pipelines
+  SmoothAiStockAnalysis.Infrastructure/  # EF Core persistence + external integrations
+  SmoothAiStockAnalysis.Host/            # Minimal API composition, middleware, observability
 
 tests/
-  Project.*.UnitTest/
-  Project.*.ComponentTest/
-  Project.*.IntegrationTest/
-  Project.TestFramework/
+  SmoothAiStockAnalysis.*.UnitTest/
+  SmoothAiStockAnalysis.*.ComponentTest/
+  SmoothAiStockAnalysis.*.IntegrationTest/
+  SmoothAiStockAnalysis.TestFramework/
 ```
 
 ## AI Coder Rules (Summary)
