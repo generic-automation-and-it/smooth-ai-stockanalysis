@@ -38,6 +38,7 @@ This is a unified AI development experience folder that centralizes skills, prom
 | `.agents/skills/git-commit/` | Commit with conventional format |
 | `.agents/skills/git-commit-push/` | Commit and push to remote |
 | `.agents/skills/git-commit-push-pr/` | Commit, push, and create/update PRs |
+| `.agents/skills/git-commit-review-push/` | Commit (with `/ai-review` trigger on the final commit) and push to remote |
 | `.agents/skills/git-sync/` | Sync with main (optionally auto-resolve conflicts) |
 | `.agents/skills/manage-rule-system/` | Create/update rule files in `.agents/rules/` |
 | `.agents/templates/` | Document templates (AGENTS.md, README.md, work task promote templates) |
@@ -138,3 +139,4 @@ ls -la | grep -E '(\.claude|\.codex|\.cursor)'
 | :---- | :---- | :---- |
 | 2026-05-30 | Initial version. | |
 | 2026-06-10 | Registered orphaned `UserPromptSubmit` hooks (`worktask-create.sh`, `agentmd-create-update.sh`, `knowledge-rule-enforce.sh`) in `settings.json` — they existed on disk but never fired. | #32 |
+| 2026-07-23 | Added the vendored `git-commit-review-push` skill to the shared `.agents` / `.codex` skill inventory. | |
