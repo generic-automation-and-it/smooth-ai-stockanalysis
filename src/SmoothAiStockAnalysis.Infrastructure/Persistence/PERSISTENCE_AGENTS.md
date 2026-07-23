@@ -2,24 +2,43 @@
 
 ## TL;DR
 
-Persistence uses one on-disk SQLite database file. It is an Infrastructure concern; Application uses the `IAnalysisCycleUnitOfWork` port and never references EF Core or SQLite.
+Persistence is an Infrastructure-only, on-disk SQLite foundation that batches each future analysis cycle into one transaction.
 
-## Durability and transactions
+## Non-Negotiables
 
-- `SqlitePragmaConnectionInterceptor` configures every opened connection with WAL journaling and `synchronous=NORMAL`, implementing LADR-002. WAL is persistent per database; synchronous mode is connection-scoped, so assert it on an open provider connection.
-- `AnalysisCycleUnitOfWork` begins one transaction, executes the supplied cycle writes, calls `SaveChangesAsync` once, then commits. Repositories in that cycle must share the scoped `DbContext` and must not save independently (NFR-034).
-- `SqliteDatabaseInitializer` uses `EnsureCreatedAsync` because M1 has no entities or migration. Add migrations under `Migrations/` when a feature first introduces a persisted entity; generated migrations require `[ExcludeFromCodeCoverage]`.
+- Keep the application database file-backed; do not use in-memory SQLite for the running service.
+- A future analysis cycle must call `IAnalysisCycleUnitOfWork` once; repositories in that scope must not independently save or commit.
+- Keep SQLite and EF Core types out of Domain and Application, and do not add time conversions here—the time-foundation worktask owns that decision.
 
-## Retention
+## Architecture Decisions
 
-`AnalysisHistoryRetentionHostedService` is registered with a one-calendar-month policy and runs the retention-job seam daily. It intentionally performs no deletion until F-003/M3 introduces timestamped analysis-history entities. Do not add date/time conversion here; the time-foundation worktask owns that choice.
+### LADR-002 — On-disk SQLite over in-memory snapshots
 
-## Tests
+**Status:** Accepted. **Context:** the target device has constrained memory and finite storage-write endurance. **Decision:** use one on-disk SQLite database with WAL, relaxed synchronous writes, one transaction per cycle, and mandatory retention. **Consequences:** the operating-system page cache serves hot reads; an in-memory database or independent per-stage commits would undermine the durability and write-volume constraints.
 
-L1 and L2 use `SqliteTestDatabase`, which creates a unique temporary on-disk file per fixture and deletes the database, WAL, and shared-memory files on disposal. Tests require no container runtime or external service.
+## Key Behaviors
 
-## Related decisions
+- `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
+- `SqliteDatabaseInitializer` creates the empty local database at Host startup with `EnsureCreatedAsync`. There is no migration until a feature introduces the first persisted entity.
+- `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
 
-- `docs/hlds/mvp/ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md`
-- `docs/hlds/mvp/nfr/006-durability-and-concurrency.md`
-- `docs/hlds/mvp/nfr/013-deployability.md`
+## Test References
+
+- **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary.
+- **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file.
+
+## Quality Constraints
+
+- NFR-034 requires one transaction per analysis cycle.
+- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service.
+
+## Migration Plans
+
+When the first feature adds a persisted entity, introduce the initial migration under `Migrations/` and mark generated migration classes with `[ExcludeFromCodeCoverage]`. The sibling time-foundation change may extend the DbContext with its separately decided NodaTime converters; do not pre-empt that representation here.
+
+## Changelog
+
+| Date | Change | Ref |
+|:-----|:-------|:----|
+| 2026-07-23 | Documented the SQLite durability, transaction, retention, test, and migration conventions. | #6 |
+| 2026-07-23 | Restructured the context to the repository AGENTS quality standard. | #252 |
