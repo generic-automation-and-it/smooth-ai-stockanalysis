@@ -144,7 +144,7 @@ The detected review source decides where the fix/skip summary table and analysis
 
 ## Guardrails
 
-- Never auto-execute after analyse mode
+- Never start execute mode on its own after analyse mode
 - Only make the final `ci: /ai-review …` empty marker commit when the review had critical/high findings — never for medium/low-only reviews
 - Keep fixes scoped to selected items only
 - **Copilot flow:** reply to and resolve only the threads for issues actually processed in this execute run; never resolve unrelated or human-authored threads

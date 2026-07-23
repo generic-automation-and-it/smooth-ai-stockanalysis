@@ -29,7 +29,7 @@ The companion `.github/workflows/pipeline-ai-analyse.yml` runs after `PR Code Re
 
 ## Key Behaviors
 
-- **Mode auto-detect:** any `N=fix`/`N=skip` arg → execute; otherwise analyse. Analyse always STOPS and never auto-executes.
+- **Mode auto-detect:** any `N=fix`/`N=skip` arg → execute; otherwise analyse. Analyse always STOPS and never proceeds to execute on its own.
 - **Source routing:** auto-detects Copilot vs other via `copilot-review.sh detect <pr>`. Copilot → reply/resolve each linked review thread + post a summary comment. Other → append the fix/skip table to the PR description's AI Review Notes (append, never overwrite).
 - **All deterministic GitHub plumbing** (detect/threads/reply/resolve/summary) lives in `scripts/copilot-review.sh`; the skill keeps only the judgment (parsing + fix/skip + reply text).
 
@@ -40,3 +40,4 @@ The companion `.github/workflows/pipeline-ai-analyse.yml` runs after `PR Code Re
 | 2026-06-20 | Vendored `/ai-review` consumer skill from smooth-ai-report-review; generator kept remote via thin caller workflow. | |
 | 2026-07-05 | Documented the companion self-fix workflow that consumes low/medium review findings and posts an auto-fix summary. | |
 | 2026-07-23 | Vendored the consumer skill and companion workflows into `smooth-ai-stockanalysis`. | #248 |
+| 2026-07-23 | Local delta from upstream: reworded the analyse-mode guardrail for explicit human-in-the-loop clarity. Re-apply on next upstream sync. | #248 |
