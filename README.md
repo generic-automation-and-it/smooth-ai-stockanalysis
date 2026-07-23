@@ -84,7 +84,10 @@ Once the stack is up:
 
 ## External Providers
 
-The product's design depends on the following third-party services (see [`docs/brds/brd-mvp.md` §8](docs/brds/brd-mvp.md) for free-tier limits and paid-upgrade analysis). Each requires its own account and API key; credentials are supplied via environment variables, never committed to the repository.
+The product's design depends on the following third-party services.
+Each requires its own account and API key; credentials are supplied via environment variables, never committed to the repository.
+
+### Data providers (see [`docs/brds/brd-mvp.md` §8](docs/brds/brd-mvp.md) for free-tier limits and paid-upgrade analysis)
 
 | Provider | Used for | Create an account |
 |---|---|---|
@@ -92,9 +95,14 @@ The product's design depends on the following third-party services (see [`docs/b
 | Finnhub | Company fundamentals, analyst ratings, earnings, insider activity, event calendar | <https://finnhub.io/register> |
 | Financial Modeling Prep | Company financials | <https://site.financialmodelingprep.com/developer/docs> |
 | Benzinga | Market news | <https://www.benzinga.com/apis> |
-| Reddit API *(optional — social sentiment, Phase 2)* | Confidence-adjusting sentiment signal | <https://www.reddit.com/dev/api> |
+| Reddit API *(optional — social sentiment, Phase 2)* | Confidence-adjusting sentiment signal | <https://www.reddit.com/prefs/apps> |
+
+### AI reasoning providers (see [LADR-013](docs/hlds/mvp/ladrs/013-abstracted-ai-reasoning-provider.md))
+
+| Provider | Used for | Create an account |
+|---|---|---|
 | OpenAI | AI reasoning (primary) | <https://platform.openai.com/signup> |
-| Anthropic | AI reasoning (alternative) | <https://platform.claude.com> |
+| Anthropic | AI reasoning (alternative) | <https://platform.claude.com/sign-up> |
 
 Begin on each provider's free tier — the product is designed to run within free allowances at proof-of-concept scale; upgrade only where the BRD's ROI analysis justifies it.
 
