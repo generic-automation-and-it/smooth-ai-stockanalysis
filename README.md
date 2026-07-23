@@ -102,7 +102,7 @@ Each requires its own account and API key; credentials are supplied via environm
 | Provider | Used for | Create an account |
 |---|---|---|
 | OpenAI | AI reasoning (primary) | <https://platform.openai.com/signup> |
-| Anthropic | AI reasoning (alternative) | <https://platform.claude.com/sign-up> |
+| Anthropic | AI reasoning (alternative) | <https://platform.claude.com> |
 
 Begin on each provider's free tier — the product is designed to run within free allowances at proof-of-concept scale; upgrade only where the BRD's ROI analysis justifies it.
 
