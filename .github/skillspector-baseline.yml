@@ -79,6 +79,20 @@ accepted:
     reason: >-
       "without asking" documents `--mansplain`. PR creation happens only on explicit
       user request per git-policy.
+  - id: EA2
+    file: ai-review/AGENTS.md
+    reason: >-
+      "Autonomous Decision Making" matches the phrase "never auto-executes" in the
+      maintenance documentation. The statement is a human-in-the-loop safeguard:
+      analyse mode always stops for user fix/skip decisions. It grants no autonomous
+      action and is not executable code.
+  - id: EA2
+    file: ai-review/SKILL.md
+    reason: >-
+      "Autonomous Decision Making" matches the explicit "Never auto-execute after
+      analyse mode" guardrail. The skill requires the user to select each fix/skip
+      decision before execute mode, so the flagged text restricts rather than grants
+      agency.
 
   # --- MEDIUM: session-scoped /tmp dedup tracker (doc-only) ---
   - id: RA2

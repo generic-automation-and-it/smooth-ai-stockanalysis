@@ -24,6 +24,7 @@ First-party AI agent skills. They legitimately run shell, `gh`/`git`, and templa
 - The gate decision is computed by `.github/scripts/skillspector-report.py`, not by SkillSpector's raw `risk > 50` exit code (which is pinned at 100 for first-party skills by design). The script subtracts baselined findings and fails only on active ones; a scan error still hard-fails.
 - The job summary lists **Active** findings (gate-failing) separately from **Accepted (baselined)** findings, and flags stale baseline entries after a fix removes a finding.
 - Two scans run per CI invocation (policy A, LADR-001): a **gating static scan** (`--no-llm`, drives the decision + SARIF) and, when a key is configured, a **non-gating LLM advisory scan** rendered as a separate, clearly-labeled summary section. The baseline (`skillspector-baseline.yml`) covers only the static scan.
+- The vendored `ai-review` consumer keeps its human-in-the-loop boundary: analyse mode always stops for explicit fix/skip decisions. At the current SkillSpector pin, the negative “never auto-execute” guardrails in its `AGENTS.md` and `SKILL.md` trigger `EA2`; both are accepted as documentation false positives with per-file reasons. The executable `copilot-review.sh` raises no static finding at this pin.
 
 ## Changelog
 
@@ -33,3 +34,4 @@ First-party AI agent skills. They legitimately run shell, `gh`/`git`, and templa
 |:-----|:-------|:----|
 | 2026-06-21 | Initial version — documents the SkillSpector baseline gate contract and the secret-handling guardrail for skills. | #52 |
 | 2026-06-21 | LADR-001: gate on the deterministic static scan; LLM semantic stage runs as a non-blocking advisory (policy A). Resolves the static-vs-LLM baseline mismatch that failed the gate on run 27907080342. | #52 |
+| 2026-07-23 | Recorded the `ai-review` consumer integration and evidence-based `EA2` baseline outcome from the pinned static scan. | #248 |
