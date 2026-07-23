@@ -28,7 +28,7 @@ internal sealed class AnalysisCycleUnitOfWork(SmoothAiStockAnalysisDbContext dbC
             }
             catch
             {
-                await transaction.RollbackAsync(cancellationToken);
+                await transaction.RollbackAsync(CancellationToken.None);
                 throw;
             }
         });

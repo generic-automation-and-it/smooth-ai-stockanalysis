@@ -24,12 +24,19 @@ public sealed class SmokeTests(HostWebAppFixture fixture) : IClassFixture<HostWe
         File.Exists(fixture.DatabasePath).ShouldBeTrue();
 
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
-        DbConnection connection = dbContext.Database.GetDbConnection();
-        (await ExecuteScalarAsync<string>(connection, "PRAGMA journal_mode;", cancellationToken))
-            .ToLowerInvariant()
-            .ShouldBe("wal");
-        (await ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", cancellationToken))
-            .ShouldBe(1);
+        try
+        {
+            DbConnection connection = dbContext.Database.GetDbConnection();
+            (await ExecuteScalarAsync<string>(connection, "PRAGMA journal_mode;", cancellationToken))
+                .ToLowerInvariant()
+                .ShouldBe("wal");
+            (await ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", cancellationToken))
+                .ShouldBe(1);
+        }
+        finally
+        {
+            await dbContext.Database.CloseConnectionAsync();
+        }
     }
 
     private static async Task<T> ExecuteScalarAsync<T>(
