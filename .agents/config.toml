@@ -26,7 +26,7 @@ project_doc_fallback_filenames = ["AGENTS.md"]
 # the guardrails in settings.json. To replicate full bypass locally, override with:
 #   approval_policy = "never"
 # in a machine-local `~/.codex/config.toml` (or set CODEX_APPROVAL_POLICY=never).
-approval_policy = "bypassPermissions"
+approval_policy = "never"
 
 # CC's bypass is guarded by a deny list Codex can't replicate, so scope Codex to
 # the workspace (read/write inside the repo) instead of full host access.
