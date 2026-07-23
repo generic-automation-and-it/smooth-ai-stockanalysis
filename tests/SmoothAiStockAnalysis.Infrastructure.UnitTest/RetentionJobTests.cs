@@ -9,7 +9,7 @@ namespace SmoothAiStockAnalysis.Infrastructure.UnitTest;
 public sealed class RetentionJobTests
 {
     [Fact]
-    public void DefaultsRetentionMonthsToOneMonth()
+    public void DefaultsRetentionToOneMonth()
     {
         var job = new AnalysisHistoryRetentionJob(
             Options.Create(new AnalysisHistoryRetentionOptions()));
@@ -18,7 +18,7 @@ public sealed class RetentionJobTests
     }
 
     [Fact]
-    public async Task PruneCompletesWithoutHistory()
+    public async Task PruneCompletesBeforeHistoryExists()
     {
         var job = new AnalysisHistoryRetentionJob(
             Options.Create(new AnalysisHistoryRetentionOptions()));
