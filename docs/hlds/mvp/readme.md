@@ -472,7 +472,7 @@ Recorded in full under [`ladrs/`](ladrs/README.md). Summarised here.
 
 ## 9. Non-functional requirements
 
-Maintained in full under `docs/nfr/`. Summarised here with the design response.
+Maintained in full under `docs/hlds/mvp/nfr/`. Summarised here with the design response.
 
 | Area | Requirement | Design response |
 |---|---|---|

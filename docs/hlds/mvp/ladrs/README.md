@@ -36,4 +36,4 @@ Each record carries a status, the context that forced a choice, the decision its
 
 - `docs/brd.md` — business requirements and delivery milestones
 - `docs/wiki/hld.md` — high level design
-- `docs/nfr/` — non-functional requirements
+- `docs/hlds/mvp/nfr/` — non-functional requirements
