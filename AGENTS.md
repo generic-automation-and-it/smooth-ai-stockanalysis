@@ -6,7 +6,7 @@ This file provides guidance for AI coding agents working in the smooth-ai-stocka
 
 smooth-ai-stockanalysis is a self-hosted research service that identifies market catalysts, filters candidates through deterministic checks, uses AI to evaluate the strongest opportunities, and emails a small set of recommendations. It is a personal research tool, not financial advice.
 
-**Tech stack:** .NET 10 · ASP.NET Core · Clean Architecture (Domain / Application / Infrastructure / Host) · EF Core + SQLite · Mediator (source-gen CQRS) · xunit.v3
+**Tech stack:** .NET 10 · ASP.NET Core · Clean Architecture (Domain / Application / Infrastructure / Host) · EF Core + SQLite · Mediator (source-gen CQRS) · xunit.v3 · Aspire-managed WireMock
 
 ## AI Context Files
 
@@ -69,7 +69,7 @@ All rules live under `.agents/rules/` as `*.instructions.md` files and are auto-
 | _(cross-cutting)_ | `.agents/rules/` (flat) | `ai-workflow-rules`, `code-review-standards` (Claude: hook-deferred to review prompts), `project-overview` |
 | git | `.agents/rules/git/` | `git-policy`, `pr-standards` |
 | meta | `.agents/rules/meta/` | `rules` (file convention), `knowledge-conventional-contexts-quality` (AGENTS.md quality) |
-| backend (`**/*.cs`) | `.agents/rules/backend/` | `api-mediator-validation` (Minimal API + Mediator + FluentValidation fail-fast); `architecture-slices` (clean-architecture boundaries, vertical-slice Features); `backend-logging-conventions` (Information vs Debug levels); `external-api-clients` (Refit list vs singular client split, HybridCache adapter); `migrations` (`[ExcludeFromCodeCoverage]` requirement) |
+| backend (`**/*.cs`) | `.agents/rules/backend/` | `api-mediator-validation` (Minimal API + Mediator + FluentValidation fail-fast); `architecture-slices` (clean-architecture boundaries, vertical-slice Features); `backend-logging-conventions` (Information vs Debug levels); `external-api-clients` (Refit list vs singular client split, HybridCache adapter); `migrations` (`[ExcludeFromCodeCoverage]` requirement); `wiremock-stubbing` (Aspire-owned WireMock test dependency and shared admin client) |
 
 ## Build / Test Commands
 
@@ -89,7 +89,7 @@ xunit.v3 · Shouldly · Bogus. Three tiers (the distinction is non-obvious and d
 - **L1** component — `Application.ComponentTest` uses in-memory EF Core; `Infrastructure.ComponentTest` uses a real isolated SQLite file.
 - **L2** `*.IntegrationTest` — full Host stack using an isolated local SQLite file.
 
-Shared fixtures, including isolated SQLite test-database support, live in `tests/SmoothAiStockAnalysis.TestFramework/`. See `docs/wiki/testing.md`.
+Shared fixtures, including isolated SQLite test-database support and the opt-in Aspire/WireMock fixture, live in `tests/SmoothAiStockAnalysis.TestFramework/`. The WireMock-only AppHost lives in `tests/SmoothAiStockAnalysis.TestFramework.Aspire/`. See `docs/wiki/testing.md`.
 
 ## Style and Dependencies
 
@@ -101,7 +101,7 @@ Human-facing reviewer documentation lives in `docs/wiki/`. Detailed high-level d
 
 ## CI/CD
 
-PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → build (Release) → container-free test with coverage via the local action `.github/actions/test-with-coverage`, then publish + upload the coverage report. Full step list and local .NET tools: `docs/wiki/ci.md`.
+PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → build (Release) → start WireMock through the Aspire AppHost → test with coverage via the local action `.github/actions/test-with-coverage` → publish + upload the coverage report. SQLite remains local and container-free. Full step list and local .NET tools: `docs/wiki/ci.md`.
 
 AI review pipelines — `.github/workflows/pipeline-code-review-report.yml` is a thin caller that generates PR review reports through the reusable workflow in `generic-automation-and-it/smooth-ai-report-review`; `.github/workflows/pipeline-ai-analyse.yml` follows successful reports with a bounded, same-repository low/medium self-fix loop. Only the local `/ai-review` consumer skill is vendored. The generator and `ai-analyse` tooling stay upstream and are fetched at runtime.
 

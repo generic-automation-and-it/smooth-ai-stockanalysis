@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/tests/TestFramework/">
     <Project Path="tests/SmoothAiStockAnalysis.TestFramework/SmoothAiStockAnalysis.TestFramework.csproj" />
+    <Project Path="tests/SmoothAiStockAnalysis.TestFramework.Aspire/SmoothAiStockAnalysis.TestFramework.Aspire.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/L0/">
@@ -47,6 +48,7 @@
     <File Path=".agents/rules/backend/backend-logging-conventions.instructions.md" />
     <File Path=".agents/rules/backend/external-api-clients.instructions.md" />
     <File Path=".agents/rules/backend/migrations.instructions.md" />
+    <File Path=".agents/rules/backend/wiremock-stubbing.instructions.md" />
   </Folder>
   <Folder Name="/.agents/rules/git/">
     <File Path=".agents/rules/git/git-policy.instructions.md" />

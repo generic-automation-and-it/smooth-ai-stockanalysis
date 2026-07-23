@@ -30,7 +30,7 @@
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
 | Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
 | Observability | Serilog + OpenTelemetry, Scalar OpenAPI UI |
-| Testing | xunit.v3 · Shouldly · Bogus · isolated SQLite files |
+| Testing | xunit.v3 · Shouldly · Bogus · isolated SQLite files · Aspire-managed WireMock |
 
 ---
 
@@ -39,7 +39,7 @@
 ### Prerequisites
 
 - **.NET 10 SDK**
-- Nothing beyond the .NET SDK — local development and tests use SQLite files.
+- A Docker-compatible container runtime when running the Aspire/WireMock test dependency or the full coverage action. Persistence tests themselves use local SQLite files.
 
 ### One-time AI-agent setup
 
@@ -132,6 +132,7 @@ tests/
   SmoothAiStockAnalysis.*.ComponentTest/     # L1 — in-memory EF Core / real isolated SQLite
   SmoothAiStockAnalysis.*.IntegrationTest/   # L2 — full stack, isolated local SQLite
   SmoothAiStockAnalysis.TestFramework/       # Shared fixtures
+  SmoothAiStockAnalysis.TestFramework.Aspire/# WireMock-only Aspire test AppHost
 ```
 
 ---

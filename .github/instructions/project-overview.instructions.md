@@ -22,7 +22,7 @@ Updated: 2026-05-09
 | Validation | FluentValidation in Mediator pipeline (fail fast) |
 | Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
 | Logging/Observability | Serilog + OpenTelemetry |
-| Testing | xunit.v3 + Shouldly + Bogus + isolated SQLite files |
+| Testing | xunit.v3 + Shouldly + Bogus + isolated SQLite files + Aspire-managed WireMock |
 
 ## Commands
 
@@ -54,6 +54,7 @@ tests/
   SmoothAiStockAnalysis.*.ComponentTest/
   SmoothAiStockAnalysis.*.IntegrationTest/
   SmoothAiStockAnalysis.TestFramework/
+  SmoothAiStockAnalysis.TestFramework.Aspire/
 ```
 
 ## AI Coder Rules (Summary)
@@ -73,3 +74,4 @@ tests/
 |:-----|:-------|
 | 2026-05-30 | Initial version. |
 | 2026-07-23 | Switched persistence from EF Core + PostgreSQL to EF Core + SQLite; dropped Respawn in favour of isolated SQLite test files. | #6 |
+| 2026-07-23 | Restored Aspire as the WireMock-only external test dependency host. | #252 |

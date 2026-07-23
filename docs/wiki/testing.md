@@ -8,7 +8,7 @@
 | L1 | Component | `Application.ComponentTest`, `Infrastructure.ComponentTest` | Isolated SQLite files where persistence is involved | End-to-end behaviour within a layer. |
 | L2 | Integration | `Host.IntegrationTest` | Isolated SQLite file | Full Host stack through `WebApplicationFactory`. |
 
-All levels run without a container runtime or another external service.
+Database tests run without a database container or external persistence service. Tests that exercise external HTTP integrations can opt into the Aspire-managed WireMock container.
 
 ## Shared fixtures
 
@@ -24,11 +24,41 @@ Fixtures live in `tests/SmoothAiStockAnalysis.TestFramework/`.
 
 Override `ConfigureTestServices(IServiceCollection)` when a test needs to replace a Host service. The Host integration fixture replaces its DbContext options with the isolated connection string because the minimal Host currently reads its configuration at startup.
 
+### AspireFixture and WireMockAdminClient
+
+`AspireFixture` is an opt-in collection fixture for tests that need an external HTTP stub. It reuses WireMock at `http://127.0.0.1:19091` when the CI action has pre-warmed it; otherwise it starts `SmoothAiStockAnalysis.TestFramework.Aspire` and reads the WireMock endpoint from Aspire.
+
+The Aspire AppHost provisions WireMock only. PostgreSQL and Redis are not test dependencies, and persistence remains isolated SQLite. Use `WireMockAdminClient` to reset mappings/request history and install JSON stubs.
+
+Because the collection definition lives in the shared test-framework assembly, downstream xunit.v3 tests select it by type:
+
+```csharp
+using SmoothAiStockAnalysis.TestFramework.Fixtures;
+using Xunit;
+
+[Collection<AspireCollection>]
+public sealed class ExternalApiTests(AspireFixture aspire)
+{
+    [Fact]
+    public async Task Uses_stubbed_response()
+    {
+        await using WireMockAdminClient wireMock = aspire.CreateWireMockAdminClient();
+        await wireMock.ResetAsync();
+        await wireMock.StubJsonResponseAsync("GET", "/example", new { value = "stubbed" });
+
+        // Configure the client under test with aspire.WireMockBaseUrl.
+    }
+}
+```
+
 ## Running tests
 
 ```bash
-# All levels — no container runtime required
+# All projects; tests that opt into AspireFixture require a container runtime
 dotnet test smooth-ai-stockanalysis.slnx
+
+# Pre-warm WireMock through the Aspire AppHost
+dotnet run --project tests/SmoothAiStockAnalysis.TestFramework.Aspire
 
 # L0 only
 dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest
