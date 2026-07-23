@@ -34,7 +34,7 @@ Keep `*AGENTS.md` files synchronised with code and documentation changes. Functi
 ### Placement Rules
 
 - Functional feature context belongs close to the feature code.
-- Cross-cutting concerns belong under `docs/hlds/02-nfrs/` or the nearest `*AGENTS.md`.
+- Cross-cutting concerns belong under `docs/hlds/mvp/nfr/` or the nearest `*AGENTS.md`.
 - Avoid creating duplicate context files that restate the same plan at multiple levels without adding new information.
 
 ## Implementation Docs

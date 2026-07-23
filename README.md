@@ -125,7 +125,7 @@ src/
   SmoothAiStockAnalysis.Domain/          # Entities, value objects, invariants — no external deps
   SmoothAiStockAnalysis.Application/     # Vertical-slice use cases (Features/<Name>/) + Mediator handlers
   SmoothAiStockAnalysis.Infrastructure/  # EF Core + PostgreSQL persistence, HTTP clients
-  SmoothAiStockAnalysis.Host/            # Minimal API composition, middleware, observability
+  SmoothAiStockAnalysis.Host/            # Minimal API composition (planned for M1), middleware, observability
 
 tests/
   SmoothAiStockAnalysis.*.UnitTest/          # L0 — no I/O, in-process
@@ -143,7 +143,7 @@ tests/
 |---|---|
 | Business requirements | [`docs/brds/brd-mvp.md`](docs/brds/brd-mvp.md) · [`docs/brds/brd-mvp-backlog.md`](docs/brds/brd-mvp-backlog.md) |
 | AI agent context & coding rules | [`AGENTS.md`](AGENTS.md) · [`.agents/`](.agents/) |
-| Architecture & design (canonical) | [MVP HLD](docs/hlds/mvp/readme.md) · [Architecture overview](docs/wiki/architecture.md) |
+| Architecture & design (canonical) | [`docs/hlds/mvp/readme.md`](docs/hlds/mvp/readme.md) · [`docs/wiki/architecture.md`](docs/wiki/architecture.md) |
 | Testing strategy | [`docs/wiki/testing.md`](docs/wiki/testing.md) |
 | CI/CD pipeline | [`docs/wiki/ci.md`](docs/wiki/ci.md) |
 | Architecture decisions & NFRs | [`docs/hlds/mvp/ladrs/`](docs/hlds/mvp/ladrs/) · [`docs/hlds/mvp/nfr/`](docs/hlds/mvp/nfr/) |
