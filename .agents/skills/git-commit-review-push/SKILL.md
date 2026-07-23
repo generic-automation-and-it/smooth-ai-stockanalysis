@@ -3,9 +3,11 @@ name: git-commit-review-push
 description: Commit current changes with conventional commits format, append the /ai-review trigger to the final commit, and push to remote repository. Use when committing and pushing changes so the pushed PR gets a full AI review.
 allowed-tools:
   - Bash(git add:*)
+  - Bash(git branch:*)
   - Bash(git commit:*)
   - Bash(git log:*)
   - Bash(git push:*)
+  - Bash(git status:*)
 models:
   claude: sonnet      # medium-complexity; branch rename logic and upstream tracking require broader reasoning
   copilot: auto

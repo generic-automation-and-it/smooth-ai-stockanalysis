@@ -18,7 +18,7 @@ Skills live **flat**, one directory per skill directly under `.agents/skills/`. 
 | **create-hld** | Author a design-only High-Level Design under `.docs/hlds/NNN-<slug>/` | `/create-hld <kebab-slug>` |
 | **git-commit** | Commit with conventional format | `/git-commit [--mansplain]` |
 | **git-commit-push** | Commit and push to remote | `/git-commit-push [--mansplain]` |
-| **git-commit-review-push** | Commit, append `/ai-review` to the final commit, and push | `/git-commit-review-push [--issue <number>]` |
+| **git-commit-review-push** | Commit with conventional format (logical chunks), append the `/ai-review` full-review trigger to the final commit, and push to remote | `/git-commit-review-push [--issue <number>]` |
 | **git-commit-push-pr** | Commit, push, and create/update PR | `/git-commit-push-pr [--mansplain]` |
 | **git-sync** | Sync with main (optionally auto-resolve conflicts) | `/git-sync` |
 | **manage-rule-system** | Create/update rule files in `.agents/rules/` | `/manage-rule-system` |
@@ -69,7 +69,7 @@ Skills are classified by complexity tier. Each SKILL.md carries a `models` front
 | **git-commit** | low | Diff review + conventional commit; straightforward |
 | **git-sync** | low | Fetch + merge; straightforward git operations |
 | **git-commit-push** | medium | Branch rename logic + upstream tracking |
-| **git-commit-review-push** | medium | Review-trigger enforcement + branch rename logic + upstream tracking |
+| **git-commit-review-push** | medium | Chunked commits + branch rename logic + upstream tracking |
 | **git-commit-push-pr** | medium | PR template authoring + state management |
 | **agile-github-task-from-diff** | medium | Diff classification + issue authoring |
 | **manage-rule-system** | medium | Cross-tool frontmatter authoring |
