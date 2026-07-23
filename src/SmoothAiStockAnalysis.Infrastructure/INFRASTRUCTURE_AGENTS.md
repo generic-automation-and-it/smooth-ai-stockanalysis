@@ -16,6 +16,7 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Persistence is file-backed SQLite. The Host supplies the connection string; the scoped `DbContext` and SQLite-only configuration remain in Infrastructure. See `Persistence/PERSISTENCE_AGENTS.md` for the durability, transaction, retention, and testing conventions.
 - The local database is created at Host startup. Each opened SQLite connection applies WAL plus `NORMAL` synchronous writes; the latter is connection-scoped and is verified on an active EF connection.
 - Infrastructure implements Application's `IAnalysisCycleUnitOfWork` port. Future cycle orchestration must call it once and let it commit all writes as one transaction.
+- `AnalysisHistoryRetentionHostedService` is registered as the mandatory one-month retention shell. It intentionally performs no deletion until timestamped analysis-history entities are introduced; the time foundation owns the date/time representation needed by that future prune operation.
 
 ## Packages to add when implementing
 
@@ -27,3 +28,4 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 |:-----|:-------|:----|
 | 2026-05-30 | Created — empty persistence + clients skeleton (`Clients/`, `Extensions/`, `Persistence/{Configurations,Entities,Migrations,Repositories,Stores,Extensions,DesignTime}/`). | — |
 | 2026-07-23 | Added SQLite persistence foundation: connection pragmas, cycle transaction seam, startup initialization, and retention shell. | #6 |
+| 2026-07-23 | Recorded the retention shell's boundary with the sibling time foundation. | #6 |
