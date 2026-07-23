@@ -88,13 +88,13 @@ The product's design depends on the following third-party services (see [`docs/b
 
 | Provider | Used for | Create an account |
 |---|---|---|
-| Polygon.io *(now Massive)* | Market data — prices, volume, market movers | <https://polygon.io> |
+| Polygon.io *(now Massive)* | Market data — prices, volume, market movers | <https://massive.com> |
 | Finnhub | Company fundamentals, analyst ratings, earnings, insider activity, event calendar | <https://finnhub.io/register> |
 | Financial Modeling Prep | Company financials | <https://site.financialmodelingprep.com/developer/docs> |
 | Benzinga | Market news | <https://www.benzinga.com/apis> |
 | Reddit API *(optional — social sentiment, Phase 2)* | Confidence-adjusting sentiment signal | <https://www.reddit.com/dev/api> |
 | OpenAI | AI reasoning (primary) | <https://platform.openai.com/signup> |
-| Anthropic | AI reasoning (alternative) | <https://console.anthropic.com> |
+| Anthropic | AI reasoning (alternative) | <https://platform.claude.com> |
 
 Begin on each provider's free tier — the product is designed to run within free allowances at proof-of-concept scale; upgrade only where the BRD's ROI analysis justifies it.
 
