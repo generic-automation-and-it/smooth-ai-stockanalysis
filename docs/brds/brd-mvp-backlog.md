@@ -50,7 +50,8 @@
 |---|---|
 | Milestones | 13 |
 | Features | 40 |
-| Tasks | 138 |
+| Tasks | 203 |
+| **Total issues** | **243** |
 
 ---
 
