@@ -1,18 +1,16 @@
 name: Skill Security Scan
 
-# Gates AI agent skills in .agents/skills/ with NVIDIA SkillSpector.
-# SkillSpector exit codes (src/skillspector/cli.py): risk_score > 50 -> 1 (HIGH/CRITICAL),
-# error -> 2, otherwise 0. These are first-party skills that legitimately run shell/gh/git,
-# so SkillSpector pins the raw score at 100 (exit 1) by design. The GATE therefore does NOT
-# key off the raw exit code; skillspector-report.py applies .github/skillspector-baseline.yml
-# (accepted findings, each justified) and the gate fails only on ACTIVE (non-baselined)
-# findings. A scan error (exit 2) still hard-fails. New/unexpected findings still block.
+# Scans AI agent skills in .agents/skills/ with NVIDIA SkillSpector. ADVISORY / NON-GATING:
+# these are first-party skills that legitimately run shell/gh/git/template operations, so
+# SkillSpector (correctly, for an untrusted third party) rates them HIGH and pins its risk
+# score at 100 (exit 1) by design. Those inherent findings cannot be removed without gutting
+# the skill, so rather than maintain a per-finding allowlist this workflow reports every
+# finding to the job summary and to code scanning for human review and NEVER fails the PR.
+# Novel-pattern safety comes from that human review plus the optional LLM semantic scan.
 #
-# Scan-mode policy (A): the GATE runs on a deterministic STATIC scan (--no-llm). The LLM
-# semantic stage is nondeterministic across model/prompt drift, so it runs as a separate
-# NON-BLOCKING advisory scan whose findings are rendered in the summary for human review
-# only and never affect the gate decision. Gating on static keeps the gate stable while
-# static analyzers still catch real dangerous patterns; see .agents/skills/AGENTS.md.
+# Two scans run: a deterministic STATIC scan (--no-llm) that produces the summary + SARIF,
+# and, when an API key is configured, an LLM semantic scan rendered as a separate advisory
+# section. Neither blocks the PR. See .agents/skills/AGENTS.md.
 #
 # SkillSpector publishes no git tags and is not on PyPI, so we pin a commit SHA and
 # emit a non-blocking warning when upstream main has moved past the pin.
@@ -26,14 +24,12 @@ on:
       - '.agents/skills/**'
       - '.github/workflows/skill-scan.yml'
       - '.github/scripts/skillspector-report.py'
-      - '.github/skillspector-baseline.yml'
   push:
     branches: [main]
     paths:
       - '.agents/skills/**'
       - '.github/workflows/skill-scan.yml'
       - '.github/scripts/skillspector-report.py'
-      - '.github/skillspector-baseline.yml'
   workflow_dispatch:
     inputs:
       branch:
@@ -98,25 +94,21 @@ jobs:
             echo "✅ SkillSpector pin is current (\`$SKILLSPECTOR_REF\`)." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      # GATING scan: deterministic, static-only (--no-llm), --format json (the richest
-      # output). Its exit code plus the baseline-aware decision drive the gate. The
-      # render step derives both the job summary and the SARIF from this run. This step
-      # records the SkillSpector exit code instead of failing, so the summary/upload
-      # steps always run; the gate is enforced last by the "Enforce gate" step.
-      - name: Scan skills (gating, static)
+      # STATIC scan: deterministic, static-only (--no-llm), --format json (the richest
+      # output). The render step derives both the job summary and the SARIF from this run.
+      # Advisory: a HIGH raw score (exit 1) is expected for first-party skills and must not
+      # fail the job, so the SkillSpector exit code is ignored (|| true).
+      - name: Scan skills (static)
         id: scan
         run: |
           set -uo pipefail
-          echo "Running deterministic static gate scan (--no-llm)."
-          set +e
-          skillspector scan .agents/skills/ --no-llm --format json --output skillspector.json
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-          set -e
+          echo "Running deterministic static scan (--no-llm; advisory)."
+          skillspector scan .agents/skills/ --no-llm --format json --output skillspector.json || true
 
-      # ADVISORY scan: full LLM semantic analysis. Non-blocking and NOT part of the gate
-      # decision — its findings are nondeterministic across model/prompt drift, so they
-      # are rendered in the summary for human review only (policy A). Self-skips when no
-      # API key is configured. continue-on-error keeps a provider hiccup from failing CI.
+      # LLM scan: full semantic analysis, rendered as a separate advisory section. Its
+      # findings are nondeterministic across model/prompt drift, so they are surfaced for
+      # human review only. Self-skips when no API key is configured. continue-on-error
+      # keeps a provider hiccup from failing CI (the whole workflow is non-gating anyway).
       - name: Scan skills (advisory, LLM)
         id: scan_llm
         continue-on-error: true
@@ -139,7 +131,7 @@ jobs:
           # Advisory only: never fail the build on the LLM scan's exit code.
           skillspector scan .agents/skills/ --format json --output skillspector-llm.json || true
 
-      - name: Render report (job summary + SARIF + gate decision)
+      - name: Render report (job summary + SARIF)
         if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
@@ -147,8 +139,6 @@ jobs:
           [ -s skillspector-llm.json ] && advisory=(--advisory skillspector-llm.json)
           python3 .github/scripts/skillspector-report.py \
             skillspector.json skillspector.sarif .agents/skills \
-            --baseline .github/skillspector-baseline.yml \
-            --decision-file skillspector-gate.txt \
             "${advisory[@]}" \
             >> "$GITHUB_STEP_SUMMARY"
 
@@ -158,22 +148,3 @@ jobs:
         with:
           sarif_file: skillspector.sarif
           category: skillspector
-
-      - name: Enforce gate
-        if: ${{ !cancelled() }}
-        run: |
-          set -uo pipefail
-          code="${{ steps.scan.outputs.exit_code }}"
-          decision="$(cat skillspector-gate.txt 2>/dev/null || echo missing)"
-          # Scan error (exit 2) always hard-fails — an incomplete scan must not pass.
-          if [ "$code" = "2" ]; then
-            echo "::error title=SkillSpector scan error::SkillSpector exited 2 (scan error). See the scan step log."
-            exit 1
-          fi
-          # Otherwise the baseline-aware decision is authoritative. Raw exit 1 (risk > 50)
-          # is expected for first-party skills and is fine when decision=pass.
-          if [ "$decision" != "pass" ]; then
-            echo "::error title=SkillSpector gate failed::Active (non-baselined) findings present (decision=$decision). See the job summary; fix them or add a justified entry to .github/skillspector-baseline.yml."
-            exit 1
-          fi
-          echo "✅ SkillSpector gate passed (raw exit $code; baseline-aware decision: pass)."

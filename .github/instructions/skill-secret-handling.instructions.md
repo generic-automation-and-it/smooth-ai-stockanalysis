@@ -29,7 +29,7 @@ The secret value flows: **runtime environment → script → tool**. It is never
 
 ## Current Status
 
-**No skill handles a real secret today.** The only SkillSpector "data exfiltration / context leakage" signal ever raised on this tree was a false positive on a natural-language prompt phrase (no secret value, no external send), since reworded. This rule is a **standing guardrail** so that if a future skill needs a secret, it is added the safe way — and so the SkillSpector gate's exfiltration detection stays meaningful rather than being trained to ignore real leaks.
+**No skill handles a real secret today.** The only SkillSpector "data exfiltration / context leakage" signal ever raised on this tree was a false positive on a natural-language prompt phrase (no secret value, no external send), since reworded. This rule is a **standing guardrail** so that if a future skill needs a secret, it is added the safe way — and so the SkillSpector scan's exfiltration detection stays meaningful (the scan is advisory, so a real leak is caught only by a human reading the report — see `.agents/skills/AGENTS.md`).
 
 ## Changelog
 
