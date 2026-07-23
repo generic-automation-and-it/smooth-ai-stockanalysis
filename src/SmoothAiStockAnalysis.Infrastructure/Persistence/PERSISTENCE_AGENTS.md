@@ -32,8 +32,9 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 `HostWebAppFixture.ConfigureTestServices` re-registers
 `DbContextOptions<SmoothAiStockAnalysisDbContext>` and reattaches
 `SqlitePragmaConnectionInterceptor` because `Program.cs` evaluates
-the connection string at builder construction — before
-`WebApplicationFactory.ConfigureAppConfiguration` runs — so the test
+the connection string at builder construction — before the
+in-memory configuration override applied via
+`WithWebHostBuilder.ConfigureAppConfiguration` runs — so the test
 override cannot reach `AddInfrastructurePersistence(connectionString)`.
 Do **not** remove this override as redundant; the regression that
 removed it failed PR Gate run `30040969698`.
