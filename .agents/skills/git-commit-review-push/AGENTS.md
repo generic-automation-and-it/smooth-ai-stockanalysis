@@ -22,5 +22,6 @@ Commits the working tree as one-or-more Conventional-Commit chunks, embeds the `
 
 | Date | Change | Ref |
 |------|--------|-----|
+| 2026-07-23 | Local delta from upstream: added an explicit `commit_made_in_step_2` code-block guard in `SKILL.md` Step 4 so literal executors cannot run the trigger check on an unrelated pre-existing `HEAD`. Upstream this fix on next sync. | PR #255 review 4767882611 |
 | 2026-07-07 | Folded the merge-commit guard into the step-4 code block (prose-only before), normalized its indentation, and documented the load-bearing `^` anchor. Sole verified finding from the OpenCode review on smooth-llm-imposter#64; both High findings there were false positives. | PR #64 review |
 | 2026-07-07 | Initial AGENTS.md for the `git-commit-review-push` skill: trigger placement, `%B` amend, merge-commit skip, and the `^`-anchor rationale. | git-commit-review-push |

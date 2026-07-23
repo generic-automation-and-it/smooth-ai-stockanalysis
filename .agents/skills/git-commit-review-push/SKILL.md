@@ -24,6 +24,7 @@ Commit current changes using conventional commits format, embed the `/ai-review`
 2. If there are changes, analyze the diff and group it into **logical units of work** (chunks). Commit each chunk separately with a [Conventional Commits](https://www.conventionalcommits.org) message — `<type>[optional scope]: <description>` with type one of `feat`/`fix`/`chore`/`docs`/`refactor`/`test`/`ci`/`perf`/`build`; subject lowercase, imperative, no trailing period, ≤ 72 chars:
    - If a commit message was provided as an argument, use it (single-chunk commit)
    - Otherwise generate an appropriate conventional commit message per chunk from the staged diff
+   - If at least one chunk commit is created, set `commit_made_in_step_2=true` so Step 4's code block can guard the trigger check explicitly
 3. **Review trigger (mandatory)**: the **last** chunk commit — or the only commit when there is a single chunk — MUST end with `/ai-review` as the final line of the commit message body. The review gate (`pipeline-code-review-report.yml`) greps PR commit messages for `/ai-review` and forces a full PR review when found. Keep the subject line clean; the trigger goes in the body:
 
    ```
@@ -41,12 +42,14 @@ Commit current changes using conventional commits format, embed the `/ai-review`
    the no-commit path. The regex tolerates trailing whitespace / CRLF, unlike a strict string compare:
 
    ```bash
-   # Merge commits (>1 parent, or a "Merge…" subject) have no usable %b body — skip the check entirely.
-   subject="$(git log -1 --format=%s)"
-   if [ "$(git log -1 --format=%P | wc -w)" -gt 1 ] || [[ "$subject" == Merge* ]]; then
-      echo "Merge commit detected — skipping /ai-review trigger check."
-   else
-      git log -1 --format='%b' | awk 'NF { last=$0 } END { exit (last ~ "^[[:space:]]*/ai-review[[:space:]]*$") ? 0 : 1 }'
+   if [ "${commit_made_in_step_2:-false}" = "true" ]; then
+      # Merge commits (>1 parent, or a "Merge…" subject) have no usable %b body — skip the check entirely.
+      subject="$(git log -1 --format=%s)"
+      if [ "$(git log -1 --format=%P | wc -w)" -gt 1 ] || [[ "$subject" == Merge* ]]; then
+         echo "Merge commit detected — skipping /ai-review trigger check."
+      else
+         git log -1 --format='%b' | awk 'NF { last=$0 } END { exit (last ~ "^[[:space:]]*/ai-review[[:space:]]*$") ? 0 : 1 }'
+      fi
    fi
    ```
 
