@@ -12,11 +12,11 @@ Constraints:
 - Invalid configuration must fail at startup, not mid-cycle (NFR-047).
 - Committed configuration may document shape with placeholders only; credentials never land in the repository (NFR-043/044).
 - There is no ambient user; startup and background work must set scope deliberately (NFR-041/042).
-- Seed must be idempotent across restarts so unattended devices do not duplicate the tenant (BR-38, NFR-077).
+- Seed must be idempotent across restarts so unattended devices do not duplicate the tenant (NFR-077).
 
 ## Decision
 
-1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start, using the same fail-fast bind pattern as `DeliveryWindow`. The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values.
+1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start, in a fail-fast style analogous to `DeliveryWindow` (validated at process start). The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values.
 2. **Committed placeholder** `00000000-0000-4000-8000-000000000001` documents shape; deploy overrides via `DefaultUser__UniqueIdentifier`.
 3. **Infrastructure seeds** after `MigrateAsync` inside `SqliteDatabaseInitializer`, under `ISystemDataAccessScope`. Lookup/insert is keyed by `unique_identifier`; present → no-op; absent → `User.Create` / `UserRecord.FromDomain` with metadata schema version 1.
 4. **Component-test compositions** may disable seed by omitting the identifier (`DefaultUserSeedOptions.None`) so migrate-only tests stay focused.
@@ -35,11 +35,5 @@ The configured GUID remains an external identity only — not a credential, sess
 
 - A clean deployment migrates, validates, and creates one configured user; a second start does not duplicate it.
 - Misconfiguration fails before any analysis cycle runs.
-- Background features resolve the seeded internal `Id` and call `IDataAccessScopeSetter.SetScope(DataAccessScope.ForUser(id))` explicitly.
+- Future background features will resolve the seeded internal `Id` and call `IDataAccessScopeSetter.SetScope(DataAccessScope.ForUser(id))` explicitly — there is no ambient user lookup.
 - Story #7 closes with L0 config validation, L1 seed idempotence + isolation, L2 Host startup against isolated SQLite, and the existing shared-data inverse L1 proof.
-
-## Related
-
-- [LADR-010](010-user-identity-from-first-release.md)
-- [LADR-017](017-explicit-data-access-scopes-and-global-user-isolation-filter.md)
-- NFR-039–044, NFR-047, BR-47/48, backlog T-022/T-023
