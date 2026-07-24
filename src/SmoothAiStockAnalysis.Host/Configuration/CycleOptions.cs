@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using SmoothAiStockAnalysis.Application.Configuration;
 
@@ -80,7 +81,7 @@ public sealed class CycleOptions
                 $"Configuration value '{IntervalPath}' is required and must be a valid TimeSpan in hh:mm:ss format.");
         }
 
-        if (!TimeSpan.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out TimeSpan interval))
+        if (!TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out TimeSpan interval))
         {
             throw new InvalidOperationException(
                 $"Configuration value '{IntervalPath}' must be a valid TimeSpan in hh:mm:ss format.");
