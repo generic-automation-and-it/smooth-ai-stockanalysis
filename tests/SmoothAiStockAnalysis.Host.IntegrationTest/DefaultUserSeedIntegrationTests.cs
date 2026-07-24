@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SmoothAiStockAnalysis.Application.Common.Persistence;
+using SmoothAiStockAnalysis.Domain.Documents;
 using SmoothAiStockAnalysis.Domain.Entities;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Entities;
@@ -35,7 +36,7 @@ public sealed class DefaultUserSeedIntegrationTests(HostWebAppFixture fixture)
                 .Where(user => user.UniqueIdentifier == PlaceholderUniqueIdentifier)
                 .ToListAsync(cancellationToken);
             seeded.Count.ShouldBe(1);
-            seeded[0].Metadata.SchemaVersion.ShouldBe(1);
+            seeded[0].Metadata.SchemaVersion.ShouldBe(UserMetadata.CurrentSchemaVersion);
         }
 
         // Re-run the production seed path against the already-started database (restart proxy).

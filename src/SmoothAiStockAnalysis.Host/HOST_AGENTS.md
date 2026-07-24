@@ -27,8 +27,47 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 ### Phase-1 default user configuration (T-022 / #66)
 
 - Committed deployment configuration documents section `DefaultUser` with non-secret placeholder identity only (`DefaultUser:UniqueIdentifier`). Override at deploy time with `DefaultUser__UniqueIdentifier` (NFR-044, NFR-080). No credentials belong in this section (NFR-043).
-- Host binds and validates the section at startup (same fail-fast pattern as `DeliveryWindow`). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
+- Host binds and validates the section at startup (same fail-fast pattern as the F-004 catalogue). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
 - Phase 1 has **no authentication**. The configured GUID is a stable external identifier for the single seeded tenant (LADR-010), not a credential, session token, or authorization claim. Future sign-in adds a front door; it does not replace this seed contract.
+
+### F-004 settings catalogue composition (T-024, T-025 / #68, #69)
+
+- `AddConfiguration(this IServiceCollection, IConfiguration)` binds five Host-owned section options (`Analysis`, `CostCaps`, `FxMultipliers`, `Cycle`, `Provider`) and registers the `IApplicationDefaults` façade. `AddApplication()` then registers the scoped `ISettingsResolver` over the façade. The composition root calls `AddConfiguration` once, after `DefaultUser` validation, before `AddApplication`.
+- The Host-owned section options live in `Configuration/` and follow the `DefaultUser`/`DeliveryWindow` style: a `FromConfiguration(IConfiguration)` static bind, a `SectionName` const, and a `ToDefaults()` conversion that produces the corresponding Application `IApplicationDefaults` fragment. Defaults are documented in XML docs beside each property (NFR-049).
+- The catalogue exposes only non-secret tunables. The `Provider` section carries provider names and model identifiers (NFR-021) and has no API-key or token property; actual credentials arrive in worktask 03 (T-027 / #71) via environment variables. The cycle interval binds as a `TimeSpan` (`hh:mm:ss`); unknown or non-positive intervals throw at `ToDefaults` with the configuration key named (NFR-047).
+- The previous `DeliveryWindow` Host options class and its `IOptions<DeliveryWindow>` registration are gone. The cycle section owns the window; the resolver produces the effective `DeliveryWindow` per user (HLD §7.2 unification, NFR-045).
+
+## Catalogue Defaults Table
+
+| Section key | Type | Default | NFR / source |
+|---|---|---|---|
+| `Analysis:CompanySizeFloor` | `decimal` | 250,000,000 | Sized floor for "small-cap" cutoff. |
+| `Analysis:MinAverageDailyVolume` | `decimal` | 100,000 | Liquidity floor (LADR-012 median). |
+| `Analysis:MinDaysTraded` | `int` | 30 | Minimum trading days. |
+| `Analysis:ScoringWeightEvent` | `decimal` | 0.50 | Event-driven funnel weight (LADR-005). |
+| `Analysis:ScoringWeightFundamental` | `decimal` | 0.30 | Fundamental weight. |
+| `Analysis:ScoringWeightSentiment` | `decimal` | 0.20 | Sentiment weight. |
+| `Analysis:HoldingHorizonDays` | `int` | 90 | Default holding horizon. |
+| `CostCaps:Event` | `int` | 50 | NFR-025 first stage. |
+| `CostCaps:Fundamental` | `int` | 20 | NFR-025 second stage. |
+| `CostCaps:Reasoning` | `int` | 10 | NFR-025 / NFR-026 reasoning ceiling. |
+| `CostCaps:Delivery` | `int` | 5 | NFR-025 delivery stage. |
+| `FxMultipliers:UsdEur` | `decimal` | 0.92 | NFR-050 placeholder; refresh deferred. |
+| `FxMultipliers:UsdGbp` | `decimal` | 0.79 | NFR-050 placeholder. |
+| `FxMultipliers:UsdJpy` | `decimal` | 150.0 | NFR-050 placeholder. |
+| `Cycle:Interval` | `TimeSpan` | `00:15:00` | Cycle scheduling. |
+| `Cycle:DeliveryWindowTimeZoneId` | `string` | `Europe/Paris` | NFR-052 named zone. |
+| `Cycle:DeliveryWindowStart` | `string` (`HH:mm`) | `07:00` | Delivery window inclusive start. |
+| `Cycle:DeliveryWindowEnd` | `string` (`HH:mm`) | `22:00` | Delivery window exclusive end. |
+| `Provider:Reasoning` | `string` | `OpenAI` | NFR-021 provider selection. |
+| `Provider:ReasoningModel` | `string` | `gpt-4o-mini` | Model identifier. |
+| `Provider:MarketData` | `string` | `OpenAI` | Provider selection. |
+| `Provider:MarketDataModel` | `string` | `gpt-4o-mini` | Model identifier. |
+
+## Test References
+
+- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` rejects malformed and non-positive values with the configuration key named (NFR-047), and that the `Provider` options exposes no credential-shaped property (NFR-043/044).
+- **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
 
 ## Changelog
 
@@ -39,3 +78,4 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 | 2026-07-24 | Registered Infrastructure without eagerly reading its connection string, preserving L2 configuration overrides. | #252 |
 | 2026-07-24 | Documented Host composition of explicit data-access scopes and the global isolation filter (no ambient user). | #62, #63, #64 |
 | 2026-07-24 | Documented Phase-1 default-user configuration keys, fail-fast validation, and identity-vs-auth boundary for seed work. | #66, #67, #7 |
+| 2026-07-24 | Added the F-004 settings catalogue composition (`AddConfiguration` + five section options + `IApplicationDefaults` façade); folded the previous standalone `DeliveryWindow` Host options class into the `Cycle` section. | #68, #69 |
