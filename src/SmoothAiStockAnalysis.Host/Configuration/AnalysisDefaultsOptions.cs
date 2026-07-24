@@ -33,14 +33,54 @@ public sealed class AnalysisDefaultsOptions
     public int HoldingHorizonDays { get; set; } = 90;
 
     /// <summary>
-    /// Binds the <c>Analysis</c> section from the supplied configuration.
+    /// Binds the <c>Analysis</c> section from the supplied configuration and validates each
+    /// value against the documented range (NFR-008, NFR-047).
     /// </summary>
     public static AnalysisDefaultsOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new AnalysisDefaultsOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequirePositive(CompanySizeFloor, nameof(CompanySizeFloor));
+        RequirePositive(MinAverageDailyVolume, nameof(MinAverageDailyVolume));
+        RequirePositive(MinDaysTraded, nameof(MinDaysTraded));
+        RequirePositive(HoldingHorizonDays, nameof(HoldingHorizonDays));
+        RequireUnitInterval(ScoringWeightEvent, nameof(ScoringWeightEvent));
+        RequireUnitInterval(ScoringWeightFundamental, nameof(ScoringWeightFundamental));
+        RequireUnitInterval(ScoringWeightSentiment, nameof(ScoringWeightSentiment));
+    }
+
+    private void RequirePositive(decimal value, string leaf)
+    {
+        if (value <= 0m)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
+        }
+    }
+
+    private void RequirePositive(int value, string leaf)
+    {
+        if (value <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
+        }
+    }
+
+    private void RequireUnitInterval(decimal value, string leaf)
+    {
+        if (value < 0m || value > 1m)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{SectionName}:{leaf}' must be in the [0, 1] interval.");
+        }
     }
 
     internal AnalysisDefaults ToDefaults() => new(

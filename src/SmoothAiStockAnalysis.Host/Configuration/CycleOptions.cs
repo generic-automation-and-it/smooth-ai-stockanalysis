@@ -39,21 +39,38 @@ public sealed class CycleOptions
     public string DeliveryWindowEnd { get; set; } = "22:00";
 
     /// <summary>
-    /// Binds the <c>Cycle</c> section from the supplied configuration.
+    /// Binds the <c>Cycle</c> section from the supplied configuration and validates the
+    /// interval parses to a strictly positive <see cref="TimeSpan"/> (NFR-008, NFR-047). The
+    /// delivery-window time zone and start/end are validated when <see cref="ApplicationDefaults"/>
+    /// is composed so the full set of cycle keys is checked before the host builds.
     /// </summary>
     public static CycleOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new CycleOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
     }
 
-    internal CycleDefaults ToDefaults() => new(
-        Interval: ParseInterval(Interval),
-        DeliveryWindowTimeZoneId: DeliveryWindowTimeZoneId,
-        DeliveryWindowStart: DeliveryWindowStart,
-        DeliveryWindowEnd: DeliveryWindowEnd);
+    /// <summary>
+    /// Validates the cycle interval parses to a strictly positive <see cref="TimeSpan"/>.
+    /// Called by <see cref="FromConfiguration"/>; also invoked by <see cref="ToDefaults"/> so
+    /// callers that bypass the bind path still hit the same range check.
+    /// </summary>
+    public TimeSpan ValidateAndParseInterval() => ParseInterval(Interval);
+
+    private void Validate() => _ = ValidateAndParseInterval();
+
+    internal CycleDefaults ToDefaults()
+    {
+        TimeSpan interval = ValidateAndParseInterval();
+        return new CycleDefaults(
+            Interval: interval,
+            DeliveryWindowTimeZoneId: DeliveryWindowTimeZoneId,
+            DeliveryWindowStart: DeliveryWindowStart,
+            DeliveryWindowEnd: DeliveryWindowEnd);
+    }
 
     private static TimeSpan ParseInterval(string value)
     {

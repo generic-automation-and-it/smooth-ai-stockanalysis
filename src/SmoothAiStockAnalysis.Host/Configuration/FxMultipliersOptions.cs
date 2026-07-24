@@ -27,14 +27,33 @@ public sealed class FxMultipliersOptions
     public decimal UsdJpy { get; set; } = 150.0m;
 
     /// <summary>
-    /// Binds the <c>FxMultipliers</c> section from the supplied configuration.
+    /// Binds the <c>FxMultipliers</c> section from the supplied configuration and validates
+    /// each multiplier is strictly positive (NFR-050, NFR-047). Zero or negative multipliers
+    /// would silently zero or invert the size-floor conversion.
     /// </summary>
     public static FxMultipliersOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new FxMultipliersOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequirePositive(UsdEur, nameof(UsdEur));
+        RequirePositive(UsdGbp, nameof(UsdGbp));
+        RequirePositive(UsdJpy, nameof(UsdJpy));
+    }
+
+    private static void RequirePositive(decimal value, string leaf)
+    {
+        if (value <= 0m)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
+        }
     }
 
     internal FxMultipliers ToDefaults() => new(UsdEur, UsdGbp, UsdJpy);

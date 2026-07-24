@@ -28,14 +28,34 @@ public sealed class ProviderOptions
     public string MarketDataModel { get; set; } = "gpt-4o-mini";
 
     /// <summary>
-    /// Binds the <c>Provider</c> section from the supplied configuration.
+    /// Binds the <c>Provider</c> section from the supplied configuration and validates each
+    /// knob is non-blank (NFR-021, NFR-047). A blank model identifier would resolve a missing
+    /// upstream at every cycle, surfacing as an intermittent failure rather than a config error.
     /// </summary>
     public static ProviderOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new ProviderOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequireNonBlank(Reasoning, nameof(Reasoning));
+        RequireNonBlank(ReasoningModel, nameof(ReasoningModel));
+        RequireNonBlank(MarketData, nameof(MarketData));
+        RequireNonBlank(MarketDataModel, nameof(MarketDataModel));
+    }
+
+    private static void RequireNonBlank(string value, string leaf)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{SectionName}:{leaf}' is required and must be non-blank.");
+        }
     }
 
     internal ProviderDefaults ToDefaults() => new(Reasoning, ReasoningModel, MarketData, MarketDataModel);
