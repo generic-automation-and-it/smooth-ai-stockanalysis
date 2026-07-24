@@ -27,15 +27,16 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 ### Phase-1 default user configuration (T-022 / #66)
 
 - Committed deployment configuration documents section `DefaultUser` with non-secret placeholder identity only (`DefaultUser:UniqueIdentifier`). Override at deploy time with `DefaultUser__UniqueIdentifier` (NFR-044, NFR-080). No credentials belong in this section (NFR-043).
-- Host binds and validates the section at startup (same fail-fast pattern as the F-004 catalogue). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
+- Host binds and validates the section at startup (same fail-fast family as the F-004 catalogue composition). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
 - Phase 1 has **no authentication**. The configured GUID is a stable external identifier for the single seeded tenant (LADR-010), not a credential, session token, or authorization claim. Future sign-in adds a front door; it does not replace this seed contract.
 
 ### F-004 settings catalogue composition (T-024, T-025 / #68, #69)
 
-- `AddConfiguration(this IServiceCollection, IConfiguration)` binds five Host-owned section options (`Analysis`, `CostCaps`, `FxMultipliers`, `Cycle`, `Provider`) and registers the `IApplicationDefaults` façade. `AddApplication()` then registers the scoped `ISettingsResolver` over the façade. The composition root calls `AddConfiguration` once, after `DefaultUser` validation, before `AddApplication`.
-- The Host-owned section options live in `Configuration/` and follow the `DefaultUser`/`DeliveryWindow` style: a `FromConfiguration(IConfiguration)` static bind, a `SectionName` const, and a `ToDefaults()` conversion that produces the corresponding Application `IApplicationDefaults` fragment. Defaults are documented in XML docs beside each property (NFR-049).
-- The catalogue exposes only non-secret tunables. The `Provider` section carries provider names and model identifiers (NFR-021) and has no API-key or token property; actual credentials arrive in worktask 03 (T-027 / #71) via environment variables. The cycle interval binds as a `TimeSpan` (`hh:mm:ss`); unknown or non-positive intervals throw at `ToDefaults` with the configuration key named (NFR-047).
-- The previous `DeliveryWindow` Host options class and its `IOptions<DeliveryWindow>` registration are gone. The cycle section owns the window; the resolver produces the effective `DeliveryWindow` per user (HLD §7.2 unification, NFR-045).
+- `AddConfiguration(this IServiceCollection, IConfiguration)` **eagerly** binds five Host-owned section options (`Analysis`, `CostCaps`, `FxMultipliers`, `Cycle`, `Provider`), composes the `IApplicationDefaults` façade immediately, and registers that instance as a singleton. Composition fails fast if `Cycle:Interval` is missing/malformed/non-positive or if the default delivery window (`Cycle:DeliveryWindowTimeZoneId` / `Start` / `End`) cannot form a valid `DeliveryWindow` — exception messages name the configuration path and do not echo invalid payload values (NFR-047). `AddApplication()` then registers the scoped `ISettingsResolver` over the façade. The composition root calls `AddConfiguration` once, after `DefaultUser` validation, before `AddApplication`.
+- The Host-owned section options live in `Configuration/` and follow the `DefaultUser` options style: a `FromConfiguration(IConfiguration)` static bind, a `SectionName` const, and a `ToDefaults()` conversion that produces the corresponding Application `IApplicationDefaults` fragment. Defaults are documented in XML docs beside each property and in the table below (NFR-049).
+- The catalogue exposes only non-secret tunables. The `Provider` section carries provider names and model identifiers (NFR-021) and has no API-key or token property; actual credentials arrive in worktask 03 (T-027 / #71) via environment variables.
+- There is no standalone `DeliveryWindow` Host options class. The cycle section owns the window strings; `ApplicationDefaults` materialises the default `DeliveryWindow` once at composition; the resolver produces the effective per-user window (HLD §7.2 unification, NFR-045).
+- `IApplicationDefaults` captures bound values at composition time. Deploy-time changes require a process restart (NFR-046 is satisfied by configuration/metadata, not by hot-reload of the singleton façade).
 
 ## Catalogue Defaults Table
 
@@ -66,7 +67,7 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 
 ## Test References
 
-- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` rejects malformed and non-positive values with the configuration key named (NFR-047), and that the `Provider` options exposes no credential-shaped property (NFR-043/044).
+- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` and default delivery-window composition reject malformed values with the configuration key named and without echoing the bad payload (NFR-047), that the default window is materialised once, and that the `Provider` options property set is an allow-list of non-secret knobs only (NFR-043/044).
 - **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
 
 ## Changelog
@@ -79,3 +80,4 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 | 2026-07-24 | Documented Host composition of explicit data-access scopes and the global isolation filter (no ambient user). | #62, #63, #64 |
 | 2026-07-24 | Documented Phase-1 default-user configuration keys, fail-fast validation, and identity-vs-auth boundary for seed work. | #66, #67, #7 |
 | 2026-07-24 | Added the F-004 settings catalogue composition (`AddConfiguration` + five section options + `IApplicationDefaults` façade); folded the previous standalone `DeliveryWindow` Host options class into the `Cycle` section. | #68, #69 |
+| 2026-07-24 | Made catalogue composition eager (interval + default delivery window fail at Host build) and tightened Provider allow-list / no-echo validation messages. | #68, #69 |

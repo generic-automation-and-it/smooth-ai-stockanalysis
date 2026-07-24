@@ -6,7 +6,8 @@ Time rules use NodaTime's explicit `Instant`, `LocalDate`, `LocalTime`, and name
 
 ## Requirements
 
-- `DeliveryWindow` represents a daily business window using an IANA zone ID and local wall-clock start/end times. The default delivery configuration is `Europe/Paris`, `07:00` through `22:00`.
+- `DeliveryWindow` represents a daily business window using an IANA zone ID and local wall-clock start/end times.
+- Product defaults for the window (`Europe/Paris`, `07:00`–`22:00`) live in the F-004 settings catalogue under Host `Cycle:DeliveryWindow*` (see [`HOST_AGENTS.md`](../../SmoothAiStockAnalysis.Host/HOST_AGENTS.md)). Feature code must read the **effective** window from `EffectiveSettings.DeliveryWindow` via `ISettingsResolver`, not from a Host singleton options object — there is no standalone `DeliveryWindow` configuration section after F-004.
 - `Contains(Instant)` is deterministic: it converts the supplied instant to the named zone and evaluates a start-inclusive, end-exclusive interval. It must never use a fixed offset, `DateTime.Now`, or `SystemClock` directly.
 - Windows do not span midnight in this foundation. Construction rejects equal or reversed bounds and unknown time-zone IDs. A future requirement must explicitly add overnight semantics.
 - Code that needs "now" receives NodaTime `IClock`; production composition registers `SystemClock.Instance` and tests supply their own clock.
@@ -27,3 +28,4 @@ Time rules use NodaTime's explicit `Instant`, `LocalDate`, `LocalTime`, and name
 | Date | Change | Ref |
 |:-----|:-------|:----|
 | 2026-07-24 | Created the NodaTime time foundation and daily delivery-window contract. | #6 |
+| 2026-07-24 | Documented that delivery-window defaults and effective resolution are owned by the F-004 catalogue/`ISettingsResolver`, not a Host singleton options class. | #68, #69 |

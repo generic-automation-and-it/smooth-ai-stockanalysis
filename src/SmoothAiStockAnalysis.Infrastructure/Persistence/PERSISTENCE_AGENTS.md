@@ -90,7 +90,7 @@ The first production feature schema contains only the tenant-root `user_record` 
 
 - After migrations apply, startup idempotently ensures one `user_record` exists for the Host-validated `DefaultUser:UniqueIdentifier`.
 - Seed runs under the named system scope (`ISystemDataAccessScope`); it does not set a user scope and does not depend on an ambient user (NFR-041/042).
-- Match key is `unique_identifier` (globally unique). Present → no-op; absent → `User.Create` + `UserRecord.FromDomain` with metadata schema version 1.
+- Match key is `unique_identifier` (globally unique). Present → no-op; absent → `User.Create` + `UserRecord.FromDomain` with metadata at `UserMetadata.CurrentSchemaVersion` (v2 after F-004; preferences unset).
 - Seed is startup initialization, not analysis-cycle work: it may `SaveChangesAsync` directly inside the initializer and does not use `IAnalysisCycleUnitOfWork`.
 - No secrets are read or logged by the seed path. Configuration carries placeholders only (NFR-043/044).
 
@@ -176,3 +176,4 @@ the production PRAGMAs.
 | 2026-07-24 | Closed AI review gap on PR #263: added L1 proof for the unique-index race-condition catch branch and wrapped its non-race re-throw with seed-step context. | #7, #263 |
 | 2026-07-24 | Corrected the PR #263 race-condition L1 test: a subsequent AI review found the prior version pre-seeded the same identifier and never reached the catch branch. Replaced it with a `SaveChangesInterceptor` that forces a genuine save-time unique-index conflict; also removed a now-provably-unreachable defensive throw in `SqliteDatabaseInitializer`. | #7, #263 |
 | 2026-07-24 | Bumped `UserMetadata` to schema version 2 with the F-004 typed preference fields on the persistence document; legacy v1 documents read back through `UserMetadata.Reconstitute` with all preferences unset so the resolver falls through to application defaults until the next save promotes the document. Added the `IUserMetadataProvider` Infrastructure implementation that loads metadata through the current data-access scope. | #68, #69 |
+| 2026-07-24 | Corrected default-user seed docs to create metadata at `UserMetadata.CurrentSchemaVersion` (v2) with preferences unset. | #68, #69 |

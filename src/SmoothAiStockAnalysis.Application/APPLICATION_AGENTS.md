@@ -39,7 +39,7 @@ Features/
 ## F-004 settings resolution
 
 - The settings catalogue façade (`IApplicationDefaults`) and the `ISettingsResolver` live in `Configuration/`. The resolver is the only sanctioned way for feature code to read effective settings; ad-hoc `if (pref)` branching is prohibited (NFR-045, HLD §7.2).
-- The `IUserMetadataProvider` port (in `Common/Configuration/`) loads a user's `UserMetadata` for the resolver; the Infrastructure implementation respects the current `IDataAccessScope` and fails closed if no scope is set. The resolver never invents an ambient user (LADR-010).
+- The `IUserMetadataProvider` port (in `Common/Configuration/`) loads a user's `UserMetadata` for the resolver; the Infrastructure implementation respects the current `IDataAccessScope` and fails closed if no scope is set. `ResolveForUserAsync` rejects non-positive user ids and never invents an ambient user (LADR-010).
 - `AddApplication` registers the resolver as **Scoped** so it shares the per-unit-of-work lifetime with the metadata port and the underlying DbContext. See [CONFIGURATION_AGENTS.md](CONFIGURATION_AGENTS.md) for the full contract.
 
 ## Changelog

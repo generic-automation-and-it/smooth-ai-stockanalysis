@@ -25,33 +25,35 @@ Pure domain model — entities, aggregate roots, and value objects. Zero externa
 
 ### F-004 settings catalogue preference shape
 
-- `UserMetadata` carries one nullable typed property per catalogue key declared in `src/SmoothAiStockAnalysis.Host/Configuration/`. The catalogue keys, with their default values, are the canonical list:
+- `UserMetadata` carries one nullable typed property per catalogue key declared in Host `Configuration/` (see the canonical defaults table in [`HOST_AGENTS.md`](../SmoothAiStockAnalysis.Host/HOST_AGENTS.md) — Domain does not own default literals).
+- Property map (override shape only; defaults live in deployment config):
 
-  | Catalogue key | Domain property | Type | Default |
-  |---|---|---|---|
-  | `Analysis:CompanySizeFloor` | `CompanySizeFloor` | `decimal?` | 250,000,000 |
-  | `Analysis:MinAverageDailyVolume` | `MinAverageDailyVolume` | `decimal?` | 100,000 |
-  | `Analysis:MinDaysTraded` | `MinDaysTraded` | `int?` | 30 |
-  | `Analysis:ScoringWeightEvent` | `ScoringWeightEvent` | `decimal?` | 0.50 |
-  | `Analysis:ScoringWeightFundamental` | `ScoringWeightFundamental` | `decimal?` | 0.30 |
-  | `Analysis:ScoringWeightSentiment` | `ScoringWeightSentiment` | `decimal?` | 0.20 |
-  | `Analysis:HoldingHorizonDays` | `HoldingHorizonDays` | `int?` | 90 |
-  | `CostCaps:Event` | `CostCapEvent` | `int?` | 50 |
-  | `CostCaps:Fundamental` | `CostCapFundamental` | `int?` | 20 |
-  | `CostCaps:Reasoning` | `CostCapReasoning` | `int?` | 10 |
-  | `CostCaps:Delivery` | `CostCapDelivery` | `int?` | 5 |
-  | `FxMultipliers:UsdEur` | `FxUsdEur` | `decimal?` | 0.92 |
-  | `FxMultipliers:UsdGbp` | `FxUsdGbp` | `decimal?` | 0.79 |
-  | `FxMultipliers:UsdJpy` | `FxUsdJpy` | `decimal?` | 150.0 |
-  | `Cycle:Interval` | `CycleInterval` | `TimeSpan?` | `00:15:00` |
-  | `Cycle:DeliveryWindowTimeZoneId` | `DeliveryWindowTimeZoneId` | `string?` | `Europe/Paris` |
-  | `Cycle:DeliveryWindowStart` | `DeliveryWindowStart` | `string?` | `07:00` |
-  | `Cycle:DeliveryWindowEnd` | `DeliveryWindowEnd` | `string?` | `22:00` |
-  | `Provider:Reasoning` | `ProviderReasoning` | `string?` | `OpenAI` |
-  | `Provider:ReasoningModel` | `ReasoningModel` | `string?` | `gpt-4o-mini` |
-  | `Provider:MarketData` | `ProviderMarketData` | `string?` | `OpenAI` |
-  | `Provider:MarketDataModel` | `MarketDataModel` | `string?` | `gpt-4o-mini` |
+  | Catalogue key | Domain property | Type |
+  |---|---|---|
+  | `Analysis:CompanySizeFloor` | `CompanySizeFloor` | `decimal?` |
+  | `Analysis:MinAverageDailyVolume` | `MinAverageDailyVolume` | `decimal?` |
+  | `Analysis:MinDaysTraded` | `MinDaysTraded` | `int?` |
+  | `Analysis:ScoringWeightEvent` | `ScoringWeightEvent` | `decimal?` |
+  | `Analysis:ScoringWeightFundamental` | `ScoringWeightFundamental` | `decimal?` |
+  | `Analysis:ScoringWeightSentiment` | `ScoringWeightSentiment` | `decimal?` |
+  | `Analysis:HoldingHorizonDays` | `HoldingHorizonDays` | `int?` |
+  | `CostCaps:Event` | `CostCapEvent` | `int?` |
+  | `CostCaps:Fundamental` | `CostCapFundamental` | `int?` |
+  | `CostCaps:Reasoning` | `CostCapReasoning` | `int?` |
+  | `CostCaps:Delivery` | `CostCapDelivery` | `int?` |
+  | `FxMultipliers:UsdEur` | `FxUsdEur` | `decimal?` |
+  | `FxMultipliers:UsdGbp` | `FxUsdGbp` | `decimal?` |
+  | `FxMultipliers:UsdJpy` | `FxUsdJpy` | `decimal?` |
+  | `Cycle:Interval` | `CycleInterval` | `TimeSpan?` |
+  | `Cycle:DeliveryWindowTimeZoneId` | `DeliveryWindowTimeZoneId` | `string?` |
+  | `Cycle:DeliveryWindowStart` | `DeliveryWindowStart` | `string?` |
+  | `Cycle:DeliveryWindowEnd` | `DeliveryWindowEnd` | `string?` |
+  | `Provider:Reasoning` | `ProviderReasoning` | `string?` |
+  | `Provider:ReasoningModel` | `ReasoningModel` | `string?` |
+  | `Provider:MarketData` | `ProviderMarketData` | `string?` |
+  | `Provider:MarketDataModel` | `MarketDataModel` | `string?` |
 
+- `WithPreferences(...)` is a **full preference snapshot replace**, not a field-level patch: every argument is written through as given, and an omitted/explicit `null` argument means the corresponding preference is **unset** on the result (it does not keep the previous value). Callers that need a partial update must restate preferences they want to retain. This is what makes "clear override → fall through to default" expressible on an immutable document.
 - The Domain preference shape is forward-compatible: a persisted v1 metadata (pre-F-004) reads back through `UserMetadata.Reconstitute` with `SchemaVersion == 1` and all preferences unset, so the resolver treats it as "no overrides" until the next save. No v1→v2 migration is applied on read because the additive change makes the legacy payload's null-preference state the correct fall-through behaviour (LADR-015).
 
 ## Changelog
@@ -62,3 +64,4 @@ Pure domain model — entities, aggregate roots, and value objects. Zero externa
 | 2026-07-24 | Added the dependency-neutral versioned-document contract consumed by the SQLite JSON persistence adapter. | #59 |
 | 2026-07-24 | Added the dual-identifier `User` model and version-1 serialization-free Domain metadata with invariant-preserving creation and reconstitution. | #60 |
 | 2026-07-24 | Bumped metadata to schema version 2 with the F-004 typed preference fields (one nullable property per catalogue key) and added the immutable `WithPreferences` factory. | #68, #69 |
+| 2026-07-24 | Clarified `WithPreferences` as full preference-snapshot replace (null clears), and pointed default literals at Host catalogue docs only. | #68, #69 |
