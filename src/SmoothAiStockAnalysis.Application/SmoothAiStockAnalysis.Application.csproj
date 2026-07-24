@@ -9,6 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Application.UnitTest" />
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Application.ComponentTest" />
   </ItemGroup>
