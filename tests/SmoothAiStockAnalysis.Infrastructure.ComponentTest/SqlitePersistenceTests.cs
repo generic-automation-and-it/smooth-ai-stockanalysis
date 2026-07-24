@@ -119,6 +119,7 @@ public sealed class SqlitePersistenceTests
     private static ServiceProvider CreateServiceProvider(string connectionString)
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddInfrastructurePersistence(connectionString);
 
         return services.BuildServiceProvider();

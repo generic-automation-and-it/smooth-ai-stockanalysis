@@ -32,7 +32,7 @@ public sealed class AspireFixture : IAsyncLifetime
             }
         }
 
-        await using var timeout = new CancellationTokenSource(StartupTimeout);
+        using var timeout = new CancellationTokenSource(StartupTimeout);
         var appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<Projects.SmoothAiStockAnalysis_TestFramework_Aspire>(
                 ["--no-dashboard"],

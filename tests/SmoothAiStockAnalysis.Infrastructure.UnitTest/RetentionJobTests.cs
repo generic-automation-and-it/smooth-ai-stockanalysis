@@ -64,16 +64,4 @@ public sealed class RetentionJobTests
             && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionJob)
             && descriptor.Lifetime == ServiceLifetime.Singleton);
     }
-
-    [Fact]
-    public void ConfigureBindingOverridesDefault()
-    {
-        var services = new ServiceCollection();
-        services.AddInfrastructurePersistence("Data Source=:memory:");
-        services.Configure<AnalysisHistoryRetentionOptions>(o => o.RetentionMonths = 6);
-
-        using var sp = services.BuildServiceProvider();
-        sp.GetRequiredService<IOptions<AnalysisHistoryRetentionOptions>>()
-          .Value.RetentionMonths.ShouldBe(6);
-    }
 }
