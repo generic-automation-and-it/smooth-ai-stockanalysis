@@ -34,6 +34,7 @@ public sealed class SqliteTestDatabase : IAsyncDisposable
         TryDelete(DatabasePath);
         TryDelete(DatabasePath + "-wal");
         TryDelete(DatabasePath + "-shm");
+        TryDelete(DatabasePath + "-journal");
         return ValueTask.CompletedTask;
     }
 

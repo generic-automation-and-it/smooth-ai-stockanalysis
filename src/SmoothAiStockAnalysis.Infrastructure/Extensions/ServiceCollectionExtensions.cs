@@ -31,6 +31,9 @@ public static class ServiceCollectionExtensions
         });
         services.AddScoped<IAnalysisCycleUnitOfWork, AnalysisCycleUnitOfWork>();
         services.Configure<AnalysisHistoryRetentionOptions>(_ => { });
+        // Intentionally registers a no-op binding so IOptions<AnalysisHistoryRetentionOptions>
+        // resolves with the default RetentionMonths = 1 from the class field initializer.
+        // Do not remove: required for the Host to resolve IOptions<T> on startup.
         services.AddSingleton<IAnalysisHistoryRetentionJob, AnalysisHistoryRetentionJob>();
         services.AddHostedService<SqliteDatabaseInitializer>();
         services.AddHostedService<AnalysisHistoryRetentionHostedService>();

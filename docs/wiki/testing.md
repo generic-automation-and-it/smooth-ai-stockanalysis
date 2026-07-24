@@ -34,7 +34,7 @@ Because the collection definition lives in the shared test-framework assembly, d
 
 ```csharp
 using SmoothAiStockAnalysis.TestFramework.Fixtures;
-using Xunit;
+using Xunit.v3;
 
 [Collection<AspireCollection>]
 public sealed class ExternalApiTests(AspireFixture aspire)
