@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
+using SmoothAiStockAnalysis.Application.Common.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Configurations;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Entities;
@@ -23,14 +24,23 @@ public sealed class OwnershipProbeFixture : IAsyncLifetime
         await context.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
     }
 
-    public OwnershipProbeDbContext CreateContext()
+    public OwnershipProbeDbContext CreateContext(
+        SmoothAiStockAnalysis.Application.Common.Persistence.DataAccessScope? scope = null)
     {
         var options = new DbContextOptionsBuilder<OwnershipProbeDbContext>()
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
             .Options;
 
-        return new OwnershipProbeDbContext(options);
+        if (scope is null)
+        {
+            return new OwnershipProbeDbContext(options);
+        }
+
+        var accessor = new DataAccessScopeAccessor();
+        var context = new OwnershipProbeDbContext(options, accessor);
+        context.SetScope(scope.Value);
+        return context;
     }
 
     public async Task<CompositeIndex> ReadOwnedProbeUniqueIndexAsync(CancellationToken cancellationToken)
@@ -85,15 +95,27 @@ public sealed class OwnershipProbeFixture : IAsyncLifetime
 /// <summary>
 /// Production model plus one test-only owned dependent configured through the shared helpers.
 /// </summary>
-public sealed class OwnershipProbeDbContext(DbContextOptions options)
-    : SmoothAiStockAnalysisDbContext(options)
+public sealed class OwnershipProbeDbContext : SmoothAiStockAnalysisDbContext
 {
+    private readonly DataAccessScopeAccessor? _accessor;
+
+    public OwnershipProbeDbContext(DbContextOptions options)
+        : base(options)
+    {
+    }
+
+    internal OwnershipProbeDbContext(DbContextOptions options, DataAccessScopeAccessor accessor)
+        : base(options, accessor) =>
+        _accessor = accessor;
+
     public DbSet<OwnedProbeRecord> OwnedProbeRecords => Set<OwnedProbeRecord>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
+    internal void SetScope(SmoothAiStockAnalysis.Application.Common.Persistence.DataAccessScope scope) =>
+        (_accessor ?? throw new InvalidOperationException("This probe context has no scope accessor."))
+            .SetScope(scope);
 
+    protected override void OnModelCreatingCore(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<OwnedProbeRecord>(entity =>
         {
             entity.ConfigureUserOwnedDependent();

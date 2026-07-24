@@ -42,6 +42,10 @@ public static class ServiceCollectionExtensions
         Func<IServiceProvider, string> connectionStringFactory)
     {
         services.AddSingleton<SqlitePragmaConnectionInterceptor>();
+        services.AddScoped<DataAccessScopeAccessor>();
+        services.AddScoped<IDataAccessScope>(sp => sp.GetRequiredService<DataAccessScopeAccessor>());
+        services.AddScoped<IDataAccessScopeSetter>(sp => sp.GetRequiredService<DataAccessScopeAccessor>());
+        services.AddScoped<ISystemDataAccessScope>(sp => sp.GetRequiredService<DataAccessScopeAccessor>());
         services.AddDbContext<SmoothAiStockAnalysisDbContext>((serviceProvider, options) =>
         {
             string connectionString = NormalizeConnectionString(connectionStringFactory(serviceProvider));
@@ -50,6 +54,10 @@ public static class ServiceCollectionExtensions
             options.UseSnakeCaseNamingConvention();
             options.AddInterceptors(serviceProvider.GetRequiredService<SqlitePragmaConnectionInterceptor>());
         });
+        // Resolve the context with its scope accessor so the global user-isolation filter is active.
+        services.AddScoped(sp => new SmoothAiStockAnalysisDbContext(
+            sp.GetRequiredService<Microsoft.EntityFrameworkCore.DbContextOptions<SmoothAiStockAnalysisDbContext>>(),
+            sp.GetRequiredService<DataAccessScopeAccessor>()));
         services.AddScoped<IAnalysisCycleUnitOfWork, AnalysisCycleUnitOfWork>();
         services.Configure<AnalysisHistoryRetentionOptions>(_ => { });
         // Intentionally registers a no-op binding so IOptions<AnalysisHistoryRetentionOptions>

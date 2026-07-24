@@ -28,7 +28,7 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Keep the persistence document separate from Domain metadata. Infrastructure owns `[JsonExtensionData]`, the forward-compatible field bag, the LADR-015 converter/comparer, and explicit Domain-to-persistence translation. `UserRecord.FromDomain` is create-only and accepts transient users; persisted updates use the merge-preserving path, retain unknown fields, and cannot regress the document schema version.
 - The initial EF migration lives under `Persistence/Migrations/`; deterministic design-time context creation is available, the generated migration class carries `[ExcludeFromCodeCoverage]`, and production startup applies migrations through `MigrateAsync`.
 - Treat `user_record` as the tenant root: its `Id` is the ownership key, so it has no self-referencing `UserId`. Future user-owned dependants must call `ConfigureUserOwnedDependent` / `HasUserScopedUniqueIndex` so they receive a required `user_id` FK and user-prefixed natural uniqueness; shared market/reference entities remain explicitly unscoped and must not use those helpers.
-- This work establishes schema ownership only. Query filters, explicit current/system scopes, configured default-user seeding, authentication, and authorization remain owned by later worktasks.
+- This work establishes schema ownership only. Global user-isolation query filters and the explicit current/system scope contract (`DataAccessScope`, `IDataAccessScopeSetter`, `IDataAccessScope`, `ISystemDataAccessScope`) are delivered by this worktask; configured default-user seeding, authentication, and authorization remain owned by later worktasks.
 
 ## Packages to add when implementing
 

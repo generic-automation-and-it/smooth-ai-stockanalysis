@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmoothAiStockAnalysis.Application.Common.Persistence;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmoothAiStockAnalysis.Domain.Entities;
@@ -21,7 +22,7 @@ public sealed class UserOwnedUniquenessConventionTests(OwnershipProbeFixture fix
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
-        await using (OwnershipProbeDbContext writeContext = fixture.CreateContext())
+        await using (OwnershipProbeDbContext writeContext = fixture.CreateContext(DataAccessScope.System()))
         {
             IEntityType ownedEntity = writeContext.Model.FindEntityType(typeof(OwnedProbeRecord))!;
             IReadOnlyList<IIndex> uniqueIndexes = [.. ownedEntity.GetIndexes().Where(index => index.IsUnique)];

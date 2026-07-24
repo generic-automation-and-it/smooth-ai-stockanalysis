@@ -29,8 +29,16 @@ Features/
 
 `Mediator.Abstractions` + `Mediator.SourceGenerator`, `FluentValidation.DependencyInjectionExtensions`, and (for upstream clients) `Refit` — all declared centrally in `Directory.Packages.props`.
 
+## Data-access scopes
+
+- Contracts live in `Common/Persistence/`: `DataAccessScope` / `DataAccessScopeKind`, `IDataAccessScopeSetter`, `IDataAccessScope`, and `ISystemDataAccessScope`.
+- Feature and background code set the scope deliberately through `IDataAccessScopeSetter` before touching owned data. There is no ambient user.
+- Shared ingestion takes `ISystemDataAccessScope` (a separate interface) so the isolation bypass is auditable. Ordinary features do not depend on it.
+- Infrastructure implements the contracts and enforces isolation with a global EF Core query filter (LADR-017). Application never references EF Core.
+
 ## Changelog
 
 | Date | Change | Ref |
 |:-----|:-------|:----|
 | 2026-05-30 | Created — empty vertical-slice skeleton (`Features/`, `Common/{Clients,Exceptions,Models,Persistence,Pipelines}/`, `Extensions/`). | — |
+| 2026-07-24 | Added explicit data-access scope contracts for user isolation (`DataAccessScope`, setter/reader, system-scope interface). | #62, #63, #64 |
