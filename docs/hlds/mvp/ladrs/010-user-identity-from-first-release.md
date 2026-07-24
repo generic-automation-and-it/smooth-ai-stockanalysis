@@ -22,9 +22,9 @@ The user has two identifiers with deliberately different roles:
 - an internal database-assigned `long Id`, used as the compact tenant key and by future foreign keys;
 - a stable, globally unique `Guid UniqueIdentifier`, suitable for exposure outside the persistence boundary.
 
-The external GUID is an identifier only. It is not an authentication credential, authorization token, or secret. The `users` table is the tenant root, so its primary key is the ownership key and it does not carry a self-referencing `UserId`.
+The external GUID is an identifier only. It is not an authentication credential, authorization token, or secret. The physical tenant-root table is `user_record` (convention-derived from the Infrastructure `UserRecord` type under LADR-016; the pre-release `InitialUserSchema` migration briefly created it as `users` and `SnakeCaseNamingConvention` renamed it before any production database existed). Its primary key is the ownership key, so the tenant root does not carry a self-referencing `UserId`.
 
-**Implementation status:** delivered by worktask 02 through the dual-identifier Domain model, `users` schema, versioned metadata mapping, and initial migration.
+**Implementation status:** delivered by worktask 02 through the dual-identifier Domain model, `user_record` schema, versioned metadata mapping, initial migration, and the reusable user-owned composite-uniqueness configuration helpers.
 
 ## Rationale
 

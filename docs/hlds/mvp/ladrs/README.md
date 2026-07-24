@@ -34,6 +34,7 @@ Each record carries a status, the context that forced a choice, the decision its
 | [LADR-013](013-abstracted-ai-reasoning-provider.md) | Abstracted AI reasoning provider | Accepted |
 | [LADR-014](014-lossless-nodatime-mappings-for-sqlite.md) | Lossless NodaTime mappings for SQLite | Completed |
 | [LADR-015](015-json-document-columns-via-value-converter-on-sqlite.md) | JSON documents as TEXT via a value converter | Accepted |
+| [LADR-016](016-snake-case-relational-naming-via-efcore-namingconventions.md) | lower_snake_case relational naming via EFCore.NamingConventions | Accepted |
 
 ## Related documents
 

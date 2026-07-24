@@ -57,7 +57,7 @@ public sealed class NodaTimeSqlitePersistenceTests : IAsyncDisposable
         await using var connection = new Microsoft.Data.Sqlite.SqliteConnection(_database.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT typeof(Instant), Instant FROM time_round_trip_records LIMIT 1;";
+        command.CommandText = "SELECT typeof(instant), instant FROM time_round_trip_records LIMIT 1;";
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
 
         (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
@@ -69,6 +69,7 @@ public sealed class NodaTimeSqlitePersistenceTests : IAsyncDisposable
     {
         var options = new DbContextOptionsBuilder<TimeRoundTripDbContext>()
             .UseSqlite(connectionString)
+            .UseSnakeCaseNamingConvention()
             .Options;
 
         return new TimeRoundTripDbContext(options);
@@ -88,9 +89,6 @@ public sealed class NodaTimeSqlitePersistenceTests : IAsyncDisposable
     private sealed class TimeRoundTripDbContext(DbContextOptions<TimeRoundTripDbContext> options) : SmoothAiStockAnalysisDbContext(options)
     {
         public DbSet<TimeRoundTripRecord> TimeRoundTripRecords => Set<TimeRoundTripRecord>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder) =>
-            modelBuilder.Entity<TimeRoundTripRecord>().ToTable("time_round_trip_records");
     }
 
     private sealed class TimeRoundTripRecord

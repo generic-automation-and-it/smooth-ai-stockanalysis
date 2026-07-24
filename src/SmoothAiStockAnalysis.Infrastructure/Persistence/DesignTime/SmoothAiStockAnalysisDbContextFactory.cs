@@ -14,6 +14,7 @@ public sealed class SmoothAiStockAnalysisDbContextFactory
     {
         var options = new DbContextOptionsBuilder<SmoothAiStockAnalysisDbContext>()
             .UseSqlite("Data Source=:memory:")
+            .UseSnakeCaseNamingConvention()
             .Options;
 
         return new SmoothAiStockAnalysisDbContext(options);

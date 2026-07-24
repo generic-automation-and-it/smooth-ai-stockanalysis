@@ -13,25 +13,18 @@ internal sealed class UserRecordConfiguration : IEntityTypeConfiguration<UserRec
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<UserRecord> builder)
     {
-        builder.ToTable("users");
-
-        builder.HasKey(user => user.Id)
-            .HasName("pk_users");
-
+        // Relational names come from the global snake_case naming convention (LADR-016);
+        // this class only carries non-naming configuration so the convention stays authoritative.
         builder.Property(user => user.Id)
-            .HasColumnName("id")
             .ValueGeneratedOnAdd();
 
         builder.Property(user => user.UniqueIdentifier)
-            .HasColumnName("unique_identifier")
             .IsRequired();
 
         builder.HasIndex(user => user.UniqueIdentifier)
-            .IsUnique()
-            .HasDatabaseName("ux_users_unique_identifier");
+            .IsUnique();
 
         PropertyBuilder<UserMetadataDocument> metadataProperty = builder.Property(user => user.Metadata)
-            .HasColumnName("metadata")
             .HasColumnType("TEXT")
             .IsRequired()
             .HasConversion(new VersionedDocumentSqliteValueConverter<UserMetadataDocument>());
