@@ -8,4 +8,8 @@
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Domain.UnitTest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+
 </Project>

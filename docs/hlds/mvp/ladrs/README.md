@@ -31,6 +31,7 @@ Each record carries a status, the context that forced a choice, the decision its
 | [LADR-011](011-memory-only-caching.md) | Memory-only caching, no cache server | Accepted |
 | [LADR-012](012-liquidity-median-excluding-catalyst-day.md) | Liquidity measured excluding the catalyst day | Accepted |
 | [LADR-013](013-abstracted-ai-reasoning-provider.md) | Abstracted AI reasoning provider | Accepted |
+| [LADR-014](014-lossless-nodatime-mappings-for-sqlite.md) | Lossless NodaTime mappings for SQLite | Accepted |
 
 ## Related documents
 

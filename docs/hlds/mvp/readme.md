@@ -498,7 +498,7 @@ Both are identified for resolution during M1 rather than discovered later.
 
 | Uncertainty | Concern |
 |---|---|
-| Date and time library support on the chosen store | The library's first-class integration targets a different database engine. Conversion behaviour must be established before any schema depends on it. |
+| Date and time library support on the chosen store | **Resolved by LADR-014:** lossless custom NodaTime-to-SQLite converters are globally registered before any schema depends on them. |
 | Structured-document columns on the chosen store | Support is thinner than on server databases. Whether the contents ever need to be queried — rather than merely read and written whole — determines the approach. |
 
 ---

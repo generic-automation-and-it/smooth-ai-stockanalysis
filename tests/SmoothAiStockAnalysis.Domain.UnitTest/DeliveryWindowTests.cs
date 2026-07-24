@@ -1,0 +1,60 @@
+using NodaTime;
+using SmoothAiStockAnalysis.Domain.Time;
+
+namespace SmoothAiStockAnalysis.Domain.UnitTest;
+
+public sealed class DeliveryWindowTests
+{
+    private static readonly DeliveryWindow Window = new("Europe/Paris", new LocalTime(7, 0), new LocalTime(22, 0));
+
+    [Fact]
+    public void ContainsUsesInclusiveStartAndExclusiveEnd()
+    {
+        Window.Contains(Instant.FromUtc(2026, 3, 29, 4, 59, 59)).ShouldBeFalse();
+        Window.Contains(Instant.FromUtc(2026, 3, 29, 5, 0)).ShouldBeTrue();
+        Window.Contains(Instant.FromUtc(2026, 3, 29, 19, 59, 59)).ShouldBeTrue();
+        Window.Contains(Instant.FromUtc(2026, 3, 29, 20, 0)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void ContainsUsesEuropeParisOffsetAfterSpringForward()
+    {
+        Window.Contains(Instant.FromUtc(2026, 3, 28, 5, 30)).ShouldBeFalse();
+        Window.Contains(Instant.FromUtc(2026, 3, 29, 5, 30)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ContainsUsesEuropeParisOffsetAfterFallBack()
+    {
+        Window.Contains(Instant.FromUtc(2026, 10, 24, 5, 30)).ShouldBeTrue();
+        Window.Contains(Instant.FromUtc(2026, 10, 25, 5, 30)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void ContainsCurrentInstantUsesTheSuppliedClock()
+    {
+        var clock = new StubClock(Instant.FromUtc(2026, 3, 29, 5, 30));
+
+        Window.ContainsCurrentInstant(clock).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("Invalid/Zone")]
+    [InlineData("")]
+    public void ConstructorRejectsUnknownTimeZone(string timeZoneId)
+    {
+        Should.Throw<ArgumentException>(() => new DeliveryWindow(timeZoneId, new LocalTime(7, 0), new LocalTime(22, 0)));
+    }
+
+    [Fact]
+    public void ConstructorRejectsWindowsThatDoNotEndAfterTheyStart()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() => new DeliveryWindow("Europe/Paris", new LocalTime(22, 0), new LocalTime(7, 0)));
+        Should.Throw<ArgumentOutOfRangeException>(() => new DeliveryWindow("Europe/Paris", new LocalTime(7, 0), new LocalTime(7, 0)));
+    }
+
+    private sealed class StubClock(Instant currentInstant) : IClock
+    {
+        public Instant GetCurrentInstant() => currentInstant;
+    }
+}
