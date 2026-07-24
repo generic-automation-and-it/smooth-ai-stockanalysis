@@ -38,7 +38,9 @@ public sealed class DefaultUserSeedTests : IAsyncDisposable
         users.Count.ShouldBe(1);
         users[0].UniqueIdentifier.ShouldBe(ConfiguredIdentifier);
         users[0].Id.ShouldBeGreaterThan(0);
-        users[0].Metadata.SchemaVersion.ShouldBe(1);
+        // The seeded user carries the current metadata schema version (v2 with the F-004
+        // preference fields; v1 was the pre-F-004 contract).
+        users[0].Metadata.SchemaVersion.ShouldBe(2);
     }
 
     [Fact]

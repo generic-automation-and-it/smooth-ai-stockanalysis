@@ -93,7 +93,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
             WHERE id = 1;
             """,
             cancellationToken);
-        metadataStorage.ShouldBe("text:1");
+        metadataStorage.ShouldBe($"text:{UserMetadata.CurrentSchemaVersion}");
     }
 
     [Fact]
@@ -174,9 +174,11 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
     [Fact]
     public void ApplyingDomainStateRejectsMetadataSchemaVersionRegression()
     {
+        // The persisted document is newer than the Domain state being applied — the Domain
+        // factory cannot downgrade the schema version (LADR-015, NFR-048).
         var document = new UserMetadataDocument
         {
-            SchemaVersion = 2,
+            SchemaVersion = UserMetadata.CurrentSchemaVersion + 1,
             ForwardCompatibleFields = new Dictionary<string, JsonElement>
             {
                 ["futurePreference"] = JsonSerializer.Deserialize<JsonElement>("\"retained\"")
@@ -186,7 +188,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         Should.Throw<InvalidOperationException>(
             () => document.ApplyDomainState(UserMetadata.Create()));
 
-        document.SchemaVersion.ShouldBe(2);
+        document.SchemaVersion.ShouldBe(UserMetadata.CurrentSchemaVersion + 1);
         document.ForwardCompatibleFields.ShouldContainKey("futurePreference");
     }
 
