@@ -7,7 +7,7 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// <summary>
 /// Section bound for cycle scheduling tunables: the cycle interval and the delivery window.
 /// </summary>
-public sealed class CycleOptions
+public sealed class CycleOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Cycle";
@@ -23,6 +23,11 @@ public sealed class CycleOptions
 
     /// <summary>Gets the full configuration path for the delivery-window end.</summary>
     public const string DeliveryWindowEndPath = SectionName + ":DeliveryWindowEnd";
+
+    private TimeSpan? _validatedInterval;
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>
     /// Gets or sets the interval between analysis cycles in <c>hh:mm:ss</c> format.
@@ -54,18 +59,18 @@ public sealed class CycleOptions
         return options;
     }
 
-    /// <summary>
-    /// Validates the cycle interval parses to a strictly positive <see cref="TimeSpan"/>.
-    /// Called by <see cref="FromConfiguration"/>; also invoked by <see cref="ToDefaults"/> so
-    /// callers that bypass the bind path still hit the same range check.
-    /// </summary>
-    public TimeSpan ValidateAndParseInterval() => ParseInterval(Interval);
+    private void Validate() => _validatedInterval = ParseInterval(Interval);
 
-    private void Validate() => _ = ValidateAndParseInterval();
+    /// <summary>
+    /// Returns the interval validated during <see cref="FromConfiguration"/>, or parses
+    /// <see cref="Interval"/> once when the section was constructed outside the bind path
+    /// (for example unit-test helpers).
+    /// </summary>
+    internal TimeSpan ResolveValidatedInterval() => _validatedInterval ?? ParseInterval(Interval);
 
     internal CycleDefaults ToDefaults()
     {
-        TimeSpan interval = ValidateAndParseInterval();
+        TimeSpan interval = ResolveValidatedInterval();
         return new CycleDefaults(
             Interval: interval,
             DeliveryWindowTimeZoneId: DeliveryWindowTimeZoneId,

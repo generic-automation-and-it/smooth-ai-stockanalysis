@@ -10,10 +10,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// Credentials never belong in this section (NFR-043). Actual API keys are read from
 /// environment variables in worktask 03 (T-027 / #71).
 /// </remarks>
-public sealed class ProviderOptions
+public sealed class ProviderOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Provider";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>Reasoning provider name. Placeholder only — credential belongs in env. Default "OpenAI".</summary>
     public string Reasoning { get; set; } = "OpenAI";
@@ -47,15 +50,6 @@ public sealed class ProviderOptions
         RequireNonBlank(ReasoningModel, nameof(ReasoningModel));
         RequireNonBlank(MarketData, nameof(MarketData));
         RequireNonBlank(MarketDataModel, nameof(MarketDataModel));
-    }
-
-    private static void RequireNonBlank(string value, string leaf)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException(
-                $"Configuration value '{SectionName}:{leaf}' is required and must be non-blank.");
-        }
     }
 
     internal ProviderDefaults ToDefaults() => new(Reasoning, ReasoningModel, MarketData, MarketDataModel);

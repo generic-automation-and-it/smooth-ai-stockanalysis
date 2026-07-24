@@ -12,10 +12,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// requirement rather than a now-built one. The placeholders below are non-secret tunables;
 /// credentials (none here) never belong in committed configuration (NFR-043/044).
 /// </remarks>
-public sealed class FxMultipliersOptions
+public sealed class FxMultipliersOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "FxMultipliers";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>USD → EUR multiplier. Default 0.92.</summary>
     public decimal UsdEur { get; set; } = 0.92m;
@@ -45,15 +48,6 @@ public sealed class FxMultipliersOptions
         RequirePositive(UsdEur, nameof(UsdEur));
         RequirePositive(UsdGbp, nameof(UsdGbp));
         RequirePositive(UsdJpy, nameof(UsdJpy));
-    }
-
-    private static void RequirePositive(decimal value, string leaf)
-    {
-        if (value <= 0m)
-        {
-            throw new InvalidOperationException(
-                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
-        }
     }
 
     internal FxMultipliers ToDefaults() => new(UsdEur, UsdGbp, UsdJpy);

@@ -23,7 +23,7 @@ public sealed class ApplicationDefaults : IApplicationDefaults
     /// lookup) runs here so a bad deploy config fails when the catalogue is composed, not
     /// mid-cycle (NFR-047).
     /// </summary>
-    public ApplicationDefaults(
+    internal ApplicationDefaults(
         AnalysisDefaultsOptions analysis,
         CostCapsOptions costCaps,
         FxMultipliersOptions fxMultipliers,

@@ -6,10 +6,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// <summary>
 /// Section bound for the user-recognition thresholds and scoring weightings (NFR-049).
 /// </summary>
-public sealed class AnalysisDefaultsOptions
+public sealed class AnalysisDefaultsOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Analysis";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>Minimum company size in account currency. Default 250,000,000.</summary>
     public decimal CompanySizeFloor { get; set; } = 250_000_000m;
@@ -54,33 +57,6 @@ public sealed class AnalysisDefaultsOptions
         RequireUnitInterval(ScoringWeightEvent, nameof(ScoringWeightEvent));
         RequireUnitInterval(ScoringWeightFundamental, nameof(ScoringWeightFundamental));
         RequireUnitInterval(ScoringWeightSentiment, nameof(ScoringWeightSentiment));
-    }
-
-    private void RequirePositive(decimal value, string leaf)
-    {
-        if (value <= 0m)
-        {
-            throw new InvalidOperationException(
-                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
-        }
-    }
-
-    private void RequirePositive(int value, string leaf)
-    {
-        if (value <= 0)
-        {
-            throw new InvalidOperationException(
-                $"Configuration value '{SectionName}:{leaf}' must be strictly positive.");
-        }
-    }
-
-    private void RequireUnitInterval(decimal value, string leaf)
-    {
-        if (value < 0m || value > 1m)
-        {
-            throw new InvalidOperationException(
-                $"Configuration value '{SectionName}:{leaf}' must be in the [0, 1] interval.");
-        }
     }
 
     internal AnalysisDefaults ToDefaults() => new(
