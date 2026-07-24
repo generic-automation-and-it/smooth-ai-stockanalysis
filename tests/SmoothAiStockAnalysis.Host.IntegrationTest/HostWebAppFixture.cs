@@ -1,5 +1,6 @@
 extern alias HostApp;
 
+using Microsoft.Extensions.Hosting;
 using SmoothAiStockAnalysis.TestFramework.Fixtures;
 
 namespace SmoothAiStockAnalysis.Host.IntegrationTest;
@@ -11,4 +12,10 @@ namespace SmoothAiStockAnalysis.Host.IntegrationTest;
 /// </summary>
 public sealed class HostWebAppFixture : WebAppFixture<HostApp::Program>
 {
+    /// <summary>
+    /// Keeps the Host's <see cref="IHostedService"/> registrations intact so startup-time
+    /// initialisation (e.g. <c>SqliteDatabaseInitializer</c>) runs against the isolated database.
+    /// </summary>
+    protected override bool RemoveHostedServices => false;
+
 }

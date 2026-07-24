@@ -11,7 +11,11 @@ Shared xunit.v3 test fixtures and helpers reused across the L0/L1/L2 test projec
 
 ## Key Behaviors
 
-- **`WebAppFixture<TProgram>`** wraps `WebApplicationFactory<TProgram>` and is generic over a Host's entry point. Because xunit.v3 compiles test assemblies as executables (each gets its own auto-generated `Program`), an integration test must reference the Host with `Aliases="HostApp"` and close the fixture as `WebAppFixture<HostApp::Program>` to avoid an ambiguous `Program`.
+- **`WebAppFixture<TProgram>`** wraps `WebApplicationFactory<TProgram>` and gives each integration fixture an isolated on-disk SQLite database. Because xunit.v3 compiles test assemblies as executables (each gets its own auto-generated `Program`), an integration test must reference the Host with `Aliases="HostApp"` and close the fixture as `WebAppFixture<HostApp::Program>` to avoid an ambiguous `Program`.
+- **`SqliteTestDatabase`** creates a unique temporary file database with pooling disabled, then deletes the database, WAL, shared-memory, and rollback-journal files at disposal. It is the only shared persistence fixture; tests must not require a container runtime.
+- **`SqliteTestHelpers.ExecuteScalarAsync<T>`** reads a single scalar value (`string`/`long`) from an open `DbConnection`; shared by `Infrastructure.ComponentTest` and `Host.IntegrationTest` so PRAGMA/probe assertions don't drift between the two.
+- **`AspireFixture`** is opt-in and exposes the WireMock endpoint plus `WireMockAdminClient`. It consumes the AppHost's public `WireMockTestDependency` resource contract, reuses the CI-prewarmed endpoint on port `19091`, or starts the WireMock-only Aspire AppHost when needed locally. Downstream xunit.v3 tests opt in with the type-based `[Collection<AspireCollection>]` attribute and receive `AspireFixture` through constructor injection.
+- **`WireMockAdminClient`** resets mappings/request history and installs JSON stubs through WireMock's admin API; tests should share this adapter rather than constructing raw admin requests.
 - **`ServiceProviderFixture`** builds an isolated `IServiceCollection`/`IServiceProvider` for L0/L1 tests and routes logging to the test output via `XUnitLoggerFactory`.
 - **`XUnitLogger*`** bridges `ILogger` to xunit's `ITestOutputHelper`, with optional per-category minimum levels.
 - **`PriorityOrderer` + `[TestPriority]`** order test cases when sequencing matters; opt in with `[TestCaseOrderer(typeof(PriorityOrderer))]` on the test class.
@@ -21,4 +25,7 @@ Shared xunit.v3 test fixtures and helpers reused across the L0/L1/L2 test projec
 | Date | Change | Ref |
 |:-----|:-------|:----|
 | 2026-05-30 | Created — lean fixtures (`ServiceProviderFixture`, `WebAppFixture<TProgram>`), xunit output logging, and test-case ordering helpers. | — |
-| 2026-07-23 | Declared centrally versioned MessagePack 2.5.302 directly in the Aspire test-host projects to remediate Aspire’s vulnerable transitive dependency. | — |
+| 2026-07-23 | Replaced container-backed fixtures with isolated SQLite test files. | #6 |
+| 2026-07-23 | Restored opt-in Aspire orchestration for WireMock only. | #252 |
+| 2026-07-24 | Consumed the centralized WireMock resource contract from the Aspire AppHost. | #252 |
+| 2026-07-24 | Added `SqliteTestHelpers.ExecuteScalarAsync<T>`, extracted from duplicate copies in `Infrastructure.ComponentTest` and `Host.IntegrationTest`; documented `-journal` cleanup in `SqliteTestDatabase`. | #252 |

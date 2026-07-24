@@ -10,6 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.UnitTest" />
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.ComponentTest" />
   </ItemGroup>

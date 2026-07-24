@@ -1,5 +1,5 @@
 name: Aspire test with coverage
-description: Start Aspire test dependencies, run ordered tests with coverage, generate reports, and clean up Aspire.
+description: Start WireMock with Aspire, run the ordered test suite with coverage, and generate reports.
 
 inputs:
   build-configuration:
@@ -11,7 +11,7 @@ inputs:
     required: false
     default: artifacts
   dependency-timeout-seconds:
-    description: Seconds to wait for Aspire-managed test dependencies.
+    description: Seconds to wait for Aspire-managed WireMock.
     required: false
     default: "120"
 

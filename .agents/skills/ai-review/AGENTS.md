@@ -41,3 +41,4 @@ The companion `.github/workflows/pipeline-ai-analyse.yml` runs after `PR Code Re
 | 2026-07-05 | Documented the companion self-fix workflow that consumes low/medium review findings and posts an auto-fix summary. | |
 | 2026-07-23 | Vendored the consumer skill and companion workflows into `smooth-ai-stockanalysis`. | #248 |
 | 2026-07-23 | Local delta from upstream: reworded the analyse-mode guardrail for explicit human-in-the-loop clarity. Re-apply on next upstream sync. | #248 |
+| 2026-07-24 | Local delta from upstream: tightened Execute step 5 and the matching Guardrail to make the `ci: /ai-review — processed review responses` empty commit MANDATORY whenever the review contains at least one 🔴 Critical or 🟠 High finding (fix OR skip). Aligns the vendored skill with the root AGENTS.md non-negotiable. Re-apply on next upstream sync. | #252 |

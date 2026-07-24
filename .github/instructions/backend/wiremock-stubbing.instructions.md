@@ -1,22 +1,29 @@
 ---
-description: 'Backend WireMock stubbing — single Aspire stub helper is the source of truth for user API stubs'
-globs: "tests/*.TestFramework.Aspire/**/*.cs"
+description: 'WireMock test orchestration and stubbing conventions for the Aspire AppHost and shared fixtures'
+globs: "tests/SmoothAiStockAnalysis.TestFramework.Aspire/**/*.cs,tests/SmoothAiStockAnalysis.TestFramework/Fixtures/*WireMock*.cs,tests/SmoothAiStockAnalysis.TestFramework/Fixtures/AspireFixture.cs"
 paths:
-  - "tests/*.TestFramework.Aspire/**/*.cs"
-applyTo: 'tests/*.TestFramework.Aspire/**/*.cs'
+  - "tests/SmoothAiStockAnalysis.TestFramework.Aspire/**/*.cs"
+  - "tests/SmoothAiStockAnalysis.TestFramework/Fixtures/*WireMock*.cs"
+  - "tests/SmoothAiStockAnalysis.TestFramework/Fixtures/AspireFixture.cs"
+applyTo: 'tests/SmoothAiStockAnalysis.TestFramework.Aspire/**/*.cs,tests/SmoothAiStockAnalysis.TestFramework/Fixtures/*WireMock*.cs,tests/SmoothAiStockAnalysis.TestFramework/Fixtures/AspireFixture.cs'
 alwaysApply: false
 ---
-# Backend WireMock Stubbing Rules
+# WireMock Test Rules
 
-## Scope
+## Non-Negotiables
 
-Applies to the single remaining Aspire WireMock stub helper:
+- Aspire owns the test WireMock process. Keep `SmoothAiStockAnalysis.TestFramework.Aspire` WireMock-only unless a future requirement explicitly adds another external dependency.
+- Do not add PostgreSQL, Redis, Npgsql, or Respawn to the Aspire test host; persistence tests use isolated SQLite files.
+- Keep `WireMockAdminClient` as the shared admin API adapter. Tests must not duplicate raw `__admin` request construction.
+- A test that changes mappings or request history must reset the WireMock instance before installing its own stubs.
+- Keep the well-known CI endpoint at `http://127.0.0.1:19091`; the coverage action pre-warms it once for the ordered test suite.
 
-- `tests/SmoothAiStockAnalysis.TestFramework.Aspire/WireMockUserStubsHelper.cs`
+> **HLD-12 context.** The dev AppHost previously provisioned its own WireMock container for local end-to-end work; that responsibility was removed in favour of the shared Aspire test dependency described here. If a future requirement reintroduces a dev-AppHost WireMock, align the orchestration with this rule set before merging.
 
-> **Note (HLD-12):** `src/SmoothAiStockAnalysis.AppHost/WireMockUserStubsHelper.cs` has been deleted. The dev AppHost no longer runs WireMock — it reads from the real upstream API directly. Only the test-framework copy remains.
+## Changelog
 
-## Rules
+> AI loading note: Skip this section during routine task execution. Use it only when updating this rule file.
 
-1. Keep the test-framework WireMock stub helper as the single source of truth for stub data shapes.
-2. The stub usernames and unique identifiers must match the active seed fixtures/migrations (`DemoFixtures`).
+| Date | Change |
+|:-----|:-------|
+| 2026-07-23 | Restored WireMock-only Aspire orchestration and shared stubbing conventions. |

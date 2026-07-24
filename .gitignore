@@ -435,3 +435,12 @@ FodyWeavers.xsd
 # macOS Finder metadata
 .DS_Store
 **/.DS_Store
+
+# Local SQLite runtime artifacts
+# `data/` and `**/*.db` are intentionally redundant defense-in-depth: `data/`
+# catches the canonical on-disk layout, and `**/*.db` catches stray database
+# files in other locations.
+data/
+**/*.db
+**/*.db-wal
+**/*.db-shm

@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.Http.Json;
 
 namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
@@ -7,21 +6,18 @@ public sealed class WireMockAdminClient(HttpClient httpClient) : IAsyncDisposabl
 {
     public static WireMockAdminClient Create(string baseUrl)
     {
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("WireMock base URL is not available.");
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
 
         return new WireMockAdminClient(new HttpClient
         {
-            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/")
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = TimeSpan.FromSeconds(10)
         });
     }
 
     public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        await SendAsync(HttpMethod.Delete, "__admin/mappings", cancellationToken);
-        await SendAsync(HttpMethod.Delete, "__admin/requests", cancellationToken);
+        await SendAsync(HttpMethod.Post, "__admin/reset", cancellationToken);
     }
 
     public async Task StubJsonResponseAsync(
@@ -49,7 +45,10 @@ public sealed class WireMockAdminClient(HttpClient httpClient) : IAsyncDisposabl
             }
         };
 
-        using HttpResponseMessage response = await httpClient.PostAsJsonAsync("__admin/mappings", request, cancellationToken);
+        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+            "__admin/mappings",
+            request,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -59,7 +58,10 @@ public sealed class WireMockAdminClient(HttpClient httpClient) : IAsyncDisposabl
         return ValueTask.CompletedTask;
     }
 
-    private async Task SendAsync(HttpMethod method, string path, CancellationToken cancellationToken)
+    private async Task SendAsync(
+        HttpMethod method,
+        string path,
+        CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(method, path);
         using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);

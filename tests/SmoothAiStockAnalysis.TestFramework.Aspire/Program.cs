@@ -4,6 +4,6 @@ using SmoothAiStockAnalysis.TestFramework.Aspire;
 [assembly: ExcludeFromCodeCoverage]
 
 var builder = DistributedApplication.CreateBuilder(args);
-builder.AddSmoothAiStockAnalysisTestDependencies();
+builder.AddWireMockTestDependency();
 
 builder.Build().Run();
