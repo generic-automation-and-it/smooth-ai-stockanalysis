@@ -37,6 +37,14 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 - The catalogue exposes only non-secret tunables. The `Provider` section carries provider names and model identifiers (NFR-021) and has no API-key or token property; actual credentials arrive in worktask 03 (T-027 / #71) via environment variables.
 - There is no standalone `DeliveryWindow` Host options class. The cycle section owns the window strings; `ApplicationDefaults` materialises the default `DeliveryWindow` once at composition; the resolver produces the effective per-user window (HLD §7.2 unification, NFR-045).
 - `IApplicationDefaults` captures bound values at composition time. Deploy-time changes require a process restart (NFR-046 is satisfied by configuration/metadata, not by hot-reload of the singleton façade).
+- Every catalogue section validates its own values inside `XxxOptions.FromConfiguration` after `Bind()`, so a broken section fails at the same composition call that binds it. Validation ranges:
+  - `Analysis` — `CompanySizeFloor`, `MinAverageDailyVolume`, `MinDaysTraded`, `HoldingHorizonDays` must be strictly positive; `ScoringWeightEvent/Fundamental/Sentiment` must be in `[0, 1]`. The sum of weights is **not** enforced (NFR-046 keeps weights freely configurable; product may revisit).
+  - `CostCaps` — `Event`, `Fundamental`, `Reasoning`, `Delivery` must each be strictly positive (NFR-025; a zero or negative cap would silently disable a stage, which the worktask-02 contract forbids).
+  - `FxMultipliers` — `UsdEur`, `UsdGbp`, `UsdJpy` must each be strictly positive (NFR-050; zero or negative would invert the size-floor conversion).
+  - `Provider` — every property is non-blank. The section is an allow-list of non-secret knobs only (NFR-021, NFR-043/044); property names are checked for credential-shape in the L0 test below.
+  - `Cycle:Interval` — must parse as a strictly positive `TimeSpan` in `hh:mm:ss`. The delivery-window `TimeZoneId` / `Start` / `End` are validated when `ApplicationDefaults` is composed (TZDB zone lookup and `HH:mm` parse); this also fires inside `AddConfiguration`.
+  - Every validation message names the `Section:Key` path and never echoes the offending value (LADR-018 / NFR-047). The composition root calls `AddConfiguration` exactly once, before `AddApplication` and before the host builds, so the failure throws before any background work starts.
+- The L0 `AddConfiguration*` tests in `CatalogueOptionsTests` exercise the same `AddConfiguration(this IServiceCollection, IConfiguration)` extension that `Program.cs` calls, so the composition-time fail-fast is proved directly. A separate L2 host-factory test is unnecessary because `Program.cs`'s only call to validate-and-bind configuration is `AddConfiguration(builder.Configuration)`, which the L0 tests already cover.
 
 ## Catalogue Defaults Table
 
@@ -67,7 +75,7 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 
 ## Test References
 
-- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` and default delivery-window composition reject malformed values with the configuration key named and without echoing the bad payload (NFR-047), that the default window is materialised once, and that the `Provider` options property set is an allow-list of non-secret knobs only (NFR-043/044).
+- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` and default delivery-window composition reject malformed values with the configuration key named and without echoing the bad payload (NFR-047), that the default window is materialised once, and that the `Provider` options property set is an allow-list of non-secret knobs only (NFR-043/044). Range-failure theories cover non-positive numerics, out-of-unit-interval scoring weights, non-positive cost caps, non-positive FX multipliers, blank provider/model knobs, blank / malformed / non-positive cycle intervals. The `AddConfigurationRejects*` and `AddConfigurationAcceptsCommittedDefaults` tests prove the same composition-time fail-fast path that `Program.cs` invokes.
 - **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
 
 ## Changelog
@@ -82,3 +90,4 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 | 2026-07-24 | Added the F-004 settings catalogue composition (`AddConfiguration` + five section options + `IApplicationDefaults` façade); folded the previous standalone `DeliveryWindow` Host options class into the `Cycle` section. | #68, #69 |
 | 2026-07-24 | Made catalogue composition eager (interval + default delivery window fail at Host build) and tightened Provider allow-list / no-echo validation messages. | #68, #69 |
 | 2026-07-24 | Updated Key Behaviors to describe the real Program composition (Infrastructure + catalogue + Application) while endpoints remain unmapped. | #68, #69 |
+| 2026-07-24 | Added range validation for the `Analysis` / `CostCaps` / `FxMultipliers` / `Provider` sections and moved `Cycle:Interval` validation into `FromConfiguration`; documented per-section rules and the L0 composition-time test set. | #70 |
