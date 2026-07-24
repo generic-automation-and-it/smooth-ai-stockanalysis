@@ -48,6 +48,7 @@ internal sealed class VersionedDocumentSqliteValueComparer<TDocument> : ValueCom
 
     private static TDocument CreateSnapshot(TDocument document)
     {
+        ArgumentNullException.ThrowIfNull(document);
         return JsonSerializer.Deserialize<TDocument>(Serialize(document), SqliteJsonSerialization.Default)
             ?? throw new InvalidOperationException($"Persisted {typeof(TDocument).Name} JSON must not be null.");
     }
