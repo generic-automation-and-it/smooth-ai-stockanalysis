@@ -405,7 +405,7 @@ MigrationBackup/
 # Local AI context / work tasks (not tracked in source control)
 .context/
 
-# Local SQLite runtime files (canonical block; keep in sync with the data/** block below)
+# Local SQLite runtime files. The canonical rules live in the bottom section of this file.
 # Ionide (cross platform F# VS Code tools) working folder
 **/.ionide/
 
@@ -438,6 +438,9 @@ FodyWeavers.xsd
 **/.DS_Store
 
 # Local SQLite runtime artifacts
+# `data/` and `**/*.db` are intentionally redundant defense-in-depth: `data/`
+# catches the canonical on-disk layout, and `**/*.db` catches stray database
+# files in other locations.
 data/
 **/*.db
 **/*.db-wal

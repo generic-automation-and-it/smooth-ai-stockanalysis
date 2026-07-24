@@ -18,6 +18,8 @@ alwaysApply: false
 - A test that changes mappings or request history must reset the WireMock instance before installing its own stubs.
 - Keep the well-known CI endpoint at `http://127.0.0.1:19091`; the coverage action pre-warms it once for the ordered test suite.
 
+> **HLD-12 context.** The dev AppHost previously provisioned its own WireMock container for local end-to-end work; that responsibility was removed in favour of the shared Aspire test dependency described here. If a future requirement reintroduces a dev-AppHost WireMock, align the orchestration with this rule set before merging.
+
 ## Changelog
 
 > AI loading note: Skip this section during routine task execution. Use it only when updating this rule file.

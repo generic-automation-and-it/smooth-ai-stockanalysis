@@ -13,8 +13,7 @@ public interface IAnalysisCycleUnitOfWork
     /// Executes and commits the cycle's writes as one transaction.
     /// </summary>
     /// <param name="writeCycle">
-    /// Delegate that performs all writes for the cycle. Must not be null;
-    /// the implementation throws <see cref="ArgumentNullException"/> otherwise.
+    /// Delegate that performs all writes for the cycle. Must not be null.
     /// </param>
     /// <param name="cancellationToken">Token observed across all database operations.</param>
     Task ExecuteAsync(

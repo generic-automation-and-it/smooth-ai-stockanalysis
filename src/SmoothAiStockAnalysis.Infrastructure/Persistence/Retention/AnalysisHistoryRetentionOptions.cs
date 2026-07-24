@@ -16,6 +16,7 @@ public sealed class AnalysisHistoryRetentionOptions
         init
         {
             ArgumentOutOfRangeException.ThrowIfNegative(value);
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
             retentionMonths = value;
         }
     }

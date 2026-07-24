@@ -2,10 +2,7 @@ using SmoothAiStockAnalysis.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string connectionString = builder.Configuration.GetConnectionString("SmoothAiStockAnalysis")
-    ?? throw new InvalidOperationException("Connection string 'SmoothAiStockAnalysis' must be configured.");
-
-builder.Services.AddInfrastructurePersistence(connectionString);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 

@@ -22,6 +22,8 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 
 `Microsoft.EntityFrameworkCore(.Relational/.Design/.Tools/.Sqlite)`, `Refit.HttpClientFactory`, `Microsoft.Extensions.Http.Resilience` — declared centrally in `Directory.Packages.props`.
 
+> **Note on `Microsoft.Extensions.*` references.** Infrastructure declares its own `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Hosting`, and `Microsoft.Extensions.Options` `PackageReference` entries even though the Host re-exports the same surfaces transitively. Infrastructure owns its own DI composition surface; it must not depend on the Host to surface those abstractions, because that would invert the dependency graph.
+
 ## Changelog
 
 | Date | Change | Ref |

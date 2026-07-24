@@ -16,7 +16,7 @@ Fixtures live in `tests/SmoothAiStockAnalysis.TestFramework/`.
 
 ### SqliteTestDatabase
 
-`SqliteTestDatabase.Create()` allocates a unique, on-disk database file below the operating-system temporary directory. It disables pooling and removes the `.db`, `-wal`, and `-shm` files on disposal. Use it for a real SQLite test without cross-test locking or container setup.
+`SqliteTestDatabase.Create()` allocates a unique, on-disk database file below the operating-system temporary directory. It disables pooling and removes the `.db`, `-wal`, `-shm`, and `-journal` files on disposal. Use it for a real SQLite test without cross-test locking or container setup.
 
 ### WebAppFixture&lt;T&gt;
 

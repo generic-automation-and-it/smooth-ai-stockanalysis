@@ -37,4 +37,43 @@ public sealed class RetentionJobTests
             descriptor.ServiceType == typeof(IHostedService)
             && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionHostedService));
     }
+
+    [Fact]
+    public void RejectsNegativeRetention()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            new AnalysisHistoryRetentionOptions { RetentionMonths = -1 });
+    }
+
+    [Fact]
+    public void RejectsZeroRetention()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            new AnalysisHistoryRetentionOptions { RetentionMonths = 0 });
+    }
+
+    [Fact]
+    public void RegistersRetentionJobAsSingleton()
+    {
+        var services = new ServiceCollection();
+
+        services.AddInfrastructurePersistence("Data Source=:memory:");
+
+        services.ShouldContain(descriptor =>
+            descriptor.ServiceType == typeof(IAnalysisHistoryRetentionJob)
+            && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionJob)
+            && descriptor.Lifetime == ServiceLifetime.Singleton);
+    }
+
+    [Fact]
+    public void ConfigureBindingOverridesDefault()
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructurePersistence("Data Source=:memory:");
+        services.Configure<AnalysisHistoryRetentionOptions>(o => o.RetentionMonths = 6);
+
+        using var sp = services.BuildServiceProvider();
+        sp.GetRequiredService<IOptions<AnalysisHistoryRetentionOptions>>()
+          .Value.RetentionMonths.ShouldBe(6);
+    }
 }

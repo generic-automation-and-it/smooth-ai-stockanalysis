@@ -31,6 +31,9 @@ public sealed class SqliteTestDatabase : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
+        // Best-effort sync I/O: the four TryDelete calls are intentionally
+        // synchronous and short — no async I/O is needed for the runner-tmp
+        // sidecar files, and a ValueTask.CompletedTask keeps the awaiter path trivial.
         TryDelete(DatabasePath);
         TryDelete(DatabasePath + "-wal");
         TryDelete(DatabasePath + "-shm");

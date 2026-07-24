@@ -18,7 +18,10 @@ public static class SqliteTestHelpers
         await using DbCommand command = connection.CreateCommand();
         command.CommandText = sql;
         object? result = await command.ExecuteScalarAsync(cancellationToken);
-        object nonNullResult = result ?? throw new InvalidOperationException("The SQL command returned no value.");
-        return (T)Convert.ChangeType(nonNullResult, typeof(T));
+        if (result is null or DBNull)
+        {
+            throw new InvalidOperationException("The SQL command returned no value.");
+        }
+        return (T)Convert.ChangeType(result, typeof(T));
     }
 }

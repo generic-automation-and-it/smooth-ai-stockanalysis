@@ -21,6 +21,7 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 - `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
 - `SqliteDatabaseInitializer` creates the empty local database at Host startup with `EnsureCreatedAsync`. There is no migration until a feature introduces the first persisted entity.
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
+- The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources.
 
 ## Test References
 
@@ -29,13 +30,14 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 
 ### L2 fixture override
 
-`HostWebAppFixture.ConfigureTestServices` re-registers
-`DbContextOptions<SmoothAiStockAnalysisDbContext>` and reattaches
-`SqlitePragmaConnectionInterceptor` because `Program.cs` evaluates
-the connection string at builder construction — before the
-in-memory configuration override applied via
-`WithWebHostBuilder.ConfigureAppConfiguration` runs — so the test
-override cannot reach `AddInfrastructurePersistence(connectionString)`.
+`Program.cs` reads the connection string from `IConfiguration` and passes it to
+`AddInfrastructurePersistence(connectionString)` at builder construction. The test
+fixture's later `WithWebHostBuilder.ConfigureAppConfiguration` and
+`ConfigureServices` overrides are not visible to that early call, so
+`AddInfrastructurePersistence` captures the production connection string. The L2
+fixture must therefore fully replace `DbContextOptions<SmoothAiStockAnalysisDbContext>`
+and reattach the internal `SqlitePragmaConnectionInterceptor` via
+`AddInterceptors(sp.GetRequiredService<SqlitePragmaConnectionInterceptor>())`.
 Do **not** remove this override as redundant; the regression that
 removed it failed PR Gate run `30040969698`.
 

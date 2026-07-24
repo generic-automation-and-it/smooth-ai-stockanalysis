@@ -38,8 +38,8 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         Dictionary<string, string?> overrides = new(ConfigurationOverrides);
-        overrides["ConnectionStrings:SmoothAiStockAnalysis"] = _database.ConnectionString;
         await EnrichConfigurationAsync(overrides);
+        overrides["ConnectionStrings:SmoothAiStockAnalysis"] = _database.ConnectionString;
 
         _factory = new WebApplicationFactory<TProgram>()
             .WithWebHostBuilder(builder =>
@@ -78,7 +78,6 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        HttpClient?.Dispose();
         _serviceScope?.Dispose();
 
         if (_factory is not null)

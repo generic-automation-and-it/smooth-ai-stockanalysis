@@ -14,6 +14,8 @@ internal sealed class AnalysisHistoryRetentionHostedService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // First tick fires after RunInterval, so the first retention run is one
+        // day after Host startup; restart the service for an out-of-band sweep.
         using var timer = new PeriodicTimer(RunInterval);
 
         while (await timer.WaitForNextTickAsync(stoppingToken))

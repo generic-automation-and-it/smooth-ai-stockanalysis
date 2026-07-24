@@ -18,13 +18,21 @@ public sealed class AspireFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        if (await IsWireMockHealthyAsync(WireMockTestDependency.DefaultBaseUrl))
+        for (int attempt = 1; attempt <= PreWarmMaxAttempts; attempt++)
         {
-            WireMockBaseUrl = WireMockTestDependency.DefaultBaseUrl;
-            return;
+            if (await IsWireMockHealthyAsync(WireMockTestDependency.DefaultBaseUrl))
+            {
+                WireMockBaseUrl = WireMockTestDependency.DefaultBaseUrl;
+                return;
+            }
+
+            if (attempt < PreWarmMaxAttempts)
+            {
+                await Task.Delay(PreWarmRetryDelay);
+            }
         }
 
-        using var timeout = new CancellationTokenSource(StartupTimeout);
+        await using var timeout = new CancellationTokenSource(StartupTimeout);
         var appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<Projects.SmoothAiStockAnalysis_TestFramework_Aspire>(
                 ["--no-dashboard"],
@@ -40,11 +48,7 @@ public sealed class AspireFixture : IAsyncLifetime
             .AbsoluteUri
             .TrimEnd('/');
 
-        if (!await IsWireMockHealthyAsync(WireMockBaseUrl))
-        {
-            throw new InvalidOperationException(
-                $"Aspire started WireMock at '{WireMockBaseUrl}', but its admin health endpoint is unavailable.");
-        }
+        await EnsureWireMockHealthyAsync(WireMockBaseUrl);
     }
 
     public async ValueTask DisposeAsync()
@@ -54,6 +58,9 @@ public sealed class AspireFixture : IAsyncLifetime
             await _application.DisposeAsync();
         }
     }
+
+    private const int PreWarmMaxAttempts = 3;
+    private static readonly TimeSpan PreWarmRetryDelay = TimeSpan.FromSeconds(1);
 
     private static async Task<bool> IsWireMockHealthyAsync(string baseUrl)
     {
@@ -73,6 +80,33 @@ public sealed class AspireFixture : IAsyncLifetime
         catch (TaskCanceledException)
         {
             return false;
+        }
+    }
+
+    private static async Task EnsureWireMockHealthyAsync(string baseUrl)
+    {
+        try
+        {
+            using var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(2)
+            };
+            using HttpResponseMessage response = await client.GetAsync($"{baseUrl}/__admin/health");
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"WireMock admin health endpoint returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}.");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException(
+                $"WireMock admin health probe failed with {ex.GetType().Name}: {ex.Message}.", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new InvalidOperationException(
+                $"WireMock admin health probe timed out: {ex.Message}.", ex);
         }
     }
 }

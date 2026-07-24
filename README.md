@@ -29,7 +29,7 @@
 | Mediator | [`martinothamar/Mediator`](https://github.com/martinothamar/Mediator) — source-gen CQRS dispatch |
 | Validation | FluentValidation in a fail-fast Mediator pipeline |
 | Persistence | EF Core + SQLite (`Microsoft.EntityFrameworkCore.Sqlite`) |
-| Observability | Serilog + OpenTelemetry, Scalar OpenAPI UI |
+| Observability | Planned for M1: Serilog + OpenTelemetry, Scalar OpenAPI UI |
 | Testing | xunit.v3 · Shouldly · Bogus · isolated SQLite files · Aspire-managed WireMock |
 
 ---

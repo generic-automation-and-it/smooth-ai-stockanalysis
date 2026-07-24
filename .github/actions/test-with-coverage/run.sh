@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 build_configuration="${BUILD_CONFIGURATION:-Release}"
 artifacts_root="${ARTIFACTS_ROOT:-artifacts}"
@@ -14,17 +14,20 @@ failures=()
 
 cleanup() {
   if [ -z "${aspire_pid}" ] || ! kill -0 "${aspire_pid}" 2>/dev/null; then
+    docker rm -f wiremock >/dev/null 2>&1 || true
     return
   fi
 
   if ! kill "${aspire_pid}" 2>/dev/null; then
     echo "ERROR: Failed to terminate Aspire host ${aspire_pid}."
+    docker rm -f wiremock >/dev/null 2>&1 || true
     return
   fi
 
   for _ in $(seq 1 15); do
     if ! kill -0 "${aspire_pid}" 2>/dev/null; then
       wait "${aspire_pid}" 2>/dev/null || true
+      docker rm -f wiremock >/dev/null 2>&1 || true
       return
     fi
     sleep 1
@@ -35,6 +38,7 @@ cleanup() {
     echo "ERROR: Failed to force-stop Aspire host ${aspire_pid}."
   fi
   wait "${aspire_pid}" 2>/dev/null || true
+  docker rm -f wiremock >/dev/null 2>&1 || true
 }
 
 trap cleanup EXIT
@@ -115,6 +119,12 @@ dotnet run \
 
 aspire_pid=$!
 echo "Aspire WireMock host started with PID ${aspire_pid}."
+
+sleep 3
+if ! check_aspire_alive; then
+  echo "ERROR: Aspire host exited before reaching the health probe."
+  exit 1
+fi
 
 wait_for_http "${wiremock_health_url}" "WireMock" || exit 1
 
