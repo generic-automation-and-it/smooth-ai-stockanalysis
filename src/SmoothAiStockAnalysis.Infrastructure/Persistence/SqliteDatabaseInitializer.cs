@@ -73,16 +73,18 @@ internal sealed class SqliteDatabaseInitializer(
         catch (DbUpdateException ex)
         {
             // Concurrent startups can race past the existence check; accept the unique-index
-            // conflict only when the configured identity is already present.
+            // conflict only when the configured identity is already present. Clearing the
+            // change tracker discards the failed insert so it cannot resurface on save; the
+            // re-query below hits the database directly and never consults the tracker
+            // (AnyAsync translates to SQL EXISTS, so hygiene only — not a correctness requirement).
             dbContext.ChangeTracker.Clear();
-            // Hygiene only: AnyAsync translates to SQL EXISTS and does not consult the change tracker.
             bool existsAfterConflict = await dbContext.Users()
                 .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken);
             if (!existsAfterConflict)
             {
                 throw new InvalidOperationException(
-                    $"Default-user seed failed for '{uniqueIdentifier}' (DefaultUser:UniqueIdentifier); " +
-                    "the database rejected the insert but no matching row exists. " +
+                    $"Default-user seed failed for '{uniqueIdentifier}' (DefaultUser:UniqueIdentifier) " +
+                    "without a concurrent winner; the database rejected the insert but no matching row exists. " +
                     "Inspect the inner provider exception for the underlying constraint or storage failure.",
                     ex);
             }

@@ -64,6 +64,26 @@ public sealed class DefaultUserSeedTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task EnsureDefaultUserAcceptsUniqueIndexConflictWhenConfiguredIdentityAlreadyExists()
+    {
+        await using ServiceProvider provider = CreateProvider(ConfiguredIdentifier);
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
+        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
+        var context = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        await context.Database.MigrateAsync(TestContext.Current.CancellationToken);
+
+        // Pre-seed a user with the configured identifier to force a unique-index conflict on save.
+        context.Users().Add(UserRecord.FromDomain(User.Create(ConfiguredIdentifier)));
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Second call must swallow the conflict and not throw.
+        await SqliteDatabaseInitializer.EnsureDefaultUserAsync(
+            context, ConfiguredIdentifier, NullLogger.Instance, TestContext.Current.CancellationToken);
+
+        (await context.Users().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+    }
+
+    [Fact]
     public async Task SeededUserIsIsolatedFromADifferentUserScope()
     {
         await using ServiceProvider provider = CreateProvider(ConfiguredIdentifier);

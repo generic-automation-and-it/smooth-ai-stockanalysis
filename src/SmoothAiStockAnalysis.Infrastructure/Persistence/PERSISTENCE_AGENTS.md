@@ -128,7 +128,7 @@ The first production feature schema contains only the tenant-root `user_record` 
 - **L0:** `Application.UnitTest/DataAccessScopeTests.cs` covers scope factory validation.
 - **L2:** `Host.IntegrationTest/DataAccessScopeIntegrationTests.cs` proves the Host composition root wires the same scopes and filter end-to-end.
 - **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
-- **L1:** `Infrastructure.ComponentTest/DefaultUserSeedTests.cs` proves migrate+seed creates one row and a second start is a no-op against isolated SQLite.
+- **L1:** `Infrastructure.ComponentTest/DefaultUserSeedTests.cs` proves migrate+seed creates one row, a second start is a no-op, and a forced unique-index conflict (row pre-seeded with the configured identifier) is swallowed by the race-condition catch branch without duplicating the user, against isolated SQLite.
 - **L2:** `Host.IntegrationTest/DefaultUserSeedIntegrationTests.cs` boots the Host against an isolated SQLite file, asserts the configured user exists once, re-runs startup seed without duplication, and proves cross-user owned queries return no rows without a feature predicate on the production stack (closing #7 / T-022 / T-023 with the existing shared-data inverse L1 proof).
 
 
@@ -175,3 +175,4 @@ the production PRAGMAs.
 | 2026-07-24 | Aligned tenant-root naming to `user_record` and added reusable owned-dependent composite-uniqueness helpers with L1 proof. | #60, #61, #65 |
 | 2026-07-24 | Added explicit data-access scopes and the global user-isolation query filter (LADR-017): Application contracts, scoped accessor, tenant-root/`UserId` filters, system-scope bypass, fail-closed missing scope, and L0/L1/L2 proofs. | #62, #63, #64 |
 | 2026-07-24 | Added default-user startup seed after migrate (LADR-018): system-scope idempotent insert of Host-validated `DefaultUser:UniqueIdentifier`, plus L0/L1/L2 evidence closing #7. | #66, #67, #7 |
+| 2026-07-24 | Closed AI review gap on PR #263: added L1 proof for the unique-index race-condition catch branch and wrapped its non-race re-throw with seed-step context. | #7, #263 |
