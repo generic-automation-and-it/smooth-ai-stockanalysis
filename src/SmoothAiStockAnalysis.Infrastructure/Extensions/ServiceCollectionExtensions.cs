@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
             string connectionString = NormalizeConnectionString(connectionStringFactory(serviceProvider));
             EnsureDatabaseDirectoryExists(connectionString);
             options.UseSqlite(connectionString);
+            options.UseSnakeCaseNamingConvention();
             options.AddInterceptors(serviceProvider.GetRequiredService<SqlitePragmaConnectionInterceptor>());
         });
         services.AddScoped<IAnalysisCycleUnitOfWork, AnalysisCycleUnitOfWork>();

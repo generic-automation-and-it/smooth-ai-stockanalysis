@@ -26,8 +26,9 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await dbContext.Database.MigrateAsync(cancellationToken);
 
         string[] appliedMigrations = [.. await dbContext.Database.GetAppliedMigrationsAsync(cancellationToken)];
-        appliedMigrations.Length.ShouldBe(1);
+        appliedMigrations.Length.ShouldBe(2);
         appliedMigrations[0].ShouldEndWith("_InitialUserSchema");
+        appliedMigrations[1].ShouldEndWith("_SnakeCaseNamingConvention");
 
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
         DbConnection connection = dbContext.Database.GetDbConnection();
@@ -36,19 +37,19 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         columns.ShouldBe(
         [
             new ColumnDefinition("id", "INTEGER", IsRequired: true, IsPrimaryKey: true),
-            new ColumnDefinition("unique_identifier", "TEXT", IsRequired: true, IsPrimaryKey: false),
-            new ColumnDefinition("metadata", "TEXT", IsRequired: true, IsPrimaryKey: false)
+            new ColumnDefinition("metadata", "TEXT", IsRequired: true, IsPrimaryKey: false),
+            new ColumnDefinition("unique_identifier", "TEXT", IsRequired: true, IsPrimaryKey: false)
         ]);
         columns.ShouldNotContain(column => column.Name == "user_id");
 
         IndexDefinition index = await ReadUniqueIdentifierIndexAsync(connection, cancellationToken);
-        index.ShouldBe(new IndexDefinition("ux_users_unique_identifier", IsUnique: true, "unique_identifier"));
+        index.ShouldBe(new IndexDefinition("ix_user_record_unique_identifier", IsUnique: true, "unique_identifier"));
 
         string createTableSql = await SqliteTestHelpers.ExecuteScalarAsync<string>(
             connection,
-            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users';",
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'user_record';",
             cancellationToken);
-        createTableSql.ShouldContain("CONSTRAINT \"pk_users\" PRIMARY KEY");
+        createTableSql.ShouldContain("CONSTRAINT \"pk_user_record\" PRIMARY KEY");
     }
 
     [Fact]
@@ -83,7 +84,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
             connection,
             """
             SELECT typeof(metadata) || ':' || json_extract(metadata, '$.schemaVersion')
-            FROM users
+            FROM user_record
             WHERE id = 1;
             """,
             cancellationToken);
@@ -120,7 +121,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         Guid uniqueIdentifier = Guid.NewGuid();
         await dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"""
-             INSERT INTO users (unique_identifier, metadata)
+             INSERT INTO user_record (unique_identifier, metadata)
              VALUES ({uniqueIdentifier}, {"""{"schemaVersion":2,"futurePreference":"retained"}"""});
              """,
             cancellationToken);
@@ -141,7 +142,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
         string storedMetadata = await SqliteTestHelpers.ExecuteScalarAsync<string>(
             dbContext.Database.GetDbConnection(),
-            "SELECT metadata FROM users;",
+            "SELECT metadata FROM user_record;",
             cancellationToken);
         storedMetadata.ShouldContain("\"schemaVersion\":3");
         storedMetadata.ShouldContain("\"futurePreference\":\"retained\"");
@@ -195,7 +196,7 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         await using DbCommand command = connection.CreateCommand();
-        command.CommandText = "PRAGMA table_info('users');";
+        command.CommandText = "PRAGMA table_info('user_record');";
         await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
 
         var columns = new List<ColumnDefinition>();
@@ -216,14 +217,14 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         await using DbCommand indexListCommand = connection.CreateCommand();
-        indexListCommand.CommandText = "PRAGMA index_list('users');";
+        indexListCommand.CommandText = "PRAGMA index_list('user_record');";
         await using DbDataReader indexListReader = await indexListCommand.ExecuteReaderAsync(cancellationToken);
 
         string? indexName = null;
         bool isUnique = false;
         while (await indexListReader.ReadAsync(cancellationToken))
         {
-            if (indexListReader.GetString(1) == "ux_users_unique_identifier")
+            if (indexListReader.GetString(1) == "ix_user_record_unique_identifier")
             {
                 indexName = indexListReader.GetString(1);
                 isUnique = indexListReader.GetInt64(2) == 1;

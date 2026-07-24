@@ -64,7 +64,7 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
         {
             await connection.OpenAsync(TestContext.Current.CancellationToken);
             await using var insert = connection.CreateCommand();
-            insert.CommandText = "INSERT INTO metadata_records (Metadata) VALUES ($json); SELECT last_insert_rowid();";
+            insert.CommandText = "INSERT INTO metadata_records (metadata) VALUES ($json); SELECT last_insert_rowid();";
             insert.Parameters.AddWithValue("$json", forwardCompatibleJson);
             id = (long)(await insert.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         }
@@ -115,7 +115,7 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
         await using var connection = new SqliteConnection(_database.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT typeof(Metadata), Metadata FROM metadata_records LIMIT 1;";
+        command.CommandText = "SELECT typeof(metadata), metadata FROM metadata_records LIMIT 1;";
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
 
         (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
@@ -129,6 +129,7 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
     {
         var options = new DbContextOptionsBuilder<MetadataDbContext>()
             .UseSqlite(connectionString)
+            .UseSnakeCaseNamingConvention()
             .Options;
 
         return new MetadataDbContext(options);
@@ -139,15 +140,17 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
     {
         public DbSet<MetadataRecord> MetadataRecords => Set<MetadataRecord>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<MetadataRecord>(entity =>
             {
-                entity.ToTable("metadata_records");
                 var metadataProperty = entity.Property(record => record.Metadata);
                 metadataProperty.HasConversion(new VersionedDocumentSqliteValueConverter<ProbeMetadataDocument>());
                 metadataProperty.Metadata.SetValueComparer(
                     new VersionedDocumentSqliteValueComparer<ProbeMetadataDocument>());
             });
+        }
     }
 
     private sealed class MetadataRecord
