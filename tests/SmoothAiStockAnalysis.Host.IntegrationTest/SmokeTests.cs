@@ -3,6 +3,7 @@ using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
+using SmoothAiStockAnalysis.TestFramework.Fixtures;
 
 namespace SmoothAiStockAnalysis.Host.IntegrationTest;
 
@@ -27,27 +28,15 @@ public sealed class SmokeTests(HostWebAppFixture fixture) : IClassFixture<HostWe
         try
         {
             DbConnection connection = dbContext.Database.GetDbConnection();
-            (await ExecuteScalarAsync<string>(connection, "PRAGMA journal_mode;", cancellationToken))
+            (await SqliteTestHelpers.ExecuteScalarAsync<string>(connection, "PRAGMA journal_mode;", cancellationToken))
                 .ToLowerInvariant()
                 .ShouldBe("wal");
-            (await ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", cancellationToken))
+            (await SqliteTestHelpers.ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", cancellationToken))
                 .ShouldBe(1);
         }
         finally
         {
             await dbContext.Database.CloseConnectionAsync();
         }
-    }
-
-    private static async Task<T> ExecuteScalarAsync<T>(
-        DbConnection connection,
-        string sql,
-        CancellationToken cancellationToken)
-    {
-        await using DbCommand command = connection.CreateCommand();
-        command.CommandText = sql;
-        object? result = await command.ExecuteScalarAsync(cancellationToken);
-        object nonNullResult = result ?? throw new InvalidOperationException("The SQL command returned no value.");
-        return (T)Convert.ChangeType(nonNullResult, typeof(T));
     }
 }
