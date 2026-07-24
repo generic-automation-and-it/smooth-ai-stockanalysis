@@ -63,8 +63,7 @@ The first production feature schema contains only the tenant-root `users` table 
 
 ### Ownership and uniqueness convention
 
-- Every future user-owned dependent table has a required `user_id` FK to `users.id`.
-- Every future user-owned dependent table has a required `user_id` FK to the tenant root's `id`.
+- Every future user-owned dependent table has a required `user_id` FK to `user_record.id`.
 - Every natural unique index on a user-owned dependent starts with the ownership key: `(user_id, natural_key...)`. A competing global unique index on the same natural key is prohibited.
 - Shared market/reference tables have no `user_id` and are never user-filtered. Shared examples include market data, company financials, news, computed indicators, and sector aggregates.
 - Owned examples include watchlists, analysis history, recommendations, alerts, notification preferences, and scoring configuration.

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.Sqlite;
@@ -155,6 +157,8 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
 
     private sealed class MetadataRecord
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; init; }
 
         public required ProbeMetadataDocument Metadata { get; set; }
