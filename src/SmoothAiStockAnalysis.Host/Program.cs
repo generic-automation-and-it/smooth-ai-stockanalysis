@@ -1,3 +1,4 @@
+using NodaTime;
 using SmoothAiStockAnalysis.Application.Extensions;
 using SmoothAiStockAnalysis.Host.Configuration;
 using SmoothAiStockAnalysis.Host.Extensions;
@@ -11,7 +12,7 @@ Guid defaultUserUniqueIdentifier = defaultUser.GetValidatedUniqueIdentifier();
 builder.Services.AddInfrastructure(defaultUserUniqueIdentifier);
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddApplication();
-builder.Services.AddSingleton<NodaTime.IClock>(NodaTime.SystemClock.Instance);
+builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 
 var app = builder.Build();
 

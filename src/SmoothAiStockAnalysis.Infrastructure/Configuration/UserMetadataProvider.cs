@@ -21,13 +21,15 @@ internal sealed class UserMetadataProvider(SmoothAiStockAnalysisDbContext dbCont
     /// <inheritdoc />
     public async Task<UserMetadata> GetForUserAsync(long userId, CancellationToken cancellationToken = default)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
+
         UserMetadataDocument metadata = await dbContext.Users()
             .Where(user => user.Id == userId)
             .Select(user => user.Metadata)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException(
-                $"No user exists with the requested identifier (id '{userId}').");
+                $"No user is visible with the requested identifier under the current data-access scope (id '{userId}').");
 
         return metadata.ToDomain();
     }

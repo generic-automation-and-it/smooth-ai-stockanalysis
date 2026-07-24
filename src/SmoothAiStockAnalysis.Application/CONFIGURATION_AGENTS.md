@@ -25,16 +25,16 @@ The F-004 settings catalogue façade, the immutable `EffectiveSettings` snapshot
 
 The façade mirrors the five Host `Configuration/` sections:
 
-| Property | Type | Notes |
-|---|---|---|
-| `Analysis` | `AnalysisDefaults` | Company size floor, liquidity thresholds, scoring weightings, holding horizon. |
-| `CostCaps` | `CostCaps` | Per-cycle stage caps; defaults follow NFR-025 (50/20/10/5). |
-| `FxMultipliers` | `FxMultipliers` | Static USD→target multipliers; refresh deferred (NFR-050). |
-| `Cycle` | `CycleDefaults` | Interval, delivery-window TZ, start, end. |
-| `Provider` | `ProviderDefaults` | Non-secret provider and model selection (NFR-021, NFR-043/044). |
-| `GetDefaultDeliveryWindow()` | `DeliveryWindow` | Returns the catalogue's default `DeliveryWindow` for the override-fall-through path. |
+| Property | Type (catalogue) | Type (as exposed in `EffectiveSettings`) | Notes |
+|---|---|---|---|
+| `Analysis` | `AnalysisDefaults` | `AnalysisSettings` | Company size floor, liquidity thresholds, scoring weightings, holding horizon. |
+| `CostCaps` | `CostCaps` | `CostCapSettings` | Per-cycle stage caps; defaults follow NFR-025 (50/20/10/5). |
+| `FxMultipliers` | `FxMultipliers` | `FxSettings` (property `Fx`) | Static USD→target multipliers; refresh deferred (NFR-050). |
+| `Cycle` | `CycleDefaults` | `CycleSettings` | Interval, delivery-window TZ, start, end. |
+| `Provider` | `ProviderDefaults` | `ProviderSettings` | Non-secret provider and model selection (NFR-021, NFR-043/044). |
+| `GetDefaultDeliveryWindow()` | `DeliveryWindow` | `DeliveryWindow` | Returns the catalogue's default `DeliveryWindow` for the override-fall-through path. |
 
-`EffectiveSettings` mirrors the same five shapes plus the resolved `DeliveryWindow`, so feature code can pick the field it needs without navigating a separate config object.
+`EffectiveSettings` mirrors the same five shapes plus the resolved `DeliveryWindow`, so feature code can pick the field it needs without navigating a separate config object. Note that the consumer-side record names are not always a 1:1 rename of the catalogue type (e.g. `FxMultipliers` → `Fx`); grep for the catalogue property name plus the `EffectiveSettings` field name when bridging the two views.
 
 ## Test References
 

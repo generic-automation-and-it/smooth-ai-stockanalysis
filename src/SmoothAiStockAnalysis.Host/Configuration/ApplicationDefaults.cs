@@ -73,7 +73,7 @@ public sealed class ApplicationDefaults : IApplicationDefaults
         {
             return new DeliveryWindow(cycle.DeliveryWindowTimeZoneId, start, end);
         }
-        catch (ArgumentException exception) when (exception is not ArgumentNullException)
+        catch (ArgumentException exception)
         {
             throw new InvalidOperationException(
                 $"Configuration values '{CycleOptions.DeliveryWindowTimeZoneIdPath}', '{CycleOptions.DeliveryWindowStartPath}', and '{CycleOptions.DeliveryWindowEndPath}' must form a valid delivery window.",
