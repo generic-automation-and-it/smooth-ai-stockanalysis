@@ -21,7 +21,10 @@ internal sealed class UserMetadataProvider(SmoothAiStockAnalysisDbContext dbCont
     /// <inheritdoc />
     public async Task<UserMetadata> GetForUserAsync(long userId, CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(
+            userId,
+            nameof(userId),
+            "A user identifier must be positive.");
 
         UserMetadataDocument metadata = await dbContext.Users()
             .Where(user => user.Id == userId)
@@ -29,7 +32,7 @@ internal sealed class UserMetadataProvider(SmoothAiStockAnalysisDbContext dbCont
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException(
-                $"No user is visible with the requested identifier under the current data-access scope (id '{userId}').");
+                $"No user is visible to the current data-access scope (id '{userId}').");
 
         return metadata.ToDomain();
     }
