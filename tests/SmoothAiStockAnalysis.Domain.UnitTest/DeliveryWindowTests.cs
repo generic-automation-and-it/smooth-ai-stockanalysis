@@ -73,6 +73,22 @@ public sealed class DeliveryWindowTests
         a.Equals(null).ShouldBeFalse();
     }
 
+    [Fact]
+    public void EqualityOperatorsHandleNullsSymmetrically()
+    {
+        DeliveryWindow? a = new("Europe/Paris", new LocalTime(7, 0), new LocalTime(22, 0));
+        DeliveryWindow? same = new("Europe/Paris", new LocalTime(7, 0), new LocalTime(22, 0));
+        DeliveryWindow? other = new("America/New_York", new LocalTime(7, 0), new LocalTime(22, 0));
+
+        (a == same).ShouldBeTrue();
+        (a == other).ShouldBeFalse();
+        (a != same).ShouldBeFalse();
+        (a != other).ShouldBeTrue();
+        (a == null).ShouldBeFalse();
+        (null == a).ShouldBeFalse();
+        (null == null).ShouldBeTrue();
+    }
+
     private sealed class StubClock(Instant currentInstant) : IClock
     {
         public Instant GetCurrentInstant() => currentInstant;
