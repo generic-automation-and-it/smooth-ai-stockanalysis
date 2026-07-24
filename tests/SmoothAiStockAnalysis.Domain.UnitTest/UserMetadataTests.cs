@@ -78,6 +78,31 @@ public sealed class UserMetadataTests
     }
 
     [Fact]
+    public void WithPreferencesReplacesTheFullPreferenceSnapshot()
+    {
+        UserMetadata original = UserMetadata.Create()
+            .WithPreferences(companySizeFloor: 500_000_000m, holdingHorizonDays: 120);
+
+        UserMetadata replaced = original.WithPreferences(companySizeFloor: 750_000_000m);
+
+        replaced.CompanySizeFloor.ShouldBe(750_000_000m);
+        // Omitted optional arguments are null on the result — they do not keep prior values.
+        replaced.HoldingHorizonDays.ShouldBeNull();
+        replaced.MinDaysTraded.ShouldBeNull();
+    }
+
+    [Fact]
+    public void WithPreferencesCanClearAnOverrideWithExplicitNull()
+    {
+        UserMetadata original = UserMetadata.Create()
+            .WithPreferences(companySizeFloor: 500_000_000m);
+
+        UserMetadata cleared = original.WithPreferences(companySizeFloor: null);
+
+        cleared.CompanySizeFloor.ShouldBeNull();
+    }
+
+    [Fact]
     public void WithPreferencesLeavesSchemaVersionUnchanged()
     {
         UserMetadata original = UserMetadata.Create();

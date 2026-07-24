@@ -115,6 +115,22 @@ public sealed class EffectiveSettingsTests
     }
 
     [Fact]
+    public void ZeroNumericOverridesAreHonouredAndDoNotFallThrough()
+    {
+        UserMetadata metadata = UserMetadata.Create().WithPreferences(
+            companySizeFloor: 0m,
+            costCapReasoning: 0,
+            cycleInterval: TimeSpan.Zero);
+
+        EffectiveSettings resolved = Resolve(metadata);
+
+        // Null means unset; zero is a deliberate override (NFR-045).
+        resolved.Analysis.CompanySizeFloor.ShouldBe(0m);
+        resolved.CostCaps.Reasoning.ShouldBe(0);
+        resolved.Cycle.Interval.ShouldBe(TimeSpan.Zero);
+    }
+
+    [Fact]
     public void DeliveryWindowOverrideUsesProvidedStrings()
     {
         UserMetadata metadata = UserMetadata.Create().WithPreferences(
@@ -180,6 +196,31 @@ public sealed class EffectiveSettingsTests
         resolved.CostCaps.Reasoning.ShouldBe(Defaults.CostCaps.Reasoning);
     }
 
+    [Fact]
+    public async Task ResolveForUserAsyncRejectsNonPositiveUserId()
+    {
+        var resolver = new SettingsResolver(Defaults, new ThrowingMetadataProvider());
+
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(
+            () => resolver.ResolveForUserAsync(0, TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(
+            () => resolver.ResolveForUserAsync(-1, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ResolveForUserAsyncLoadsMetadataAndMerges()
+    {
+        UserMetadata metadata = UserMetadata.Create().WithPreferences(companySizeFloor: 900_000_000m);
+        var provider = new FixedMetadataProvider(metadata);
+        var resolver = new SettingsResolver(Defaults, provider);
+
+        EffectiveSettings resolved = await resolver.ResolveForUserAsync(42, TestContext.Current.CancellationToken);
+
+        resolved.Analysis.CompanySizeFloor.ShouldBe(900_000_000m);
+        resolved.CostCaps.Event.ShouldBe(Defaults.CostCaps.Event);
+        provider.LastRequestedUserId.ShouldBe(42);
+    }
+
     private static EffectiveSettings Resolve(UserMetadata metadata)
     {
         var resolver = new SettingsResolver(Defaults, new ThrowingMetadataProvider());
@@ -190,6 +231,17 @@ public sealed class EffectiveSettingsTests
     {
         public Task<UserMetadata> GetForUserAsync(long userId, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Resolve(defaults, metadata) must not load from the port.");
+    }
+
+    private sealed class FixedMetadataProvider(UserMetadata metadata) : IUserMetadataProvider
+    {
+        public long? LastRequestedUserId { get; private set; }
+
+        public Task<UserMetadata> GetForUserAsync(long userId, CancellationToken cancellationToken = default)
+        {
+            LastRequestedUserId = userId;
+            return Task.FromResult(metadata);
+        }
     }
 
     private sealed record TestDefaults(

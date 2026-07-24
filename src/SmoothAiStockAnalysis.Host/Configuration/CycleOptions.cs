@@ -11,6 +11,18 @@ public sealed class CycleOptions
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Cycle";
 
+    /// <summary>Gets the full configuration path for the cycle interval.</summary>
+    public const string IntervalPath = SectionName + ":Interval";
+
+    /// <summary>Gets the full configuration path for the delivery-window time zone.</summary>
+    public const string DeliveryWindowTimeZoneIdPath = SectionName + ":DeliveryWindowTimeZoneId";
+
+    /// <summary>Gets the full configuration path for the delivery-window start.</summary>
+    public const string DeliveryWindowStartPath = SectionName + ":DeliveryWindowStart";
+
+    /// <summary>Gets the full configuration path for the delivery-window end.</summary>
+    public const string DeliveryWindowEndPath = SectionName + ":DeliveryWindowEnd";
+
     /// <summary>
     /// Gets or sets the interval between analysis cycles in <c>hh:mm:ss</c> format.
     /// Default 15 minutes.
@@ -45,18 +57,22 @@ public sealed class CycleOptions
 
     private static TimeSpan ParseInterval(string value)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{IntervalPath}' is required and must be a valid TimeSpan in hh:mm:ss format.");
+        }
 
         if (!TimeSpan.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out TimeSpan interval))
         {
             throw new InvalidOperationException(
-                $"Configuration value 'Cycle:Interval' must be a valid TimeSpan in hh:mm:ss format (received '{value}').");
+                $"Configuration value '{IntervalPath}' must be a valid TimeSpan in hh:mm:ss format.");
         }
 
         if (interval <= TimeSpan.Zero)
         {
             throw new InvalidOperationException(
-                "Configuration value 'Cycle:Interval' must be strictly positive.");
+                $"Configuration value '{IntervalPath}' must be strictly positive.");
         }
 
         return interval;

@@ -1,19 +1,21 @@
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using SmoothAiStockAnalysis.Application.Configuration;
 using SmoothAiStockAnalysis.Host.Configuration;
 
 namespace SmoothAiStockAnalysis.Host.UnitTest;
 
 /// <summary>
 /// L0 coverage for the F-004 settings catalogue sections (T-025). Each section's
-/// <c>FromConfiguration</c> is exercised for happy-path bind; one section is also exercised
-/// for fail-fast on malformed values (where applicable). Defaults match the catalogue table in
+/// <c>FromConfiguration</c> is exercised for happy-path bind; cycle/window composition is
+/// also exercised for fail-fast on malformed values. Defaults match the catalogue table in
 /// <c>HOST_AGENTS.md</c>.
 /// </summary>
 public sealed class CatalogueOptionsTests
 {
     [Fact]
-    public void AnalysisDefaultsBindTheEuropeParisDeliveryDefaultsFromEmptyConfiguration()
+    public void AnalysisDefaultsBindFromEmptyConfiguration()
     {
         AnalysisDefaultsOptions options = AnalysisDefaultsOptions.FromConfiguration(new ConfigurationBuilder().Build());
 
@@ -95,7 +97,8 @@ public sealed class CatalogueOptionsTests
         CycleOptions options = CycleOptions.FromConfiguration(configuration);
 
         InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => _ = options.ToDefaults());
-        exception.Message.ShouldContain("Cycle:Interval");
+        exception.Message.ShouldContain(CycleOptions.IntervalPath);
+        exception.Message.ShouldNotContain("not-a-timespan");
     }
 
     [Fact]
@@ -105,7 +108,36 @@ public sealed class CatalogueOptionsTests
 
         CycleOptions options = CycleOptions.FromConfiguration(configuration);
 
-        Should.Throw<InvalidOperationException>(() => _ = options.ToDefaults());
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => _ = options.ToDefaults());
+        exception.Message.ShouldContain(CycleOptions.IntervalPath);
+    }
+
+    [Fact]
+    public void ApplicationDefaultsRejectsMalformedDeliveryWindowStart()
+    {
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CreateApplicationDefaults(deliveryWindowStart: "not-a-time"));
+
+        exception.Message.ShouldContain(CycleOptions.DeliveryWindowStartPath);
+        exception.Message.ShouldNotContain("not-a-time");
+    }
+
+    [Fact]
+    public void ApplicationDefaultsRejectsUnknownDeliveryWindowTimeZone()
+    {
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CreateApplicationDefaults(deliveryWindowTimeZoneId: "Not/AZone"));
+
+        exception.Message.ShouldContain(CycleOptions.DeliveryWindowTimeZoneIdPath);
+    }
+
+    [Fact]
+    public void ApplicationDefaultsParsesTheDefaultDeliveryWindowEagerly()
+    {
+        ApplicationDefaults defaults = CreateApplicationDefaults();
+
+        defaults.GetDefaultDeliveryWindow().TimeZoneId.ShouldBe("Europe/Paris");
+        defaults.GetDefaultDeliveryWindow().ShouldBeSameAs(defaults.GetDefaultDeliveryWindow());
     }
 
     [Fact]
@@ -120,19 +152,30 @@ public sealed class CatalogueOptionsTests
     }
 
     [Fact]
-    public void ProviderSectionsContainNoCredentialShapedValues()
+    public void ProviderSectionsContainNoCredentialShapedProperties()
     {
-        ProviderOptions options = ProviderOptions.FromConfiguration(new ConfigurationBuilder().Build());
+        string[] allowed =
+        [
+            nameof(ProviderOptions.Reasoning),
+            nameof(ProviderOptions.ReasoningModel),
+            nameof(ProviderOptions.MarketData),
+            nameof(ProviderOptions.MarketDataModel),
+        ];
 
-        // NFR-043/044: credentials never belong in committed configuration. The provider
-        // section exposes only names and model identifiers; there are no API-key or
-        // bearer-token properties on the options shape.
-        var properties = typeof(ProviderOptions)
+        string[] actual = typeof(ProviderOptions)
             .GetProperties()
-            .Select(property => property.PropertyType);
+            .Select(property => property.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
 
-        properties.ShouldNotContain(typeof(string).MakeArrayType());
-        properties.ShouldNotContain(typeof(System.Security.SecureString));
+        // NFR-043/044: the provider catalogue section is an allow-list of non-secret knobs only.
+        actual.ShouldBe(allowed.OrderBy(name => name, StringComparer.Ordinal).ToArray());
+        actual.ShouldNotContain(name =>
+            name.Contains("Key", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Secret", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Token", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Password", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Credential", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -143,6 +186,27 @@ public sealed class CatalogueOptionsTests
         Should.Throw<ArgumentNullException>(() => FxMultipliersOptions.FromConfiguration(null!));
         Should.Throw<ArgumentNullException>(() => CycleOptions.FromConfiguration(null!));
         Should.Throw<ArgumentNullException>(() => ProviderOptions.FromConfiguration(null!));
+    }
+
+    private static ApplicationDefaults CreateApplicationDefaults(
+        string deliveryWindowTimeZoneId = "Europe/Paris",
+        string deliveryWindowStart = "07:00",
+        string deliveryWindowEnd = "22:00")
+    {
+        var cycle = new CycleOptions
+        {
+            Interval = "00:15:00",
+            DeliveryWindowTimeZoneId = deliveryWindowTimeZoneId,
+            DeliveryWindowStart = deliveryWindowStart,
+            DeliveryWindowEnd = deliveryWindowEnd,
+        };
+
+        return new ApplicationDefaults(
+            Options.Create(new AnalysisDefaultsOptions()),
+            Options.Create(new CostCapsOptions()),
+            Options.Create(new FxMultipliersOptions()),
+            Options.Create(cycle),
+            Options.Create(new ProviderOptions()));
     }
 
     private static IConfiguration BuildConfiguration(params (string Key, string? Value)[] values)

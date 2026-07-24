@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SmoothAiStockAnalysis.Application.Configuration;
 using SmoothAiStockAnalysis.Host.Configuration;
 
@@ -14,10 +15,29 @@ public static class ServiceCollectionExtensions
     /// Binds the F-004 settings catalogue sections and registers the <see cref="IApplicationDefaults"/>
     /// façade. The composition root should call this once after <c>DefaultUser</c> validation.
     /// </summary>
+    /// <remarks>
+    /// Catalogue sections are bound and composed eagerly so invalid deploy configuration fails
+    /// during Host composition (NFR-047), matching the <c>DefaultUser</c> fail-fast style rather
+    /// than waiting for the first settings resolve mid-cycle.
+    /// </remarks>
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+
+        AnalysisDefaultsOptions analysis = AnalysisDefaultsOptions.FromConfiguration(configuration);
+        CostCapsOptions costCaps = CostCapsOptions.FromConfiguration(configuration);
+        FxMultipliersOptions fxMultipliers = FxMultipliersOptions.FromConfiguration(configuration);
+        CycleOptions cycle = CycleOptions.FromConfiguration(configuration);
+        ProviderOptions provider = ProviderOptions.FromConfiguration(configuration);
+
+        // Eager composition validates interval parsing and the default delivery window (zone + HH:mm).
+        var applicationDefaults = new ApplicationDefaults(
+            Options.Create(analysis),
+            Options.Create(costCaps),
+            Options.Create(fxMultipliers),
+            Options.Create(cycle),
+            Options.Create(provider));
 
         services.Configure<AnalysisDefaultsOptions>(configuration.GetSection(AnalysisDefaultsOptions.SectionName));
         services.Configure<CostCapsOptions>(configuration.GetSection(CostCapsOptions.SectionName));
@@ -25,7 +45,7 @@ public static class ServiceCollectionExtensions
         services.Configure<CycleOptions>(configuration.GetSection(CycleOptions.SectionName));
         services.Configure<ProviderOptions>(configuration.GetSection(ProviderOptions.SectionName));
 
-        services.AddSingleton<IApplicationDefaults, ApplicationDefaults>();
+        services.AddSingleton<IApplicationDefaults>(applicationDefaults);
 
         return services;
     }

@@ -12,11 +12,16 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// </summary>
 public sealed class ApplicationDefaults : IApplicationDefaults
 {
+    private static readonly LocalTimePattern LocalTimePattern =
+        LocalTimePattern.CreateWithInvariantCulture("HH:mm");
+
     private readonly CycleDefaults _cycle;
+    private readonly DeliveryWindow _defaultDeliveryWindow;
 
     /// <summary>
-    /// Composes the façade from the bound section options. Validation that crosses sections
-    /// (e.g. DeliveryWindow parsing) lives here so the per-section binders stay simple.
+    /// Composes the façade from the bound section options. Cross-section validation (delivery
+    /// window parse and TZDB lookup) runs here so a bad deploy config fails when the catalogue
+    /// is composed, not mid-cycle (NFR-047).
     /// </summary>
     public ApplicationDefaults(
         IOptions<AnalysisDefaultsOptions> analysis,
@@ -36,6 +41,7 @@ public sealed class ApplicationDefaults : IApplicationDefaults
         FxMultipliers = fxMultipliers.Value.ToDefaults();
         _cycle = cycle.Value.ToDefaults();
         Provider = provider.Value.ToDefaults();
+        _defaultDeliveryWindow = CreateDefaultDeliveryWindow(_cycle);
     }
 
     /// <inheritdoc />
@@ -54,25 +60,40 @@ public sealed class ApplicationDefaults : IApplicationDefaults
     public ProviderDefaults Provider { get; }
 
     /// <inheritdoc />
-    public DeliveryWindow GetDefaultDeliveryWindow() =>
-        new(
-            _cycle.DeliveryWindowTimeZoneId,
-            ParseLocalTime(_cycle.DeliveryWindowStart, nameof(_cycle.DeliveryWindowStart)),
-            ParseLocalTime(_cycle.DeliveryWindowEnd, nameof(_cycle.DeliveryWindowEnd)));
+    public DeliveryWindow GetDefaultDeliveryWindow() => _defaultDeliveryWindow;
 
-    private static readonly LocalTimePattern LocalTimePattern =
-        LocalTimePattern.CreateWithInvariantCulture("HH:mm");
-
-    private static LocalTime ParseLocalTime(string value, string parameterName)
+    internal static DeliveryWindow CreateDefaultDeliveryWindow(CycleDefaults cycle)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        ArgumentNullException.ThrowIfNull(cycle);
+
+        LocalTime start = ParseLocalTime(cycle.DeliveryWindowStart, CycleOptions.DeliveryWindowStartPath);
+        LocalTime end = ParseLocalTime(cycle.DeliveryWindowEnd, CycleOptions.DeliveryWindowEndPath);
+
+        try
+        {
+            return new DeliveryWindow(cycle.DeliveryWindowTimeZoneId, start, end);
+        }
+        catch (ArgumentException exception) when (exception is not ArgumentNullException)
+        {
+            throw new InvalidOperationException(
+                $"Configuration values '{CycleOptions.DeliveryWindowTimeZoneIdPath}', '{CycleOptions.DeliveryWindowStartPath}', and '{CycleOptions.DeliveryWindowEndPath}' must form a valid delivery window.",
+                exception);
+        }
+    }
+
+    private static LocalTime ParseLocalTime(string value, string configurationPath)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{configurationPath}' is required and must use the HH:mm format.");
+        }
 
         ParseResult<LocalTime> result = LocalTimePattern.Parse(value);
         if (!result.Success)
         {
-            throw new ArgumentException(
-                $"Delivery window time must use the HH:mm format (parameter '{parameterName}').",
-                parameterName,
+            throw new InvalidOperationException(
+                $"Configuration value '{configurationPath}' must use the HH:mm format.",
                 result.Exception);
         }
 

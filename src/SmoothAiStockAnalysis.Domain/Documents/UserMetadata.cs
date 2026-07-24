@@ -5,9 +5,11 @@ namespace SmoothAiStockAnalysis.Domain.Documents;
 /// </summary>
 /// <remarks>
 /// Schema version 2 adds the typed preference fields that the F-004 catalogue resolves against
-/// (NFR-045). Schema version 1 metadata is read as version 2 with all preferences null — the
-/// preference fields are an additive change and an empty override is the correct
-/// fall-through-to-default state for a legacy user. See LADR-015 for the version-bump contract.
+/// (NFR-045). A legacy schema version 1 document is reconstituted with its persisted
+/// <see cref="SchemaVersion"/> preserved and every preference unset (null). Unset preferences
+/// fall through to application defaults at resolve time; the next
+/// Infrastructure write-back promotes the stored marker to <see cref="CurrentSchemaVersion"/>.
+/// See LADR-015 for the version-bump contract.
 /// </remarks>
 public sealed class UserMetadata : IVersionedDocument
 {
@@ -189,7 +191,11 @@ public sealed class UserMetadata : IVersionedDocument
     /// Creates empty metadata at the current schema version. All preferences are unset and
     /// resolve to application defaults.
     /// </summary>
-    public static UserMetadata Create() => new(CurrentSchemaVersion, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    public static UserMetadata Create() =>
+        new(
+            CurrentSchemaVersion,
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null);
 
     /// <summary>
     /// Reconstitutes metadata with the supplied persisted schema version. All preference
@@ -215,11 +221,16 @@ public sealed class UserMetadata : IVersionedDocument
     }
 
     /// <summary>
-    /// Returns a new instance with the same schema version and the supplied preferences applied.
+    /// Returns a new instance that keeps this instance's schema version and replaces the full
+    /// preference snapshot with the supplied values.
     /// </summary>
     /// <remarks>
-    /// Intended for the Infrastructure document translator. Passing a null argument leaves the
-    /// corresponding preference unset (so the application default is used at resolution time).
+    /// This is a full replace, not a field-level patch: every argument is written through as
+    /// given. Passing <c>null</c> (including via an omitted optional argument) means the
+    /// corresponding preference is <strong>unset</strong> on the result — it does not mean
+    /// "keep the previous value". Callers that need a partial update must restate the
+    /// preferences they want to retain. Infrastructure's document translator uses this factory
+    /// when materialising a complete Domain snapshot from the persistence document.
     /// </remarks>
     public UserMetadata WithPreferences(
         decimal? companySizeFloor = null,
@@ -246,26 +257,26 @@ public sealed class UserMetadata : IVersionedDocument
         string? marketDataModel = null) =>
         new(
             SchemaVersion,
-            companySizeFloor ?? CompanySizeFloor,
-            minAverageDailyVolume ?? MinAverageDailyVolume,
-            minDaysTraded ?? MinDaysTraded,
-            scoringWeightEvent ?? ScoringWeightEvent,
-            scoringWeightFundamental ?? ScoringWeightFundamental,
-            scoringWeightSentiment ?? ScoringWeightSentiment,
-            holdingHorizonDays ?? HoldingHorizonDays,
-            costCapEvent ?? CostCapEvent,
-            costCapFundamental ?? CostCapFundamental,
-            costCapReasoning ?? CostCapReasoning,
-            costCapDelivery ?? CostCapDelivery,
-            fxUsdEur ?? FxUsdEur,
-            fxUsdGbp ?? FxUsdGbp,
-            fxUsdJpy ?? FxUsdJpy,
-            cycleInterval ?? CycleInterval,
-            deliveryWindowTimeZoneId ?? DeliveryWindowTimeZoneId,
-            deliveryWindowStart ?? DeliveryWindowStart,
-            deliveryWindowEnd ?? DeliveryWindowEnd,
-            providerReasoning ?? ProviderReasoning,
-            reasoningModel ?? ReasoningModel,
-            providerMarketData ?? ProviderMarketData,
-            marketDataModel ?? MarketDataModel);
+            companySizeFloor,
+            minAverageDailyVolume,
+            minDaysTraded,
+            scoringWeightEvent,
+            scoringWeightFundamental,
+            scoringWeightSentiment,
+            holdingHorizonDays,
+            costCapEvent,
+            costCapFundamental,
+            costCapReasoning,
+            costCapDelivery,
+            fxUsdEur,
+            fxUsdGbp,
+            fxUsdJpy,
+            cycleInterval,
+            deliveryWindowTimeZoneId,
+            deliveryWindowStart,
+            deliveryWindowEnd,
+            providerReasoning,
+            reasoningModel,
+            providerMarketData,
+            marketDataModel);
 }
