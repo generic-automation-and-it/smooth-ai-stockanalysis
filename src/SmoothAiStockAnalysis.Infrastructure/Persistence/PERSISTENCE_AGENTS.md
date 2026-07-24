@@ -48,7 +48,6 @@ C4Context
 
 **Status:** Accepted. Application owns the explicit scope contract (`DataAccessScope`, `IDataAccessScopeSetter`, `IDataAccessScope`, `ISystemDataAccessScope`). Infrastructure's scoped `DataAccessScopeAccessor` implements all three, and `SmoothAiStockAnalysisDbContext` applies a global query filter that reads `UserIsolationTenantKey` on the current context instance. User scopes filter the tenant root by `Id` and every annotated owned dependent by `UserId`; the named system scope short-circuits the filter; missing scope throws (fail-closed). Shared reference entities carry no annotation and stay unfiltered. Feature code must never call `IgnoreQueryFilters`. Derived probe contexts add entities via `OnModelCreatingCore` so the filter scan still sees them. See [LADR-017](../../../docs/hlds/mvp/ladrs/017-explicit-data-access-scopes-and-global-user-isolation-filter.md).
 
-
 ### LADR-018 — Startup default-user seed from deployment configuration
 
 **Status:** Accepted. Host validates non-secret `DefaultUser:UniqueIdentifier`; after `MigrateAsync`, `SqliteDatabaseInitializer` idempotently inserts that user under `ISystemDataAccessScope` when absent. Restarts do not duplicate the tenant; misconfiguration fails before cycles; startup never assumes an ambient user (NFR-041). See [LADR-018](../../../docs/hlds/mvp/ladrs/018-startup-default-user-seed-from-deployment-configuration.md).
@@ -86,7 +85,6 @@ The first production feature schema contains only the tenant-root `user_record` 
 - Shared market/reference tables have no `user_id`, are never user-filtered, and must not call the user-owned helpers. Shared examples include market data, company financials, news, computed indicators, and sector aggregates.
 - Owned examples include watchlists, analysis history, recommendations, alerts, notification preferences, and scoring configuration.
 - Infrastructure tables such as `__EFMigrationsHistory` carry no ownership key.
-
 
 ### Default-user startup seed
 
@@ -130,7 +128,6 @@ The first production feature schema contains only the tenant-root `user_record` 
 - **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
 - **L1:** `Infrastructure.ComponentTest/DefaultUserSeedTests.cs` proves migrate+seed creates one row, a second start is a no-op, and a forced unique-index conflict (row pre-seeded with the configured identifier) is swallowed by the race-condition catch branch without duplicating the user, against isolated SQLite.
 - **L2:** `Host.IntegrationTest/DefaultUserSeedIntegrationTests.cs` boots the Host against an isolated SQLite file, asserts the configured user exists once, re-runs startup seed without duplication, and proves cross-user owned queries return no rows without a feature predicate on the production stack (closing #7 / T-022 / T-023 with the existing shared-data inverse L1 proof).
-
 
 ### L2 fixture override
 

@@ -34,8 +34,7 @@ internal sealed class SqliteDatabaseInitializer(
             return;
         }
 
-        Guid uniqueIdentifier = seedOptions.UniqueIdentifier
-            ?? throw new InvalidOperationException("Default-user seed is enabled without a unique identifier.");
+        Guid uniqueIdentifier = seedOptions.UniqueIdentifier!.Value;
 
         // Seed under the named system scope — startup has no ambient user (LADR-010 / NFR-041).
         scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();

@@ -22,7 +22,6 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 - Host remains the composition root only: `AddInfrastructure()` registers the scoped `IDataAccessScopeSetter` / `IDataAccessScope` / `ISystemDataAccessScope` and the DbContext that applies the global isolation filter.
 - Host does not set a user scope itself. Background workers / future pipeline code set the scope deliberately after resolving the DI scope. No HTTP ambient user is assumed in Phase 1.
 
-
 ## Requirements
 
 ### Phase-1 default user configuration (T-022 / #66)

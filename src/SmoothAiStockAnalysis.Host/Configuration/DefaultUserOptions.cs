@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace SmoothAiStockAnalysis.Host.Configuration;
 
 /// <summary>
@@ -40,7 +38,7 @@ public sealed class DefaultUserOptions
 
         var options = new DefaultUserOptions();
         configuration.GetSection(SectionName).Bind(options);
-        _ = options.GetValidatedUniqueIdentifier();
+        options.GetValidatedUniqueIdentifier();
         return options;
     }
 
@@ -56,28 +54,19 @@ public sealed class DefaultUserOptions
         if (string.IsNullOrWhiteSpace(UniqueIdentifier))
         {
             throw new InvalidOperationException(
-                string.Format(
-                    CultureInfo.InvariantCulture,
-                    "Configuration value '{0}' is required and must be a non-empty GUID.",
-                    UniqueIdentifierPath));
+                $"Configuration value '{UniqueIdentifierPath}' is required and must be a non-empty GUID.");
         }
 
         if (!Guid.TryParse(UniqueIdentifier, out Guid uniqueIdentifier))
         {
             throw new InvalidOperationException(
-                string.Format(
-                    CultureInfo.InvariantCulture,
-                    "Configuration value '{0}' must be a valid GUID.",
-                    UniqueIdentifierPath));
+                $"Configuration value '{UniqueIdentifierPath}' must be a valid GUID.");
         }
 
         if (uniqueIdentifier == Guid.Empty)
         {
             throw new InvalidOperationException(
-                string.Format(
-                    CultureInfo.InvariantCulture,
-                    "Configuration value '{0}' must not be an empty GUID.",
-                    UniqueIdentifierPath));
+                $"Configuration value '{UniqueIdentifierPath}' must not be an empty GUID.");
         }
 
         return uniqueIdentifier;
