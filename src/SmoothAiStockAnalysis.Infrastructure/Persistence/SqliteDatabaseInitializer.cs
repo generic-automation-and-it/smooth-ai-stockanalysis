@@ -70,16 +70,21 @@ internal sealed class SqliteDatabaseInitializer(
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Configured default user seed completed.");
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
             // Concurrent startups can race past the existence check; accept the unique-index
             // conflict only when the configured identity is already present.
             dbContext.ChangeTracker.Clear();
+            // Hygiene only: AnyAsync translates to SQL EXISTS and does not consult the change tracker.
             bool existsAfterConflict = await dbContext.Users()
                 .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken);
             if (!existsAfterConflict)
             {
-                throw;
+                throw new InvalidOperationException(
+                    $"Default-user seed failed for '{uniqueIdentifier}' (DefaultUser:UniqueIdentifier); " +
+                    "the database rejected the insert but no matching row exists. " +
+                    "Inspect the inner provider exception for the underlying constraint or storage failure.",
+                    ex);
             }
 
             logger.LogDebug("Default user already present; seed skipped.");
