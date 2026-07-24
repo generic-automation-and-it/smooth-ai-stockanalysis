@@ -31,4 +31,6 @@ It also aligns naturally with the planned authentication work, which then adds a
 
 **Uniqueness constraints become composite** — scoped by user rather than global. Free now, a migration later.
 
+**The user's metadata is a versioned document.** It is stored as a JSON `TEXT` column carrying an explicit schema-version marker (NFR-048) through the value-converter representation decided in [LADR-015](015-json-document-columns-via-value-converter-on-sqlite.md), not as a native provider mapping. This keeps preferences an opaque, forward-compatible payload rather than an EF-owned entity graph.
+
 Isolation is a property of the data layer rather than of each developer's diligence.

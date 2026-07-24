@@ -18,6 +18,7 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Infrastructure implements Application's `IAnalysisCycleUnitOfWork` port. Future cycle orchestration must call it once and let it commit all writes as one transaction.
 - `AnalysisHistoryRetentionHostedService` is registered as the mandatory one-month retention shell. It intentionally performs no deletion until timestamped analysis-history entities are introduced; the time foundation owns the date/time representation needed by that future prune operation.
 - `SmoothAiStockAnalysisDbContext.ConfigureConventions` globally maps NodaTime persistence values using the lossless SQLite `TEXT` contract in LADR-014. The mapping stays Infrastructure-only; named-zone business rules stay in Domain.
+- Versioned structured documents persist as JSON `TEXT` via `Persistence/Converters/JsonDocumentSqliteValueConverter<TDocument>` (LADR-015), applied per property rather than as a global convention. Prefer it over EF Core's native `.ToJson()` for evolving documents; see `Persistence/PERSISTENCE_AGENTS.md`.
 
 ## Packages to add when implementing
 
@@ -33,3 +34,4 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 | 2026-07-23 | Added SQLite persistence foundation: connection pragmas, cycle transaction seam, startup initialization, and retention shell. | #6 |
 | 2026-07-23 | Recorded the retention shell's boundary with the sibling time foundation. | #6 |
 | 2026-07-24 | Registered global, lossless NodaTime SQLite conversions in the persistence context. | #6 |
+| 2026-07-24 | Added the LADR-015 per-property JSON-document value converter for versioned structured documents. | #59 |
