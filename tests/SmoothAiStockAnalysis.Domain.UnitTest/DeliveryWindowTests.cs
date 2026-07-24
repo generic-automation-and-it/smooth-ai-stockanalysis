@@ -54,6 +54,25 @@ public sealed class DeliveryWindowTests
         Should.Throw<ArgumentOutOfRangeException>(() => new DeliveryWindow("Europe/Paris", new LocalTime(7, 0), new LocalTime(7, 0)));
     }
 
+    [Fact]
+    public void EqualsAndGetHashCodeUseAllThreeComponents()
+    {
+        var a = new DeliveryWindow("Europe/Paris", new LocalTime(7, 0), new LocalTime(22, 0));
+        var same = new DeliveryWindow("Europe/Paris", new LocalTime(7, 0), new LocalTime(22, 0));
+        var otherZone = new DeliveryWindow("America/New_York", new LocalTime(7, 0), new LocalTime(22, 0));
+        var otherStart = new DeliveryWindow("Europe/Paris", new LocalTime(7, 30), new LocalTime(22, 0));
+        var otherEnd = new DeliveryWindow("Europe/Paris", new LocalTime(7, 0), new LocalTime(21, 0));
+
+        a.Equals(same).ShouldBeTrue();
+        a.Equals((object)same).ShouldBeTrue();
+        a.GetHashCode().ShouldBe(same.GetHashCode());
+
+        a.Equals(otherZone).ShouldBeFalse();
+        a.Equals(otherStart).ShouldBeFalse();
+        a.Equals(otherEnd).ShouldBeFalse();
+        a.Equals(null).ShouldBeFalse();
+    }
+
     private sealed class StubClock(Instant currentInstant) : IClock
     {
         public Instant GetCurrentInstant() => currentInstant;

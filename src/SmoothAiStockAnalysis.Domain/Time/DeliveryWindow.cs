@@ -73,4 +73,10 @@ public sealed class DeliveryWindow : IEquatable<DeliveryWindow>
     public override bool Equals(object? obj) => obj is DeliveryWindow w && Equals(w);
 
     public override int GetHashCode() => HashCode.Combine(_timeZone.Id, Start, End);
+
+    public static bool operator ==(DeliveryWindow? left, DeliveryWindow? right) =>
+        left is null ? right is null : left.Equals(right);
+
+    public static bool operator !=(DeliveryWindow? left, DeliveryWindow? right) =>
+        !(left == right);
 }
