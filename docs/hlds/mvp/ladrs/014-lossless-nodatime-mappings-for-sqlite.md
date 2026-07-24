@@ -1,6 +1,6 @@
 # LADR-014: Lossless NodaTime mappings for SQLite
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context
