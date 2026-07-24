@@ -11,12 +11,11 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 /// members through a <c>[System.Text.Json.Serialization.JsonExtensionData]</c> property.
 /// </typeparam>
 /// <remarks>
-/// Chosen over EF Core's native owned-entity JSON mapping (<c>OwnsOne(...).ToJson()</c>) so the
-/// document stays an opaque, self-versioned payload rather than an EF-managed entity graph:
+/// Chosen for metadata that is read and written as one opaque, self-versioned payload rather
+/// than as an EF-managed entity graph:
 /// <list type="bullet">
 ///   <item>unknown / forward-compatible fields survive a read-modify-write cycle via the document's
-///     extension data, whereas an EF-owned JSON graph has no equivalent opaque-payload
-///     preservation contract;</item>
+///     extension data;</item>
 ///   <item>the schema version is a first-class member of the payload (NFR-048), not a scattered
 ///     owned-entity column;</item>
 ///   <item>adding a preference is a document-version change, not an EF model migration.</item>

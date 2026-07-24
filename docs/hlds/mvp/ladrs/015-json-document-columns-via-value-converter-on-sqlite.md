@@ -25,8 +25,8 @@ Persist a versioned structured document as a **single canonical JSON `TEXT` colu
 
 **EF Core native owned-entity JSON mapping (`OwnsOne(...).ToJson()`).** Rejected:
 
-- It is an EF-owned graph whose persistence and update behavior is driven by mapped CLR properties; it provides no opaque-payload contract for retaining unknown members via `[JsonExtensionData]`. That is insufficient for this document's forward-compatibility requirement.
-- It scatters the document's shape across an EF-owned entity graph and ties its evolution to EF model changes and migrations; the version marker becomes just another owned column rather than a self-describing payload field.
+- The metadata is read and written as one opaque payload. A scalar property with an explicit converter directly models that use case; no feature needs EF to model or query individual metadata fields.
+- `[JsonExtensionData]`, `SchemaVersion`, and `JsonSerializerOptions` remain document/serialization responsibilities under either mapping. The converter was chosen because it makes the one-column serialization contract explicit at the persistence boundary.
 - The SQLite provider's support for querying into JSON columns is limited, and this document does not need it — it is resolved wholesale per user.
 
 **A document store (LiteDB/RavenDB/Redis) or a second persistence mechanism.** Rejected: out of bounds — LADR-002 keeps SQLite the single store. A JSON `TEXT` column adds no second mechanism.
