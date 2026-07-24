@@ -60,6 +60,8 @@ First-party agent skills live under `.agents/skills/` and are registered in `.ag
 | Infrastructure | `src/SmoothAiStockAnalysis.Infrastructure/` | EF Core + SQLite (`Persistence/`), HTTP clients (`Clients/`) |
 | Host | `src/SmoothAiStockAnalysis.Host/` | ASP.NET Core Web API, Serilog, Scalar OpenAPI |
 
+**Settings catalogue (F-004):** application defaults and two-layer resolution live under Host `Configuration/` + Application `Configuration/` (`ISettingsResolver`, `EffectiveSettings`). Authoritative agent context: [`HOST_AGENTS.md`](src/SmoothAiStockAnalysis.Host/HOST_AGENTS.md), [`CONFIGURATION_AGENTS.md`](src/SmoothAiStockAnalysis.Application/CONFIGURATION_AGENTS.md), Domain preference shape in [`DOMAIN_AGENTS.md`](src/SmoothAiStockAnalysis.Domain/DOMAIN_AGENTS.md).
+
 Detailed backend coding rules are maintained in `.agents/rules/backend/` and scoped per-file via frontmatter (see Rules section).
 
 ## Rules

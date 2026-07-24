@@ -13,8 +13,8 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 
 ## Key Behaviors
 
-- The template `Program.cs` is a bare bootstrap (`CreateBuilder → Build → Run`) with no registered endpoints, so any un-routed request returns `404` — this is exactly what the Host integration smoke test asserts. Replace it with real composition (Serilog, OpenAPI/Scalar, health checks, `AddApplication`/`AddInfrastructure`, endpoint mapping) as features land.
-- Persistence enters the composition root through `AddInfrastructure(defaultUserUniqueIdentifier)` after Host fail-fast validation of `DefaultUser`. That extension resolves the connection string only when EF creates its DbContext options, so configuration providers composed by `WebApplicationFactory` can select the isolated L2 database without replacing those options. The Host-validated GUID is registered as `DefaultUserSeedOptions` for the startup initializer.
+- `Program.cs` is the composition root: after fail-fast `DefaultUser` validation it registers `AddInfrastructure`, eager F-004 `AddConfiguration`, `AddApplication`, and `IClock`. There are still **no mapped endpoints**, so any un-routed request returns `404` — that is what the Host integration smoke test asserts. Remaining composition (Serilog, OpenAPI/Scalar, health checks, endpoint mapping) lands with later features.
+- Persistence enters through `AddInfrastructure(defaultUserUniqueIdentifier)`. That extension resolves the connection string only when EF creates its DbContext options, so configuration providers composed by `WebApplicationFactory` can select the isolated L2 database without replacing those options. The Host-validated GUID is registered as `DefaultUserSeedOptions` for the startup initializer.
 - F-001 verified the solution dependency graph: `SmoothAiStockAnalysis.Domain` has no project references; `SmoothAiStockAnalysis.Application` references Domain; `SmoothAiStockAnalysis.Infrastructure` references Application and Domain to implement application contracts; and this Host references Application, Domain, and Infrastructure. No layer references Host and there are no cycles.
 
 ## Data-access scopes
@@ -81,3 +81,4 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 | 2026-07-24 | Documented Phase-1 default-user configuration keys, fail-fast validation, and identity-vs-auth boundary for seed work. | #66, #67, #7 |
 | 2026-07-24 | Added the F-004 settings catalogue composition (`AddConfiguration` + five section options + `IApplicationDefaults` façade); folded the previous standalone `DeliveryWindow` Host options class into the `Cycle` section. | #68, #69 |
 | 2026-07-24 | Made catalogue composition eager (interval + default delivery window fail at Host build) and tightened Provider allow-list / no-echo validation messages. | #68, #69 |
+| 2026-07-24 | Updated Key Behaviors to describe the real Program composition (Infrastructure + catalogue + Application) while endpoints remain unmapped. | #68, #69 |
