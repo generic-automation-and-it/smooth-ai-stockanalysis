@@ -64,14 +64,24 @@ internal sealed class SqliteDatabaseInitializer(
 
         logger.LogInformation("Seeding the configured default user.");
         dbContext.Users().Add(UserRecord.FromDomain(User.Create(uniqueIdentifier)));
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Configured default user seed completed.");
         }
-        catch (DbUpdateException) when (await dbContext.Users()
-            .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken))
+        catch (DbUpdateException)
         {
+            // Concurrent startups can race past the existence check; accept the unique-index
+            // conflict only when the configured identity is already present.
+            dbContext.ChangeTracker.Clear();
+            bool existsAfterConflict = await dbContext.Users()
+                .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken);
+            if (!existsAfterConflict)
+            {
+                throw;
+            }
+
             logger.LogDebug("Default user already present; seed skipped.");
         }
     }
