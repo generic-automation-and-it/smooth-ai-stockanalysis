@@ -10,14 +10,14 @@ public sealed class WireMockAdminClient(HttpClient httpClient) : IAsyncDisposabl
 
         return new WireMockAdminClient(new HttpClient
         {
-            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/")
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = TimeSpan.FromSeconds(10)
         });
     }
 
     public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        await SendAsync(HttpMethod.Delete, "__admin/mappings", cancellationToken);
-        await SendAsync(HttpMethod.Delete, "__admin/requests", cancellationToken);
+        await SendAsync(HttpMethod.Post, "__admin/reset", cancellationToken);
     }
 
     public async Task StubJsonResponseAsync(

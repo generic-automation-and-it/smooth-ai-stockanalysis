@@ -12,7 +12,8 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 
 ## Key Behaviors
 
-- `DistributedApplicationBuilderExtensions.AddWireMockTestDependency` declares the `wiremock/wiremock` container.
+- `WireMockTestDependency` is the public resource-name, port, and default-URL contract shared with the reusable test fixture.
+- `DistributedApplicationBuilderExtensions.AddWireMockTestDependency` declares the `wiremock/wiremock` container from that shared contract.
 - The CI coverage action starts this AppHost, waits for `http://127.0.0.1:19091/__admin/health`, runs the tests, and terminates the AppHost.
 - Tests can opt into `AspireFixture` when they need the WireMock endpoint or admin client; tests without external HTTP dependencies remain container-free.
 
@@ -21,3 +22,4 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 | Date | Change | Ref |
 |:-----|:-------|:----|
 | 2026-07-23 | Restored Aspire as a WireMock-only test dependency host. | #252 |
+| 2026-07-24 | Centralized the WireMock resource contract for downstream fixtures. | #252 |

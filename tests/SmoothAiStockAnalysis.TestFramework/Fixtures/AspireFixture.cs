@@ -8,8 +8,6 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 public sealed class AspireFixture : IAsyncLifetime
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromMinutes(2);
-    private const string WireMockResourceName = "wiremock";
-    private const string DefaultWireMockBaseUrl = "http://127.0.0.1:19091";
 
     private DistributedApplication? _application;
 
@@ -20,9 +18,9 @@ public sealed class AspireFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        if (await IsWireMockHealthyAsync(DefaultWireMockBaseUrl))
+        if (await IsWireMockHealthyAsync(WireMockTestDependency.DefaultBaseUrl))
         {
-            WireMockBaseUrl = DefaultWireMockBaseUrl;
+            WireMockBaseUrl = WireMockTestDependency.DefaultBaseUrl;
             return;
         }
 
@@ -35,10 +33,10 @@ public sealed class AspireFixture : IAsyncLifetime
         _application = await appHost.BuildAsync(timeout.Token);
         await _application.StartAsync(timeout.Token);
         await _application.ResourceNotifications
-            .WaitForResourceHealthyAsync(WireMockResourceName, timeout.Token);
+            .WaitForResourceHealthyAsync(WireMockTestDependency.ResourceName, timeout.Token);
 
         WireMockBaseUrl = _application
-            .GetEndpoint(WireMockResourceName)
+            .GetEndpoint(WireMockTestDependency.ResourceName)
             .AbsoluteUri
             .TrimEnd('/');
 

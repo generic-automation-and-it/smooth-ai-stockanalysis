@@ -8,6 +8,7 @@ timeout_seconds="${DEPENDENCY_TIMEOUT_SECONDS:-120}"
 results_directory="${artifacts_root}/testresults"
 coverage_directory="${artifacts_root}/coverage"
 coverage_collect="XPlat Code Coverage;Format=cobertura;Include=[SmoothAiStockAnalysis.*]*;ExcludeByFile=**/*.g.cs,**/obj/**,**/Migrations/*.cs,**/*ModelSnapshot.cs"
+wiremock_health_url="http://127.0.0.1:19091/__admin/health"
 aspire_pid=""
 failures=()
 
@@ -16,7 +17,11 @@ cleanup() {
     return
   fi
 
-  kill "${aspire_pid}" 2>/dev/null || return
+  if ! kill "${aspire_pid}" 2>/dev/null; then
+    echo "ERROR: Failed to terminate Aspire host ${aspire_pid}."
+    return
+  fi
+
   for _ in $(seq 1 15); do
     if ! kill -0 "${aspire_pid}" 2>/dev/null; then
       wait "${aspire_pid}" 2>/dev/null || true
@@ -26,7 +31,9 @@ cleanup() {
   done
 
   echo "WARNING: Aspire host ${aspire_pid} is still running after the termination signal."
-  kill -KILL "${aspire_pid}" 2>/dev/null || true
+  if ! kill -KILL "${aspire_pid}" 2>/dev/null; then
+    echo "ERROR: Failed to force-stop Aspire host ${aspire_pid}."
+  fi
   wait "${aspire_pid}" 2>/dev/null || true
 }
 
@@ -39,13 +46,23 @@ check_aspire_alive() {
 ensure_aspire_alive() {
   if ! check_aspire_alive; then
     record_failure "Aspire host exited before the action completed."
+    return
+  fi
+
+  if ! curl -sf --max-time 2 "${wiremock_health_url}" > /dev/null 2>&1; then
+    record_failure "WireMock health check failed; the Aspire-managed dependency is unhealthy."
   fi
 }
 
 wait_for_http() {
   local url=$1
   local name=$2
-  local elapsed=0
+  local started_at
+  local deadline
+  local elapsed
+
+  started_at=$(date +%s)
+  deadline=$((started_at + timeout_seconds))
 
   echo "Waiting for ${name} at ${url}..."
   while ! curl -sf --max-time 2 "${url}" > /dev/null 2>&1; do
@@ -54,14 +71,17 @@ wait_for_http() {
       return 1
     fi
 
-    sleep 2
-    elapsed=$((elapsed + 2))
-    if [ "${elapsed}" -ge "${timeout_seconds}" ]; then
+    if [ "$(date +%s)" -ge "${deadline}" ]; then
       echo "ERROR: Timed out after ${timeout_seconds}s waiting for ${name}."
+      echo "${name} health-probe diagnostics:"
+      curl --verbose --max-time 2 "${url}" || true
       return 1
     fi
+
+    sleep 2
   done
 
+  elapsed=$(($(date +%s) - started_at))
   echo "${name} is healthy after ${elapsed}s."
 }
 
@@ -96,7 +116,7 @@ dotnet run \
 aspire_pid=$!
 echo "Aspire WireMock host started with PID ${aspire_pid}."
 
-wait_for_http "http://127.0.0.1:19091/__admin/health" "WireMock" || exit 1
+wait_for_http "${wiremock_health_url}" "WireMock" || exit 1
 
 dotnet tool restore || exit 1
 
