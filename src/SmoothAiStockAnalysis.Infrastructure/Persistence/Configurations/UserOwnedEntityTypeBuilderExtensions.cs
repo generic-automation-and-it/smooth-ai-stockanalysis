@@ -21,6 +21,11 @@ internal static class UserOwnedEntityTypeBuilderExtensions
     internal const string OwnershipForeignKeyName = "UserId";
 
     /// <summary>
+    /// Model annotation marking an entity as user-owned so the global isolation filter is applied.
+    /// </summary>
+    internal const string IsUserOwnedAnnotation = "SmoothAi:IsUserOwned";
+
+    /// <summary>
     /// Configures the user-ownership relationship for an entity whose user-scoped unique index
     /// is enforced by <see cref="HasUserScopedUniqueIndex"/>.
     /// </summary>
@@ -42,6 +47,8 @@ internal static class UserOwnedEntityTypeBuilderExtensions
             .HasForeignKey(OwnershipForeignKeyName)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
+
+        builder.HasAnnotation(IsUserOwnedAnnotation, true);
 
         return builder;
     }

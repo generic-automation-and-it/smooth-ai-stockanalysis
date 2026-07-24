@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using SmoothAiStockAnalysis.Application.Common.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using SmoothAiStockAnalysis.Domain.Documents;
 using SmoothAiStockAnalysis.Domain.Entities;
@@ -20,6 +21,8 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await using ServiceProvider serviceProvider = CreateServiceProvider();
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        // Schema/setup tests deliberately use the named system scope so owned-row setup is not blocked by isolation.
+        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
         await dbContext.Database.MigrateAsync(cancellationToken);
@@ -58,6 +61,8 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await using ServiceProvider serviceProvider = CreateServiceProvider();
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        // Schema/setup tests deliberately use the named system scope so owned-row setup is not blocked by isolation.
+        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         await dbContext.Database.MigrateAsync(cancellationToken);
 
@@ -97,6 +102,8 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await using ServiceProvider serviceProvider = CreateServiceProvider();
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        // Schema/setup tests deliberately use the named system scope so owned-row setup is not blocked by isolation.
+        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         await dbContext.Database.MigrateAsync(cancellationToken);
 
@@ -115,6 +122,8 @@ public sealed class UserSchemaMigrationTests : IAsyncDisposable
         await using ServiceProvider serviceProvider = CreateServiceProvider();
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        // Schema/setup tests deliberately use the named system scope so owned-row setup is not blocked by isolation.
+        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         await dbContext.Database.MigrateAsync(cancellationToken);
 

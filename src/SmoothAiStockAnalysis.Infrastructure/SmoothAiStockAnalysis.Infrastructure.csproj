@@ -26,6 +26,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.UnitTest" />
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.ComponentTest" />
+    <InternalsVisibleTo Include="SmoothAiStockAnalysis.Host.IntegrationTest" />
   </ItemGroup>
 
 </Project>

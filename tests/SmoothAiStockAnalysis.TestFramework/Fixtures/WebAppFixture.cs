@@ -25,7 +25,14 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
 
     public HttpClient HttpClient { get; private set; } = default!;
 
+    /// <summary>
+    /// A single test scope created at fixture boot. Prefer <see cref="RootServices"/> when a test
+    /// needs independent scopes (e.g. multi-user isolation proofs).
+    /// </summary>
     public IServiceProvider Services { get; private set; } = default!;
+
+    /// <summary>The Host root service provider from <see cref="WebApplicationFactory{TProgram}"/>.</summary>
+    public IServiceProvider RootServices { get; private set; } = default!;
 
     protected virtual bool RemoveHostedServices => true;
 
@@ -59,6 +66,7 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
             });
 
         HttpClient = _factory.CreateClient();
+        RootServices = _factory.Services;
         _serviceScope = _factory.Services.CreateScope();
         Services = _serviceScope.ServiceProvider;
 

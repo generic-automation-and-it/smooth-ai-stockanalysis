@@ -140,9 +140,8 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
     {
         public DbSet<MetadataRecord> MetadataRecords => Set<MetadataRecord>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreatingCore(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<MetadataRecord>(entity =>
             {
                 var metadataProperty = entity.Property(record => record.Metadata);
