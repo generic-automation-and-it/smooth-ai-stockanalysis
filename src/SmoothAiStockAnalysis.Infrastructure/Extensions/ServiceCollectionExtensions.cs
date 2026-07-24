@@ -14,15 +14,15 @@ namespace SmoothAiStockAnalysis.Infrastructure.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the Infrastructure composition by reading the connection string
-    /// from <paramref name="configuration"/> and delegating to
-    /// <see cref="AddInfrastructurePersistence(IServiceCollection, string)"/>.
+    /// Registers the Infrastructure composition. The connection string is resolved
+    /// when a <see cref="SmoothAiStockAnalysisDbContext"/> is created so later
+    /// configuration providers, including integration-test overrides, are honoured.
     /// </summary>
-    public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services,
-        IConfiguration configuration) =>
-        services.AddInfrastructurePersistence(
-            configuration.GetConnectionString("SmoothAiStockAnalysis")
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services) =>
+        RegisterInfrastructurePersistence(
+            services,
+            serviceProvider => serviceProvider.GetRequiredService<IConfiguration>()
+                .GetConnectionString("SmoothAiStockAnalysis")
                 ?? throw new InvalidOperationException("Missing connection string 'SmoothAiStockAnalysis'."));
 
     /// <summary>
@@ -34,11 +34,18 @@ public static class ServiceCollectionExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        EnsureDatabaseDirectoryExists(connectionString);
+        return RegisterInfrastructurePersistence(services, _ => connectionString);
+    }
 
+    private static IServiceCollection RegisterInfrastructurePersistence(
+        IServiceCollection services,
+        Func<IServiceProvider, string> connectionStringFactory)
+    {
         services.AddSingleton<SqlitePragmaConnectionInterceptor>();
         services.AddDbContext<SmoothAiStockAnalysisDbContext>((serviceProvider, options) =>
         {
+            string connectionString = NormalizeConnectionString(connectionStringFactory(serviceProvider));
+            EnsureDatabaseDirectoryExists(connectionString);
             options.UseSqlite(connectionString);
             options.AddInterceptors(serviceProvider.GetRequiredService<SqlitePragmaConnectionInterceptor>());
         });
@@ -52,6 +59,17 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<AnalysisHistoryRetentionHostedService>();
 
         return services;
+    }
+
+    private static string NormalizeConnectionString(string connectionString)
+    {
+        var builder = new SqliteConnectionStringBuilder(connectionString);
+        if (builder.DataSource is not ":memory:" && !Path.IsPathFullyQualified(builder.DataSource))
+        {
+            builder.DataSource = Path.GetFullPath(builder.DataSource, AppContext.BaseDirectory);
+        }
+
+        return builder.ToString();
     }
 
     private static void EnsureDatabaseDirectoryExists(string connectionString)

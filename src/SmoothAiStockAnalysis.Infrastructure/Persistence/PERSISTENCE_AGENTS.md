@@ -21,7 +21,7 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 - `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
 - `SqliteDatabaseInitializer` creates the empty local database at Host startup with `EnsureCreatedAsync`. There is no migration until a feature introduces the first persisted entity.
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
-- The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources.
+- The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources. Relative SQLite data sources are normalized against `AppContext.BaseDirectory`, never the process working directory.
 
 ## Test References
 
@@ -30,21 +30,18 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 
 ### L2 fixture override
 
-`Program.cs` reads the connection string from `IConfiguration` and passes it to
-`AddInfrastructurePersistence(connectionString)` at builder construction. The test
-fixture's later `WithWebHostBuilder.ConfigureAppConfiguration` and
-`ConfigureServices` overrides are not visible to that early call, so
-`AddInfrastructurePersistence` captures the production connection string. The L2
-fixture must therefore fully replace `DbContextOptions<SmoothAiStockAnalysisDbContext>`
-and reattach the internal `SqlitePragmaConnectionInterceptor` via
-`AddInterceptors(sp.GetRequiredService<SqlitePragmaConnectionInterceptor>())`.
-Do **not** remove this override as redundant; the regression that
-removed it failed PR Gate run `30040969698`.
+`Program.cs` calls `AddInfrastructure()` without capturing configuration. The
+extension resolves `IConfiguration` only when EF creates the DbContext options, after
+the test fixture's `WithWebHostBuilder.ConfigureAppConfiguration` override is
+composed. The generic fixture's isolated `DatabaseConnectionString` therefore reaches
+the production registration without replacing `DbContextOptions` or reattaching the
+interceptor. `SmokeTests.HostBootsAndRespondsToHttp` proves both the isolated file and
+the production PRAGMAs.
 
 ## Quality Constraints
 
 - NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/mvp/nfr/006-durability-and-concurrency.md) for the single-transaction boundary.
-- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/mvp/nfr/013-deployability.md) and [NFR-079](../../../docs/hlds/mvp/nfr/011-observability.md).
+- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/mvp/nfr/013-deployability.md) and [NFR-079](../../../docs/hlds/mvp/nfr/013-deployability.md).
 
 ## Package Notes
 
@@ -63,3 +60,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-23 | Documented the L2 SQLite connection-invariant coverage. | #252 |
 | 2026-07-23 | Documented why the L2 `DbContextOptions` replacement is required and not redundant. | #252 |
 | 2026-07-24 | Fixed Quality Constraints NFR links to `docs/hlds/mvp/nfr/`; documented the fresh-connection PRAGMA test that decouples the invariant from `EnsureCreatedAsync`. | #252 |
+| 2026-07-24 | Deferred Host connection-string resolution to DbContext creation, allowing L2 configuration overrides without re-registering options; anchored relative SQLite paths to the app base directory. | #252 |
