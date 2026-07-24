@@ -41,7 +41,7 @@ cleanup() {
   docker rm -f wiremock >/dev/null 2>&1 || true
 }
 
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
 check_aspire_alive() {
   kill -0 "${aspire_pid}" 2>/dev/null
@@ -120,7 +120,6 @@ dotnet run \
 aspire_pid=$!
 echo "Aspire WireMock host started with PID ${aspire_pid}."
 
-sleep 3
 if ! check_aspire_alive; then
   echo "ERROR: Aspire host exited before reaching the health probe."
   exit 1

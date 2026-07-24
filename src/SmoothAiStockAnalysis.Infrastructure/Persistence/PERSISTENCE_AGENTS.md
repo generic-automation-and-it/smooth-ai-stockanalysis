@@ -10,6 +10,22 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 - A future analysis cycle must call `IAnalysisCycleUnitOfWork` once; repositories in that scope must not independently save or commit.
 - Keep SQLite and EF Core types out of Domain and Application, and do not add time conversions here—the time-foundation worktask owns that decision.
 
+## System Context
+
+Persistence is the Infrastructure-owned SQLite foundation the Host uses to durably record analysis-cycle output. `SmoothAiStockAnalysisDbContext` opens one on-disk database file per Host instance, applies WAL and `synchronous=NORMAL` through the connection interceptor, and commits one cycle's writes as a single transaction via `IAnalysisCycleUnitOfWork`. The retention hosted service runs the mandatory monthly seam; until timestamped analysis-history entities arrive, the seam is a no-op. There are no external service dependencies — the only boundary is the local filesystem.
+
+```mermaid
+C4Context
+    title Persistence — System Context
+
+    System(persistence, "Persistence layer", "EF Core DbContext + UnitOfWork + retention hosted service")
+    System_Ext(host, "SmoothAiStockAnalysis.Host", "ASP.NET Core service that resolves the DbContext and hosted services via DI")
+    System_Ext(fs, "Local filesystem", "On-disk SQLite file (with WAL/SHM sidecars) under the resolved data directory")
+
+    Rel(host, persistence, "Resolves DbContext + IAnalysisCycleUnitOfWork + retention hosted service")
+    Rel(persistence, fs, "Reads/writes one .db file (with -wal / -shm sidecars)")
+```
+
 ## Architecture Decisions
 
 ### LADR-002 — On-disk SQLite over in-memory snapshots
@@ -61,3 +77,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-23 | Documented why the L2 `DbContextOptions` replacement is required and not redundant. | #252 |
 | 2026-07-24 | Fixed Quality Constraints NFR links to `docs/hlds/mvp/nfr/`; documented the fresh-connection PRAGMA test that decouples the invariant from `EnsureCreatedAsync`. | #252 |
 | 2026-07-24 | Deferred Host connection-string resolution to DbContext creation, allowing L2 configuration overrides without re-registering options; anchored relative SQLite paths to the app base directory. | #252 |
+| 2026-07-24 | Added the missing mandatory System Context section (with C4Context diagram) between Non-Negotiables and Architecture Decisions, satisfying the repository AGENTS quality standard. | #252 |

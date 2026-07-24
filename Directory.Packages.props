@@ -2,8 +2,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <!-- App packages — ASP.NET Core runtime baseline (10.0.x). Two entries below are
-       pinned to 10.0.7 because their 10.0.8 patch has not been validated against
+  <!-- App packages — ASP.NET Core runtime baseline (10.0.x). One entry below is
+       pinned to 10.0.7 because its 10.0.8 patch has not been validated against
        the rest of this baseline; revisit when the patch is verified. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />          <!-- pinned: 10.0.8 patch not yet validated for this baseline -->

@@ -8,7 +8,10 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 public static class SqliteTestHelpers
 {
     /// <summary>
-    /// Reads a single scalar value. Supported types: <see cref="string"/>, <see cref="long"/>.
+    /// Reads a single scalar value, converting it to <typeparamref name="T"/> via
+    /// <see cref="Convert.ChangeType(object?, Type)"/>. Any <see cref="IConvertible"/>
+    /// target type that the underlying scalar can represent is supported
+    /// (e.g. <see cref="string"/>, <see cref="long"/>, <see cref="int"/>, <see cref="bool"/>).
     /// </summary>
     public static async Task<T> ExecuteScalarAsync<T>(
         DbConnection connection,

@@ -35,7 +35,8 @@ public sealed class RetentionJobTests
 
         services.ShouldContain(descriptor =>
             descriptor.ServiceType == typeof(IHostedService)
-            && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionHostedService));
+            && descriptor.ImplementationType == typeof(AnalysisHistoryRetentionHostedService)
+            && descriptor.Lifetime == ServiceLifetime.Singleton);
     }
 
     [Fact]

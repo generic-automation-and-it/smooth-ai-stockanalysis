@@ -20,8 +20,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.UnitTest" />
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Infrastructure.ComponentTest" />
-    <!-- Required by the L2 interceptor reattach that re-resolves SqlitePragmaConnectionInterceptor from Infrastructure internals. -->
-    <InternalsVisibleTo Include="SmoothAiStockAnalysis.Host.IntegrationTest" />
   </ItemGroup>
 
 </Project>
