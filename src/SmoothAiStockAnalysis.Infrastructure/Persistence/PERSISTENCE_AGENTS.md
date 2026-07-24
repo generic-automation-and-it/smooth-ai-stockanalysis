@@ -44,6 +44,10 @@ C4Context
 
 **Status:** Accepted. `UseSnakeCaseNamingConvention()` (`EFCore.NamingConventions` package) is applied at every production options seam — the Host DI registration and the design-time factory — so every entity yields `lower_snake_case` table, column, primary/foreign-key, and index names without per-entity naming configuration. Entity configuration classes carry only non-naming concerns (value generation, requiredness, column types, converters/comparers); repeating `ToTable`/`HasColumnName`/`HasName`/`HasDatabaseName` for convention-derived names is prohibited. A `DbSet` exposed through a set property is named after the set property, so name set properties for the intended table. The convention also rewrites EF's infrastructure names (`__EFMigrationsHistory` keeps its table name, but its columns are `migration_id`/`product_version`). The JSON payload inside document columns stays camelCase (LADR-015); only the relational names change. Derived test probe contexts opt in on their own options builder. See [LADR-016](../../../docs/hlds/mvp/ladrs/016-snake-case-relational-naming-via-efcore-namingconventions.md).
 
+### LADR-017 — Explicit data-access scopes and a global user-isolation filter
+
+**Status:** Accepted. Application owns the explicit scope contract (`DataAccessScope`, `IDataAccessScopeSetter`, `IDataAccessScope`, `ISystemDataAccessScope`). Infrastructure's scoped `DataAccessScopeAccessor` implements all three, and `SmoothAiStockAnalysisDbContext` applies a global query filter that reads `UserIsolationTenantKey` on the current context instance. User scopes filter the tenant root by `Id` and every annotated owned dependent by `UserId`; the named system scope short-circuits the filter; missing scope throws (fail-closed). Shared reference entities carry no annotation and stay unfiltered. Feature code must never call `IgnoreQueryFilters`. Derived probe contexts add entities via `OnModelCreatingCore` so the filter scan still sees them. See [LADR-017](../../../docs/hlds/mvp/ladrs/017-explicit-data-access-scopes-and-global-user-isolation-filter.md).
+
 ## Requirements
 
 ### Initial user schema
@@ -60,6 +64,14 @@ The first production feature schema contains only the tenant-root `user_record` 
 - The tenant root has no self-referencing `user_id`. Worktask 03 must filter this tenant root by `id`.
 - The initial metadata payload carries `"schemaVersion":1` and no preference business fields. Infrastructure owns its serialization representation and preserves unknown members through extension data. Persisted metadata updates merge into the tracked document and reject schema-version regression.
 - There are no production owned-dependent or shared-reference tables yet; do not create production placeholders to demonstrate either category. The extension path is the shared configuration helpers below, proven by a test-only probe entity.
+
+### Explicit data-access scopes
+
+- Background work sets an explicit scope through `IDataAccessScopeSetter.SetScope(DataAccessScope.ForUser(id))` before querying owned data. Nothing supplies a user implicitly (no HTTP ambient, no thread-local auto-magic).
+- Shared ingestion uses the separate `ISystemDataAccessScope.EnterSystemScope()` dependency so the bypass is named, greppable, and unavailable by accident to ordinary feature execution.
+- Scope services and the DbContext are all scoped DI lifetimes and share one accessor per unit of work.
+- Owned-data queries with no valid scope throw `InvalidOperationException`; they never return all rows and never silently return empty-as-success.
+- Do not use `IgnoreQueryFilters` in application feature code. The system scope is the only sanctioned cross-user path.
 
 ### Ownership and uniqueness convention
 
@@ -96,6 +108,11 @@ The first production feature schema contains only the tenant-root `user_record` 
 - **L1:** `Infrastructure.ComponentTest/UserSchemaMigrationTests.cs` exercises the production user persistence model and initial migration against isolated SQLite. It proves repeatable migration application, physical column/key/index shape, generated internal IDs, external-identifier uniqueness, explicit metadata version storage, Domain translation, and unknown-field retention.
 - **L1:** `Infrastructure.ComponentTest/UserOwnedUniquenessConventionTests.cs` (via `Persistence/OwnershipProbeFixture`) proves the reusable owned-dependent helpers: required `user_id` FK to `user_record`, restrictive delete, composite unique `(user_id, natural_key...)`, same natural key allowed for two users, and rejection of helper misuse that would omit the ownership prefix.
 - **L1:** `Infrastructure.ComponentTest/SnakeCaseNamingConventionTests.cs` proves the LADR-016 global naming convention: an entity added with no explicit naming configuration yields snake_case table, column, primary-key, and index names through a probe context whose only addition is `UseSnakeCaseNamingConvention()`.
+
+- **L1:** `Infrastructure.ComponentTest/DataAccessScopeFilterTests.cs` proves the production DI registration + global filter: two-user isolation with no feature predicate, missing-scope fail-closed, system scope distinct/sees-all, sequential-scope no-leak.
+- **L1:** `Infrastructure.ComponentTest/DataAccessScopeOwnedAndSharedTests.cs` (via `Persistence/ScopeProbeDbContext`) proves owned dependents filter on `UserId`, shared probe entities stay unfiltered under user/system/no-scope, and missing scope fails closed for owned dependents.
+- **L0:** `Application.UnitTest/DataAccessScopeTests.cs` covers scope factory validation.
+- **L2:** `Host.IntegrationTest/DataAccessScopeIntegrationTests.cs` proves the Host composition root wires the same scopes and filter end-to-end.
 
 ### L2 fixture override
 
@@ -138,3 +155,4 @@ the production PRAGMAs.
 | 2026-07-24 | Added the initial user schema and migration-based startup; documented the delivered ownership inventory and composite-uniqueness convention for future owned tables. | #60, #61, #65 |
 | 2026-07-24 | Adopted lower_snake_case as the global relational naming standard (LADR-016) via `EFCore.NamingConventions`; stripped per-entity naming configuration and renamed the pre-release tenant-root table to the convention-derived `user_record` through the `SnakeCaseNamingConvention` migration. | #259 |
 | 2026-07-24 | Aligned tenant-root naming to `user_record` and added reusable owned-dependent composite-uniqueness helpers with L1 proof. | #60, #61, #65 |
+| 2026-07-24 | Added explicit data-access scopes and the global user-isolation query filter (LADR-017): Application contracts, scoped accessor, tenant-root/`UserId` filters, system-scope bypass, fail-closed missing scope, and L0/L1/L2 proofs. | #62, #63, #64 |
