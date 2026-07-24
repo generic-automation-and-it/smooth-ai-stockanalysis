@@ -10,7 +10,7 @@ namespace SmoothAiStockAnalysis.Infrastructure.ComponentTest;
 
 /// <summary>
 /// Proof for the T-015 / #59 spike: a versioned metadata document round-trips through the
-/// production <see cref="JsonDocumentSqliteValueConverter{TDocument}"/> against an isolated on-disk
+/// production <see cref="VersionedDocumentSqliteValueConverter{TDocument}"/> against an isolated on-disk
 /// SQLite file, without EF InMemory or a live provider. The document type here is a test-only probe;
 /// the production user-metadata document is introduced by worktask 02 (T-016).
 /// </summary>
@@ -37,8 +37,8 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
         }
 
         await using var readContext = CreateContext(_database.ConnectionString);
-        ProbeMetadataDocument stored = (await readContext.MetadataRecords
-            .SingleAsync(TestContext.Current.CancellationToken)).Metadata;
+        ProbeMetadataDocument stored = await readContext.MetadataRecords
+            .SingleAsync(TestContext.Current.CancellationToken).Metadata;
 
         stored.SchemaVersion.ShouldBe(1);
         stored.CompanySizeFloor.ShouldBe(250_000_000.55m);
@@ -87,8 +87,8 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
         }
 
         await using var verifyContext = CreateContext(_database.ConnectionString);
-        ProbeMetadataDocument rewritten = (await verifyContext.MetadataRecords
-            .SingleAsync(entity => entity.Id == id, TestContext.Current.CancellationToken)).Metadata;
+        ProbeMetadataDocument rewritten = await verifyContext.MetadataRecords
+            .SingleAsync(entity => entity.Id == id, TestContext.Current.CancellationToken).Metadata;
 
         rewritten.HoldingHorizonDays.ShouldBe(45);
         rewritten.ForwardCompatibleFields.ShouldNotBeNull();
@@ -147,9 +147,9 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
             {
                 entity.ToTable("metadata_records");
                 var metadataProperty = entity.Property(record => record.Metadata);
-                metadataProperty.HasConversion(new JsonDocumentSqliteValueConverter<ProbeMetadataDocument>());
+                metadataProperty.HasConversion(new VersionedDocumentSqliteValueConverter<ProbeMetadataDocument>());
                 metadataProperty.Metadata.SetValueComparer(
-                    new JsonDocumentSqliteValueComparer<ProbeMetadataDocument>());
+                    new VersionedDocumentSqliteValueComparer<ProbeMetadataDocument>());
             });
     }
 

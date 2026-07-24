@@ -26,7 +26,6 @@ internal static class SqliteJsonSerialization
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
         options.MakeReadOnly();
         return options;
