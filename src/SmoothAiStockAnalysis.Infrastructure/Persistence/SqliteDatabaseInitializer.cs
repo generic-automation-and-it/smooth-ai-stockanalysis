@@ -64,7 +64,16 @@ internal sealed class SqliteDatabaseInitializer(
 
         logger.LogInformation("Seeding the configured default user.");
         dbContext.Users().Add(UserRecord.FromDomain(User.Create(uniqueIdentifier)));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (await dbContext.Users()
+            .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken))
+        {
+            logger.LogDebug("Default user already present; seed skipped.");
+        }
+
         logger.LogInformation("Configured default user seed completed.");
     }
 }

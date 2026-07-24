@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SmoothAiStockAnalysis.Application.Common.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Retention;
@@ -59,7 +60,7 @@ public static class ServiceCollectionExtensions
         DefaultUserSeedOptions seedOptions = defaultUserUniqueIdentifier == Guid.Empty
             ? DefaultUserSeedOptions.None
             : new DefaultUserSeedOptions(defaultUserUniqueIdentifier);
-        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(seedOptions));
+        services.AddSingleton(Options.Create(seedOptions));
 
         services.AddSingleton<SqlitePragmaConnectionInterceptor>();
         services.AddScoped<DataAccessScopeAccessor>();
