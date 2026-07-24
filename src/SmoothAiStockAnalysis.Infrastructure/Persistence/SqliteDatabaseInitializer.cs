@@ -34,6 +34,8 @@ internal sealed class SqliteDatabaseInitializer(
             return;
         }
 
+        // IsEnabled (checked above) is defined as UniqueIdentifier is not null, so the value is
+        // guaranteed non-null here.
         Guid uniqueIdentifier = seedOptions.UniqueIdentifier!.Value;
 
         // Seed under the named system scope — startup has no ambient user (LADR-010 / NFR-041).

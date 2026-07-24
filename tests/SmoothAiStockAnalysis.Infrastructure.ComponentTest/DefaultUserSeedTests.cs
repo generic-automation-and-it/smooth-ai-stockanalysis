@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -67,20 +68,57 @@ public sealed class DefaultUserSeedTests : IAsyncDisposable
     public async Task EnsureDefaultUserAcceptsUniqueIndexConflictWhenConfiguredIdentityAlreadyExists()
     {
         await using ServiceProvider provider = CreateProvider(ConfiguredIdentifier);
-        await using AsyncServiceScope scope = provider.CreateAsyncScope();
-        scope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
-        var context = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
-        await context.Database.MigrateAsync(TestContext.Current.CancellationToken);
+        await using AsyncServiceScope migrateScope = provider.CreateAsyncScope();
+        migrateScope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
+        await migrateScope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>()
+            .Database.MigrateAsync(TestContext.Current.CancellationToken);
 
-        // Pre-seed a user with the configured identifier to force a unique-index conflict on save.
-        context.Users().Add(UserRecord.FromDomain(User.Create(ConfiguredIdentifier)));
-        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        // A dedicated context, with an interceptor that inserts and commits a row bearing the
+        // configured identifier through a second connection right before SaveChangesAsync sends
+        // its own INSERT. The existence check above has already run and found nothing, so this
+        // reproduces the genuine race: the unique-index conflict only appears at save time.
+        var options = new DbContextOptionsBuilder<SmoothAiStockAnalysisDbContext>()
+            .UseSqlite(_database.ConnectionString)
+            .UseSnakeCaseNamingConvention()
+            .AddInterceptors(new ConflictingRowOnSaveInterceptor(_database.ConnectionString, ConfiguredIdentifier))
+            .Options;
+        var scopeAccessor = new DataAccessScopeAccessor();
+        scopeAccessor.EnterSystemScope();
+        await using var context = new SmoothAiStockAnalysisDbContext(options, scopeAccessor);
 
-        // Second call must swallow the conflict and not throw.
+        // Must swallow the conflict and not throw.
         await SqliteDatabaseInitializer.EnsureDefaultUserAsync(
             context, ConfiguredIdentifier, NullLogger.Instance, TestContext.Current.CancellationToken);
 
-        (await context.Users().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        await using AsyncServiceScope verifyScope = provider.CreateAsyncScope();
+        verifyScope.ServiceProvider.GetRequiredService<ISystemDataAccessScope>().EnterSystemScope();
+        var verifyContext = verifyScope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+        (await verifyContext.Users().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+    }
+
+    /// <summary>
+    /// Forces the unique-index race <see cref="SqliteDatabaseInitializer.EnsureDefaultUserAsync"/>
+    /// must tolerate: on the intercepted context's first save, a second connection inserts and
+    /// commits the conflicting row before the intercepted INSERT reaches SQLite.
+    /// </summary>
+    private sealed class ConflictingRowOnSaveInterceptor(string connectionString, Guid uniqueIdentifier)
+        : SaveChangesInterceptor
+    {
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var options = new DbContextOptionsBuilder<SmoothAiStockAnalysisDbContext>()
+                .UseSqlite(connectionString)
+                .UseSnakeCaseNamingConvention()
+                .Options;
+            await using var conflictingWriterContext = new SmoothAiStockAnalysisDbContext(options);
+            conflictingWriterContext.Users().Add(UserRecord.FromDomain(User.Create(uniqueIdentifier)));
+            await conflictingWriterContext.SaveChangesAsync(cancellationToken);
+
+            return await base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
     }
 
     [Fact]
