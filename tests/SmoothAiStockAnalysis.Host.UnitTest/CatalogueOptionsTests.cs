@@ -328,7 +328,12 @@ public sealed class CatalogueOptionsTests
     [Fact]
     public void AddConfigurationAcceptsCommittedDefaults()
     {
-        IServiceProvider provider = AddConfigurationForTest(new ConfigurationBuilder().Build());
+        // Credentials are now validated in the same pass; supply a non-placeholder OpenAI key
+        // so the catalogue defaults path completes.
+        IConfiguration configuration = BuildConfiguration(
+            (CredentialsOptions.OpenAiApiKeyPath, "test-openai-api-key-for-composition"));
+
+        IServiceProvider provider = AddConfigurationForTest(configuration);
         IApplicationDefaults defaults = provider.GetRequiredService<IApplicationDefaults>();
 
         defaults.CostCaps.Event.ShouldBe(50);
@@ -338,9 +343,13 @@ public sealed class CatalogueOptionsTests
     [Fact]
     public void AddConfigurationRegistersOnlyTheValidatedApplicationDefaultsFacade()
     {
-        IServiceProvider provider = AddConfigurationForTest(new ConfigurationBuilder().Build());
+        IConfiguration configuration = BuildConfiguration(
+            (CredentialsOptions.OpenAiApiKeyPath, "test-openai-api-key-for-composition"));
+
+        IServiceProvider provider = AddConfigurationForTest(configuration);
 
         provider.GetService<IApplicationDefaults>().ShouldNotBeNull();
+        provider.GetService<CredentialsOptions>().ShouldNotBeNull();
 
         // Single validated path: no unvalidated IOptions<section> bindings are registered for the
         // catalogue sections (NFR-047 / worktask-02 double-bind avoidance).
@@ -349,6 +358,49 @@ public sealed class CatalogueOptionsTests
         provider.GetService<Microsoft.Extensions.Options.IOptions<FxMultipliersOptions>>().ShouldBeNull();
         provider.GetService<Microsoft.Extensions.Options.IOptions<CycleOptions>>().ShouldBeNull();
         provider.GetService<Microsoft.Extensions.Options.IOptions<ProviderOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<CredentialsOptions>>().ShouldBeNull();
+    }
+
+    [Fact]
+    public void AddConfigurationRejectsMissingOpenAiApiKeyWhenOpenAiIsEnabled()
+    {
+        // Empty configuration: Provider defaults to OpenAI, but Credentials:OpenAi:ApiKey is empty.
+        IConfiguration configuration = new ConfigurationBuilder().Build();
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AddConfigurationForTest(configuration));
+
+        exception.Message.ShouldContain(CredentialsOptions.OpenAiApiKeyPath);
+        exception.Message.ShouldContain(CredentialsOptions.OpenAiApiKeyEnvironmentVariable);
+    }
+
+    [Fact]
+    public void AddConfigurationRejectsPlaceholderOpenAiApiKey()
+    {
+        IConfiguration configuration = BuildConfiguration(
+            (CredentialsOptions.OpenAiApiKeyPath, CredentialsOptions.OpenAiApiKeyPlaceholder));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AddConfigurationForTest(configuration));
+
+        exception.Message.ShouldContain(CredentialsOptions.OpenAiApiKeyPath);
+        exception.Message.ShouldContain(CredentialsOptions.OpenAiApiKeyEnvironmentVariable);
+        // LADR-018: never echo the bound value.
+        exception.Message.ShouldNotContain(CredentialsOptions.OpenAiApiKeyPlaceholder);
+    }
+
+    [Fact]
+    public void AddConfigurationAcceptsNonOpenAiProviderWithoutOpenAiCredential()
+    {
+        // If neither Provider:Reasoning nor Provider:MarketData is OpenAI, the OpenAI credential
+        // is not required.
+        IConfiguration configuration = BuildConfiguration(
+            ("Provider:Reasoning", "Anthropic"),
+            ("Provider:MarketData", "Anthropic"));
+
+        IServiceProvider provider = AddConfigurationForTest(configuration);
+
+        provider.GetService<IApplicationDefaults>().ShouldNotBeNull();
     }
 
     private static ApplicationDefaults CreateApplicationDefaults(
