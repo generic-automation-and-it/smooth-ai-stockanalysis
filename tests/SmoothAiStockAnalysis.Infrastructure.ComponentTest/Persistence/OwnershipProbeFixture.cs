@@ -63,6 +63,9 @@ public sealed class OwnershipProbeFixture : IAsyncLifetime
                 $"Expected a composite unique index named '{expectedIndexName}' on owned_probe_records (user_id, ticker).");
         }
 
+        // Microsoft.Data.Sqlite allows one active reader per connection; dispose before the second PRAGMA.
+        await indexListReader.DisposeAsync();
+
         await using DbCommand indexInfoCommand = connection.CreateCommand();
         indexInfoCommand.CommandText = $"PRAGMA index_info('{indexName}');";
         await using DbDataReader indexInfoReader = await indexInfoCommand.ExecuteReaderAsync(cancellationToken);
