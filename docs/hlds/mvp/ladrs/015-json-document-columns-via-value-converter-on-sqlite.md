@@ -16,10 +16,19 @@ The representation must round-trip losslessly, carry an explicit schema version,
 Persist a versioned structured document as a **single canonical JSON `TEXT` column** through a reusable `VersionedDocumentSqliteValueConverter<TDocument>` backed by `System.Text.Json`.
 
 - `TDocument` must implement the Domain's `IVersionedDocument` — an explicit `int SchemaVersion` member (NFR-048). The versioning rule is enforced at the type level without making Domain depend on Infrastructure.
-- The document should retain unknown members through a `[JsonExtensionData]` property, so a field written by a newer schema version survives a read-modify-write cycle.
+- The persistence document should retain unknown members through a `[JsonExtensionData]` property, so a field written by a newer schema version survives a read-modify-write cycle.
 - The stored serialization contract is fixed by `SqliteJsonSerialization.Default` (`Infrastructure/Persistence/Converters/SqliteJsonSerialization.cs`; camelCase names, compact output). Changing those options changes the on-disk representation and is a schema-version concern.
 - The converter is applied **per property** in the owning entity's model configuration. It is not a global convention (unlike the LADR-014 NodaTime converters), because only document-typed properties are mapped this way.
 - Each mapped mutable document also receives `VersionedDocumentSqliteValueComparer<TDocument>`, which snapshots and compares canonical JSON so an in-place edit is detected by EF Core change tracking.
+
+For user metadata, Domain and persistence use separate representations:
+
+- Domain `UserMetadata` owns the meaning and invariant of `SchemaVersion` and remains free of JSON attributes or serializer types.
+- Infrastructure `UserMetadataDocument` owns `[JsonExtensionData]`, canonical JSON serialization, and the forward-compatible field bag.
+- Explicit translation connects the representations. Record creation accepts only transient Domain users; persisted updates merge known Domain changes into the existing persistence document so unknown fields are not discarded.
+- A persisted document cannot be downgraded to an earlier schema version. Retaining fields written by a newer contract while lowering `SchemaVersion` would make the marker misrepresent its payload.
+
+**Implementation status:** delivered by worktask 02. Domain `UserMetadata` is serialization-free, while Infrastructure `UserMetadataDocument` owns extension data and the production EF mapping.
 
 ## Alternatives considered
 
@@ -36,5 +45,5 @@ Persist a versioned structured document as a **single canonical JSON `TEXT` colu
 - The document stays an opaque, self-versioned, inspectable text payload, consistent with the lossless-text approach in LADR-014. `decimal`, `int`, and `string` preferences round-trip exactly.
 - Adding a preference is a **document-version change, not an EF model migration**. No column migration is required until a feature adds the property that carries the document.
 - Forward compatibility is the document's responsibility (its `[JsonExtensionData]` member), not the converter's; a document without one will drop unknown fields.
-- The downstream user-metadata work will define a Domain type implementing `IVersionedDocument` (with a `[JsonExtensionData]` member for forward-compatible fields) and apply both `VersionedDocumentSqliteValueConverter<TMetadata>` and `VersionedDocumentSqliteValueComparer<TMetadata>` to the owning property. The versioning rule and serialization contract are settled here; the downstream work chooses the document's shape.
+- User metadata uses a serialization-free Domain type implementing `IVersionedDocument` and a separate Infrastructure persistence document with `[JsonExtensionData]`. Infrastructure applies both `VersionedDocumentSqliteValueConverter<UserMetadataDocument>` and `VersionedDocumentSqliteValueComparer<UserMetadataDocument>` to the persisted property and translates explicitly between the two representations.
 - A real-file SQLite component test proves the version marker, representative preference values, unknown-field retention across a read-modify-write cycle, and the inspectable `text` column. No EF InMemory or live provider is used.

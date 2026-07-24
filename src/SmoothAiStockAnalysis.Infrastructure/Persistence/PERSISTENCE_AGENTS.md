@@ -38,12 +38,45 @@ C4Context
 
 ### LADR-015 — Structured documents as JSON text via a value converter
 
-**Status:** Accepted. Versioned structured documents (e.g. user metadata) persist as one canonical JSON `TEXT` column through `VersionedDocumentSqliteValueConverter<TDocument>` (`Converters/`), rather than EF Core's native `OwnsOne(...).ToJson()` mapping. `TDocument` implements the Domain's `IVersionedDocument` (explicit `int SchemaVersion`, NFR-048), keeping Domain independent from Infrastructure; the document should keep a `[JsonExtensionData]` member so unknown/forward-compatible fields survive a read-modify-write cycle. The converter is selected because metadata is an opaque one-column payload with an application-controlled serialization contract, not because native JSON mapping lacks these document capabilities. Apply `VersionedDocumentSqliteValueComparer<TDocument>` beside the converter whenever the document is mutable, so EF detects in-place changes. Unlike the LADR-014 mappings this pair is applied **per property**, not registered globally. Adding a field is a document-version change, not a schema migration. See [LADR-015](../../../docs/hlds/mvp/ladrs/015-json-document-columns-via-value-converter-on-sqlite.md).
+**Status:** Accepted. Versioned structured documents (e.g. user metadata) persist as one canonical JSON `TEXT` column through `VersionedDocumentSqliteValueConverter<TDocument>` (`Converters/`), rather than EF Core's native `OwnsOne(...).ToJson()` mapping. `TDocument` implements the Domain's `IVersionedDocument` (explicit `int SchemaVersion`, NFR-048). For user metadata, an Infrastructure persistence document owns `[JsonExtensionData]` and the forward-compatible field bag while the Domain model remains serialization-free; explicit translation connects the two representations. The converter is selected because metadata is an opaque one-column payload with an application-controlled serialization contract, not because native JSON mapping lacks these document capabilities. Apply `VersionedDocumentSqliteValueComparer<TDocument>` beside the converter whenever the document is mutable, so EF detects in-place changes. Unlike the LADR-014 mappings this pair is applied **per property**, not registered globally. Adding a field is a document-version change, not a schema migration. See [LADR-015](../../../docs/hlds/mvp/ladrs/015-json-document-columns-via-value-converter-on-sqlite.md).
+
+## Requirements
+
+### Initial user schema
+
+The first production feature schema contains only the tenant-root `users` table plus EF's migration history:
+
+| Table | Classification | Ownership key | Required shape |
+|---|---|---|---|
+| `users` | Tenant root containing user identity and owned metadata | `id` itself | `id INTEGER` generated primary key, `unique_identifier TEXT NOT NULL` with a global unique index, and `metadata TEXT NOT NULL` |
+| `__EFMigrationsHistory` | EF infrastructure metadata | None | Framework-managed; never user-filtered |
+
+- `users.id` is a compact internal `long` key for future foreign keys. `users.unique_identifier` is a stable externally exposable GUID; it is not a secret or access-control mechanism.
+- `users` has no self-referencing `user_id`. Worktask 03 must filter this tenant root by `id`.
+- The initial metadata payload carries `"schemaVersion":1` and no preference business fields. Infrastructure owns its serialization representation and preserves unknown members through extension data. Persisted metadata updates merge into the tracked document and reject schema-version regression.
+- There are no production owned-dependent or shared-reference tables yet; do not create placeholders to demonstrate either category.
+
+### Ownership and uniqueness convention
+
+- Every future user-owned dependent table has a required `user_id` FK to `users.id`.
+- Every natural unique index on a user-owned dependent starts with the ownership key: `(user_id, natural_key...)`. A competing global unique index on the same natural key is prohibited.
+- Shared market/reference tables have no `user_id` and are never user-filtered. Shared examples include market data, company financials, news, computed indicators, and sector aggregates.
+- Owned examples include watchlists, analysis history, recommendations, alerts, notification preferences, and scoring configuration.
+- Infrastructure tables such as `__EFMigrationsHistory` carry no ownership key.
+- Prefer restrictive deletion for future user FKs until user-deletion and retained-history semantics are explicitly designed.
+
+### Migration-based initialization
+
+- The initial generated migration lives under `Persistence/Migrations/` and its migration class is marked `[ExcludeFromCodeCoverage]`.
+- The design-time context factory keeps migration generation independent from Host startup, hosted services, deployment configuration, and seeding.
+- The production initializer uses `MigrateAsync`; migration failures propagate and fail startup.
+- Production-context tests use migrations. Test-only derived probe contexts may continue to use `EnsureCreatedAsync` against their isolated, non-production models.
+- Startup migration is separate from analysis-cycle work and does not change the `IAnalysisCycleUnitOfWork` rule: future repositories still must not independently save or commit.
 
 ## Key Behaviors
 
 - `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
-- `SqliteDatabaseInitializer` creates the empty local database at Host startup with `EnsureCreatedAsync`. There is no migration until a feature introduces the first persisted entity.
+- `SqliteDatabaseInitializer` applies pending EF migrations at Host startup with `MigrateAsync`. The initial user-schema migration creates the first production feature table and establishes EF migration history.
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
 - The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources. Relative SQLite data sources are normalized against `AppContext.BaseDirectory`, never the process working directory.
 - Future EF properties of the mapped NodaTime types inherit the global converters automatically. Do not store an offset/local string as the authoritative form of an instant.
@@ -52,9 +85,10 @@ C4Context
 ## Test References
 
 - **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary. `AppliesProductionPragmasToFreshConnectionWithoutEnsureCreated` proves the PRAGMA invariant is applied by `SqlitePragmaConnectionInterceptor` alone — on a scope that never calls `EnsureCreatedAsync` — so it stays green independently of whichever path creates the database.
-- **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file and verifies that the production connection interceptor still applies WAL and `synchronous=NORMAL`.
+- **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file, verifies that the production connection interceptor still applies WAL and `synchronous=NORMAL`, and proves startup created `users` by applying `InitialUserSchema`.
 - **L1:** `Infrastructure.ComponentTest/NodaTimeSqlitePersistenceTests.cs` derives a test-only model from the production context and round-trips time values through its production converter convention against an isolated SQLite file.
-- **L1:** `Infrastructure.ComponentTest/UserMetadataDocumentSqlitePersistenceTests.cs` proves the LADR-015 document mapping (T-015/#59): a test-only versioned document round-trips its version marker and representative preferences, retains an unknown forward-compatible field across a read-modify-write cycle, and stores as inspectable `text` — through `VersionedDocumentSqliteValueConverter<TDocument>` against an isolated SQLite file. The production user-metadata document arrives with worktask 02.
+- **L1:** `Infrastructure.ComponentTest/UserMetadataDocumentSqlitePersistenceTests.cs` proves the reusable LADR-015 mapping (T-015/#59) with a test-only document: it round-trips its version marker and representative preferences, retains an unknown forward-compatible field across a read-modify-write cycle, and stores as inspectable `text`.
+- **L1:** `Infrastructure.ComponentTest/UserSchemaMigrationTests.cs` exercises the production user persistence model and initial migration against isolated SQLite. It proves repeatable migration application, physical column/key/index shape, generated internal IDs, external-identifier uniqueness, explicit metadata version storage, Domain translation, and unknown-field retention.
 
 ### L2 fixture override
 
@@ -77,7 +111,7 @@ the production PRAGMAs.
 
 ## Migration Plans
 
-When the first feature adds a persisted entity, introduce the initial migration under `Migrations/` and mark generated migration classes with `[ExcludeFromCodeCoverage]`. NodaTime properties require no per-entity conversion configuration: they use the LADR-014 global convention. The migration's columns are SQLite `TEXT`.
+`InitialUserSchema` is the first production migration. It establishes migration history and the `users` tenant root with a generated numeric primary key, globally unique external GUID, and JSON `TEXT` metadata column; its migration class carries `[ExcludeFromCodeCoverage]`. Startup applies it through `MigrateAsync`. NodaTime properties continue to require no per-entity conversion configuration because they use the LADR-014 global convention.
 
 ## Changelog
 
@@ -93,3 +127,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-24 | Added the LADR-014 global, lossless NodaTime SQLite converter contract and its isolated-file L1 coverage. | #6 |
 | 2026-07-24 | Decided the versioned-document representation (LADR-015): per-property `VersionedDocumentSqliteValueConverter` over native `.ToJson()`, with `IVersionedDocument` version marker and `[JsonExtensionData]` forward-compatibility; added the isolated-file L1 proof. | #59 |
 | 2026-07-24 | Corrected the LADR-015 adapter boundary and tracking behavior: `IVersionedDocument` now belongs to Domain, and mutable JSON documents use a canonical deep comparer/snapshot. | #59 |
+| 2026-07-24 | Added the initial user schema and migration-based startup; documented the delivered ownership inventory and composite-uniqueness convention for future owned tables. | #60, #61, #65 |
