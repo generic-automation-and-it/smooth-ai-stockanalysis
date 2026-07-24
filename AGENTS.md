@@ -8,6 +8,10 @@ smooth-ai-stockanalysis is a self-hosted research service that identifies market
 
 **Tech stack:** .NET 10 · ASP.NET Core · Clean Architecture (Domain / Application / Infrastructure / Host) · EF Core + SQLite · Mediator (source-gen CQRS) · xunit.v3 · Aspire-managed WireMock
 
+## Non-Negotiables
+
+- `/ai-review execute` MUST make a final empty commit when any 🔴 Critical or 🟠 High finding is present — no exceptions. Commit message: `ci: /ai-review — processed review responses`. This applies whether those findings were fixed or skipped. Never omit this commit, never fold it into a fix commit. Only omit for medium/low-only reviews. This re-triggers the full review gate to re-verify critical/high findings.
+
 ## AI Context Files
 
 `AGENTS.md` and `*AGENTS.md` are **AI-coder contextual knowledge documents**. Read them like `CLAUDE.md` (or your agent's equivalent standard context file): they are first-class, authoritative context — not optional reference material. Before changing code, treat any `AGENTS.md` / `*AGENTS.md` in scope as required reading.
