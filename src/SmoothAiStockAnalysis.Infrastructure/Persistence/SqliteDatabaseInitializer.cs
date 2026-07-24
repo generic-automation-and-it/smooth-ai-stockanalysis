@@ -67,13 +67,12 @@ internal sealed class SqliteDatabaseInitializer(
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Configured default user seed completed.");
         }
         catch (DbUpdateException) when (await dbContext.Users()
             .AnyAsync(user => user.UniqueIdentifier == uniqueIdentifier, cancellationToken))
         {
             logger.LogDebug("Default user already present; seed skipped.");
         }
-
-        logger.LogInformation("Configured default user seed completed.");
     }
 }
