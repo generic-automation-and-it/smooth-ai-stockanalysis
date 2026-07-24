@@ -15,14 +15,20 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Configurations;
 internal static class UserOwnedEntityTypeBuilderExtensions
 {
     /// <summary>
-    /// CLR and relational ownership foreign-key name on every user-owned dependent.
+    /// CLR property and EF Core foreign-key property name on every user-owned dependent
+    /// (the relational column name is the LADR-016 convention output, e.g. <c>user_id</c>).
     /// </summary>
-    public const string OwnershipForeignKeyName = "UserId";
+    internal const string OwnershipForeignKeyName = "UserId";
 
     /// <summary>
-    /// Configures a required ownership FK to the tenant-root <see cref="UserRecord"/> with
-    /// restrictive delete semantics.
+    /// Configures the user-ownership relationship for an entity whose user-scoped unique index
+    /// is enforced by <see cref="HasUserScopedUniqueIndex"/>.
     /// </summary>
+    /// <remarks>
+    /// The ownership foreign key is <see cref="OwnershipForeignKeyName"/> (<c>UserId</c>) and is
+    /// always a <see cref="long"/> matching <c>UserRecord.Id</c>. The relational column name is
+    /// the LADR-016 convention output (e.g. <c>user_id</c>).
+    /// </remarks>
     public static EntityTypeBuilder<TEntity> ConfigureUserOwnedDependent<TEntity>(
         this EntityTypeBuilder<TEntity> builder)
         where TEntity : class

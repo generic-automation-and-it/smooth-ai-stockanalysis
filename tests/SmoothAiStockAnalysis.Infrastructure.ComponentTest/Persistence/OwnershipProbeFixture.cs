@@ -45,11 +45,11 @@ public sealed class OwnershipProbeFixture : IAsyncLifetime
 
         string? indexName = null;
         bool isUnique = false;
+        const string expectedIndexName = "ix_owned_probe_records_user_id_ticker";
         while (await indexListReader.ReadAsync(cancellationToken))
         {
             string candidate = indexListReader.GetString(1);
-            if (candidate.Contains("user_id", StringComparison.Ordinal)
-                && candidate.Contains("ticker", StringComparison.Ordinal))
+            if (candidate == expectedIndexName)
             {
                 indexName = candidate;
                 isUnique = indexListReader.GetInt64(2) == 1;
@@ -60,10 +60,8 @@ public sealed class OwnershipProbeFixture : IAsyncLifetime
         if (indexName is null)
         {
             throw new InvalidOperationException(
-                "Expected a composite unique index on owned_probe_records (user_id, ticker).");
+                $"Expected a composite unique index named '{expectedIndexName}' on owned_probe_records (user_id, ticker).");
         }
-
-        await indexListReader.DisposeAsync();
 
         await using DbCommand indexInfoCommand = connection.CreateCommand();
         indexInfoCommand.CommandText = $"PRAGMA index_info('{indexName}');";
