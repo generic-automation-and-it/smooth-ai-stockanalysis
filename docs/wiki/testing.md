@@ -16,7 +16,7 @@ Fixtures live in `tests/SmoothAiStockAnalysis.TestFramework/`.
 
 ### SqliteTestDatabase
 
-`SqliteTestDatabase.Create()` allocates a unique, on-disk database file below the operating-system temporary directory. It disables pooling and removes the `.db`, `-wal`, `-shm`, and `-journal` files on disposal. Use it for a real SQLite test without cross-test locking or container setup.
+`new SqliteTestDatabase()` allocates a unique, on-disk database file below the operating-system temporary directory. It disables pooling and removes the `.db`, `-wal`, `-shm`, and `-journal` files on disposal. L1 test classes own one instance and implement `IAsyncDisposable`; because xUnit creates a new test-class instance for each test, this preserves per-test database isolation without static helpers.
 
 ### WebAppFixture&lt;T&gt;
 

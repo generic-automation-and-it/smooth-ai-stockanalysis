@@ -19,7 +19,7 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 public abstract class WebAppFixture<TProgram> : IAsyncLifetime
     where TProgram : class
 {
-    private readonly SqliteTestDatabase _database = SqliteTestDatabase.Create();
+    private readonly SqliteTestDatabase _database = new();
     private WebApplicationFactory<TProgram>? _factory;
     private IServiceScope? _serviceScope;
 

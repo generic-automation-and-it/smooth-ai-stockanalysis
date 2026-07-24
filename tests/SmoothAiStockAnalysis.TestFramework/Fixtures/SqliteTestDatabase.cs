@@ -7,12 +7,15 @@ namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 /// </summary>
 public sealed class SqliteTestDatabase : IAsyncDisposable
 {
-    private SqliteTestDatabase(string databasePath)
+    public SqliteTestDatabase()
     {
-        DatabasePath = databasePath;
+        string directoryPath = Path.Combine(Path.GetTempPath(), "smooth-ai-stockanalysis-tests");
+        Directory.CreateDirectory(directoryPath);
+
+        DatabasePath = Path.Combine(directoryPath, $"{Guid.NewGuid():N}.db");
         ConnectionString = new SqliteConnectionStringBuilder
         {
-            DataSource = databasePath,
+            DataSource = DatabasePath,
             Pooling = false
         }.ConnectionString;
     }
@@ -20,14 +23,6 @@ public sealed class SqliteTestDatabase : IAsyncDisposable
     public string ConnectionString { get; }
 
     public string DatabasePath { get; }
-
-    public static SqliteTestDatabase Create()
-    {
-        string directoryPath = Path.Combine(Path.GetTempPath(), "smooth-ai-stockanalysis-tests");
-        Directory.CreateDirectory(directoryPath);
-
-        return new SqliteTestDatabase(Path.Combine(directoryPath, $"{Guid.NewGuid():N}.db"));
-    }
 
     public ValueTask DisposeAsync()
     {

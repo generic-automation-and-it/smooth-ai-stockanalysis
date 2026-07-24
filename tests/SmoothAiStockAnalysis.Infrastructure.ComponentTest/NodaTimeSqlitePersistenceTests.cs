@@ -4,19 +4,20 @@ using SmoothAiStockAnalysis.Infrastructure.Persistence;
 
 namespace SmoothAiStockAnalysis.Infrastructure.ComponentTest;
 
-public sealed class NodaTimeSqlitePersistenceTests
+public sealed class NodaTimeSqlitePersistenceTests : IAsyncDisposable
 {
+    private readonly SqliteTestDatabase _database = new();
+
     [Fact]
     public async Task RoundTripsNodaTimeValuesThroughAnOnDiskSqliteDatabase()
     {
-        await using var database = SqliteTestDatabase.Create();
         Instant instant = Instant.FromUtc(2026, 3, 29, 0, 59, 59) + Duration.FromNanoseconds(123_456_789);
         var localDate = new LocalDate(2024, 2, 29, CalendarSystem.Julian);
         DateTimeZone paris = DateTimeZoneProviders.Tzdb["Europe/Paris"];
         ZonedDateTime earlierFallBack = Instant.FromUtc(2026, 10, 25, 0, 30).InZone(paris);
         ZonedDateTime laterFallBack = Instant.FromUtc(2026, 10, 25, 1, 30).InZone(paris);
 
-        await using (var writeContext = CreateContext(database.ConnectionString))
+        await using (var writeContext = CreateContext(_database.ConnectionString))
         {
             await writeContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
             writeContext.TimeRoundTripRecords.AddRange(
@@ -25,7 +26,7 @@ public sealed class NodaTimeSqlitePersistenceTests
             await writeContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var readContext = CreateContext(database.ConnectionString);
+        await using var readContext = CreateContext(_database.ConnectionString);
         List<TimeRoundTripRecord> records = await readContext.TimeRoundTripRecords
             .OrderBy(record => record.Id)
             .ToListAsync(TestContext.Current.CancellationToken);
@@ -39,10 +40,9 @@ public sealed class NodaTimeSqlitePersistenceTests
     [Fact]
     public async Task StoresInstantsAsUtcIsoTextWithoutLosingNanoseconds()
     {
-        await using var database = SqliteTestDatabase.Create();
         Instant instant = Instant.FromUtc(2026, 3, 29, 0, 59, 59) + Duration.FromNanoseconds(1);
 
-        await using (var writeContext = CreateContext(database.ConnectionString))
+        await using (var writeContext = CreateContext(_database.ConnectionString))
         {
             await writeContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
             writeContext.TimeRoundTripRecords.Add(new TimeRoundTripRecord
@@ -54,7 +54,7 @@ public sealed class NodaTimeSqlitePersistenceTests
             await writeContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection(database.ConnectionString);
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection(_database.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT typeof(Instant), Instant FROM time_round_trip_records LIMIT 1;";
@@ -73,6 +73,8 @@ public sealed class NodaTimeSqlitePersistenceTests
 
         return new TimeRoundTripDbContext(options);
     }
+
+    public ValueTask DisposeAsync() => _database.DisposeAsync();
 
     private static void AssertZonedValue(ZonedDateTime actual, ZonedDateTime expected)
     {

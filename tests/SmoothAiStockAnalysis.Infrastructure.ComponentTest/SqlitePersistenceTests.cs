@@ -7,13 +7,14 @@ using SmoothAiStockAnalysis.Infrastructure.Persistence;
 
 namespace SmoothAiStockAnalysis.Infrastructure.ComponentTest;
 
-public sealed class SqlitePersistenceTests
+public sealed class SqlitePersistenceTests : IAsyncDisposable
 {
+    private readonly SqliteTestDatabase _database = new();
+
     [Fact]
     public async Task ConfiguresWalAndNormalSynchronousWrites()
     {
-        await using var database = SqliteTestDatabase.Create();
-        await using ServiceProvider serviceProvider = CreateServiceProvider(database.ConnectionString);
+        await using ServiceProvider serviceProvider = CreateServiceProvider(_database.ConnectionString);
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
 
@@ -31,16 +32,14 @@ public sealed class SqlitePersistenceTests
     [Fact]
     public async Task AppliesProductionPragmasToFreshConnectionWithoutEnsureCreated()
     {
-        await using var database = SqliteTestDatabase.Create();
-
-        await using (ServiceProvider setupProvider = CreateServiceProvider(database.ConnectionString))
+        await using (ServiceProvider setupProvider = CreateServiceProvider(_database.ConnectionString))
         {
             await using AsyncServiceScope setupScope = setupProvider.CreateAsyncScope();
             var setupDbContext = setupScope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
             await setupDbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
         }
 
-        await using ServiceProvider serviceProvider = CreateServiceProvider(database.ConnectionString);
+        await using ServiceProvider serviceProvider = CreateServiceProvider(_database.ConnectionString);
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
 
@@ -57,8 +56,7 @@ public sealed class SqlitePersistenceTests
     [Fact]
     public async Task UnitOfWorkCommitsOneCycleOfWrites()
     {
-        await using var database = SqliteTestDatabase.Create();
-        await using ServiceProvider serviceProvider = CreateServiceProvider(database.ConnectionString);
+        await using ServiceProvider serviceProvider = CreateServiceProvider(_database.ConnectionString);
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IAnalysisCycleUnitOfWork>();
@@ -86,8 +84,7 @@ public sealed class SqlitePersistenceTests
     [Fact]
     public async Task UnitOfWorkRollsBackWhenCycleFails()
     {
-        await using var database = SqliteTestDatabase.Create();
-        await using ServiceProvider serviceProvider = CreateServiceProvider(database.ConnectionString);
+        await using ServiceProvider serviceProvider = CreateServiceProvider(_database.ConnectionString);
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IAnalysisCycleUnitOfWork>();
@@ -124,4 +121,6 @@ public sealed class SqlitePersistenceTests
 
         return services.BuildServiceProvider();
     }
+
+    public ValueTask DisposeAsync() => _database.DisposeAsync();
 }
