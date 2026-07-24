@@ -89,9 +89,6 @@ public sealed class NodaTimeSqlitePersistenceTests : IAsyncDisposable
     {
         public DbSet<TimeRoundTripRecord> TimeRoundTripRecords => Set<TimeRoundTripRecord>();
 
-        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
-            base.ConfigureConventions(configurationBuilder);
-
         protected override void OnModelCreating(ModelBuilder modelBuilder) =>
             modelBuilder.Entity<TimeRoundTripRecord>().ToTable("time_round_trip_records");
     }

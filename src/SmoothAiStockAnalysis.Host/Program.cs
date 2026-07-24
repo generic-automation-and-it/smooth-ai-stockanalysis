@@ -8,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure();
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 
-DeliveryWindowOptions deliveryWindowOptions = DeliveryWindowOptions.FromConfiguration(builder.Configuration);
-builder.Services.AddSingleton(deliveryWindowOptions.ToDeliveryWindow());
+var deliveryWindow = DeliveryWindowOptions.FromConfiguration(builder.Configuration).ToDeliveryWindow();
+builder.Services.AddSingleton(deliveryWindow);
 
 var app = builder.Build();
 

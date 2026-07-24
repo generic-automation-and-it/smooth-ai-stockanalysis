@@ -5,7 +5,7 @@ namespace SmoothAiStockAnalysis.Domain.Time;
 /// <summary>
 /// A daily business window expressed in local wall-clock time for a named IANA time zone.
 /// </summary>
-public sealed class DeliveryWindow
+public sealed class DeliveryWindow : IEquatable<DeliveryWindow>
 {
     private readonly DateTimeZone _timeZone;
 
@@ -63,4 +63,14 @@ public sealed class DeliveryWindow
         ArgumentNullException.ThrowIfNull(clock);
         return Contains(clock.GetCurrentInstant());
     }
+
+    public bool Equals(DeliveryWindow? other) =>
+        other is not null
+        && _timeZone.Id == other._timeZone.Id
+        && Start == other.Start
+        && End == other.End;
+
+    public override bool Equals(object? obj) => obj is DeliveryWindow w && Equals(w);
+
+    public override int GetHashCode() => HashCode.Combine(_timeZone.Id, Start, End);
 }
