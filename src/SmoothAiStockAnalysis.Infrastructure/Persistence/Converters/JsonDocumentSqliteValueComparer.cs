@@ -46,11 +46,12 @@ internal sealed class VersionedDocumentSqliteValueComparer<TDocument> : ValueCom
     private static int GetDocumentHashCode(TDocument document) =>
         document is null ? 0 : StringComparer.Ordinal.GetHashCode(Serialize(document));
 
-    private static TDocument CreateSnapshot(TDocument document) =>
-        document is null
-            ? null!
-            : JsonSerializer.Deserialize<TDocument>(Serialize(document), SqliteJsonSerialization.Default)
-              ?? throw new InvalidOperationException($"Persisted {typeof(TDocument).Name} JSON must not be null.");
+    private static TDocument CreateSnapshot(TDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return JsonSerializer.Deserialize<TDocument>(Serialize(document), SqliteJsonSerialization.Default)
+            ?? throw new InvalidOperationException($"Persisted {typeof(TDocument).Name} JSON must not be null.");
+    }
 
     private static string Serialize(TDocument document) =>
         JsonSerializer.Serialize(document, SqliteJsonSerialization.Default);
