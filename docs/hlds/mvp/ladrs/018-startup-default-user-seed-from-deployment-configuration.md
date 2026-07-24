@@ -1,6 +1,6 @@
 # LADR-018: Startup default-user seed from deployment configuration
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context
@@ -16,7 +16,7 @@ Constraints:
 
 ## Decision
 
-1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start, in a fail-fast style analogous to `DeliveryWindow` (validated at process start). The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values.
+1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start, in a fail-fast style analogous to `DeliveryWindow` (also validated at process start). The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values.
 2. **Committed placeholder** `00000000-0000-4000-8000-000000000001` documents shape; deploy overrides via `DefaultUser__UniqueIdentifier`.
 3. **Infrastructure seeds** after `MigrateAsync` inside `SqliteDatabaseInitializer`, under `ISystemDataAccessScope`. Lookup/insert is keyed by `unique_identifier`; present → no-op; absent → `User.Create` / `UserRecord.FromDomain` with metadata schema version 1.
 4. **Component-test compositions** may disable seed by omitting the identifier (`DefaultUserSeedOptions.None`) so migrate-only tests stay focused.
