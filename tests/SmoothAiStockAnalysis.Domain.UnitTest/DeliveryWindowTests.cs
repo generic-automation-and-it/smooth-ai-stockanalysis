@@ -41,10 +41,10 @@ public sealed class DeliveryWindowTests
     [Theory]
     [InlineData("Invalid/Zone")]
     [InlineData("")]
-    [InlineData(null!)]
-    public void ConstructorRejectsUnknownTimeZone(string timeZoneId)
+    [InlineData(null)]
+    public void ConstructorRejectsUnknownTimeZone(string? timeZoneId)
     {
-        Should.Throw<ArgumentException>(() => new DeliveryWindow(timeZoneId, new LocalTime(7, 0), new LocalTime(22, 0)));
+        Should.Throw<ArgumentException>(() => new DeliveryWindow(timeZoneId!, new LocalTime(7, 0), new LocalTime(22, 0)));
     }
 
     [Fact]
