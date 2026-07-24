@@ -5,7 +5,10 @@ using SmoothAiStockAnalysis.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructure();
+DefaultUserOptions defaultUser = DefaultUserOptions.FromConfiguration(builder.Configuration);
+Guid defaultUserUniqueIdentifier = defaultUser.GetValidatedUniqueIdentifier();
+
+builder.Services.AddInfrastructure(defaultUserUniqueIdentifier);
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 
 var deliveryWindow = DeliveryWindowOptions.FromConfiguration(builder.Configuration).ToDeliveryWindow();

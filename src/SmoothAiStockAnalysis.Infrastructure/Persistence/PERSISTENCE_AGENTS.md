@@ -48,6 +48,10 @@ C4Context
 
 **Status:** Accepted. Application owns the explicit scope contract (`DataAccessScope`, `IDataAccessScopeSetter`, `IDataAccessScope`, `ISystemDataAccessScope`). Infrastructure's scoped `DataAccessScopeAccessor` implements all three, and `SmoothAiStockAnalysisDbContext` applies a global query filter that reads `UserIsolationTenantKey` on the current context instance. User scopes filter the tenant root by `Id` and every annotated owned dependent by `UserId`; the named system scope short-circuits the filter; missing scope throws (fail-closed). Shared reference entities carry no annotation and stay unfiltered. Feature code must never call `IgnoreQueryFilters`. Derived probe contexts add entities via `OnModelCreatingCore` so the filter scan still sees them. See [LADR-017](../../../docs/hlds/mvp/ladrs/017-explicit-data-access-scopes-and-global-user-isolation-filter.md).
 
+### LADR-018 — Startup default-user seed from deployment configuration
+
+**Status:** Accepted. Host validates non-secret `DefaultUser:UniqueIdentifier`; after `MigrateAsync`, `SqliteDatabaseInitializer` idempotently inserts that user under `ISystemDataAccessScope` when absent. Restarts do not duplicate the tenant; misconfiguration fails before cycles; startup never assumes an ambient user (NFR-041). See [LADR-018](../../../docs/hlds/mvp/ladrs/018-startup-default-user-seed-from-deployment-configuration.md).
+
 ## Requirements
 
 ### Initial user schema
@@ -82,6 +86,14 @@ The first production feature schema contains only the tenant-root `user_record` 
 - Owned examples include watchlists, analysis history, recommendations, alerts, notification preferences, and scoring configuration.
 - Infrastructure tables such as `__EFMigrationsHistory` carry no ownership key.
 
+### Default-user startup seed
+
+- After migrations apply, startup idempotently ensures one `user_record` exists for the Host-validated `DefaultUser:UniqueIdentifier`.
+- Seed runs under the named system scope (`ISystemDataAccessScope`); it does not set a user scope and does not depend on an ambient user (NFR-041/042).
+- Match key is `unique_identifier` (globally unique). Present → no-op; absent → `User.Create` + `UserRecord.FromDomain` with metadata schema version 1.
+- Seed is startup initialization, not analysis-cycle work: it may `SaveChangesAsync` directly inside the initializer and does not use `IAnalysisCycleUnitOfWork`.
+- No secrets are read or logged by the seed path. Configuration carries placeholders only (NFR-043/044).
+
 ### Migration-based initialization
 
 - Every generated migration lives under `Persistence/Migrations/` and its migration class is marked `[ExcludeFromCodeCoverage]`.
@@ -93,7 +105,7 @@ The first production feature schema contains only the tenant-root `user_record` 
 ## Key Behaviors
 
 - `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
-- `SqliteDatabaseInitializer` applies pending EF migrations at Host startup with `MigrateAsync`. `InitialUserSchema` creates the tenant-root table and establishes EF migration history; `SnakeCaseNamingConvention` follows immediately and renames that pre-release table (`users` → `user_record`, `pk_users` → `pk_user_record`, `ux_users_unique_identifier` → `ix_user_record_unique_identifier`) so the physical schema is fully convention-derived.
+- `SqliteDatabaseInitializer` applies pending EF migrations at Host startup with `MigrateAsync`, then idempotently seeds the configured default user under system scope (LADR-018). `InitialUserSchema` creates the tenant-root table and establishes EF migration history; `SnakeCaseNamingConvention` follows immediately and renames that pre-release table (`users` → `user_record`, `pk_users` → `pk_user_record`, `ux_users_unique_identifier` → `ix_user_record_unique_identifier`) so the physical schema is fully convention-derived.
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
 - The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources. Relative SQLite data sources are normalized against `AppContext.BaseDirectory`, never the process working directory.
 - Future EF properties of the mapped NodaTime types inherit the global converters automatically. Do not store an offset/local string as the authoritative form of an instant.
@@ -113,6 +125,9 @@ The first production feature schema contains only the tenant-root `user_record` 
 - **L1:** `Infrastructure.ComponentTest/DataAccessScopeOwnedAndSharedTests.cs` (via `Persistence/ScopeProbeDbContext`) proves owned dependents filter on `UserId`, shared probe entities stay unfiltered under user/system/no-scope, and missing scope fails closed for owned dependents.
 - **L0:** `Application.UnitTest/DataAccessScopeTests.cs` covers scope factory validation.
 - **L2:** `Host.IntegrationTest/DataAccessScopeIntegrationTests.cs` proves the Host composition root wires the same scopes and filter end-to-end.
+- **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
+- **L1:** `Infrastructure.ComponentTest/DefaultUserSeedTests.cs` proves migrate+seed creates one row and a second start is a no-op; a `SaveChangesInterceptor`-forced unique-index conflict (a second connection commits the configured identifier's row between the existence check and the save) proves the race-condition catch branch swallows the conflict without duplicating the user, against isolated SQLite.
+- **L2:** `Host.IntegrationTest/DefaultUserSeedIntegrationTests.cs` boots the Host against an isolated SQLite file, asserts the configured user exists once, re-runs startup seed without duplication, and proves cross-user owned queries return no rows without a feature predicate on the production stack (closing #7 / T-022 / T-023 with the existing shared-data inverse L1 proof).
 
 ### L2 fixture override
 
@@ -156,3 +171,6 @@ the production PRAGMAs.
 | 2026-07-24 | Adopted lower_snake_case as the global relational naming standard (LADR-016) via `EFCore.NamingConventions`; stripped per-entity naming configuration and renamed the pre-release tenant-root table to the convention-derived `user_record` through the `SnakeCaseNamingConvention` migration. | #259 |
 | 2026-07-24 | Aligned tenant-root naming to `user_record` and added reusable owned-dependent composite-uniqueness helpers with L1 proof. | #60, #61, #65 |
 | 2026-07-24 | Added explicit data-access scopes and the global user-isolation query filter (LADR-017): Application contracts, scoped accessor, tenant-root/`UserId` filters, system-scope bypass, fail-closed missing scope, and L0/L1/L2 proofs. | #62, #63, #64 |
+| 2026-07-24 | Added default-user startup seed after migrate (LADR-018): system-scope idempotent insert of Host-validated `DefaultUser:UniqueIdentifier`, plus L0/L1/L2 evidence closing #7. | #66, #67, #7 |
+| 2026-07-24 | Closed AI review gap on PR #263: added L1 proof for the unique-index race-condition catch branch and wrapped its non-race re-throw with seed-step context. | #7, #263 |
+| 2026-07-24 | Corrected the PR #263 race-condition L1 test: a subsequent AI review found the prior version pre-seeded the same identifier and never reached the catch branch. Replaced it with a `SaveChangesInterceptor` that forces a genuine save-time unique-index conflict; also removed a now-provably-unreachable defensive throw in `SqliteDatabaseInitializer`. | #7, #263 |

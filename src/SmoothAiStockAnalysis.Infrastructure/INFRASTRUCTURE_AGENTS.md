@@ -28,7 +28,7 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Keep the persistence document separate from Domain metadata. Infrastructure owns `[JsonExtensionData]`, the forward-compatible field bag, the LADR-015 converter/comparer, and explicit Domain-to-persistence translation. `UserRecord.FromDomain` is create-only and accepts transient users; persisted updates use the merge-preserving path, retain unknown fields, and cannot regress the document schema version.
 - The initial EF migration lives under `Persistence/Migrations/`; deterministic design-time context creation is available, the generated migration class carries `[ExcludeFromCodeCoverage]`, and production startup applies migrations through `MigrateAsync`.
 - Treat `user_record` as the tenant root: its `Id` is the ownership key, so it has no self-referencing `UserId`. Future user-owned dependants must call `ConfigureUserOwnedDependent` / `HasUserScopedUniqueIndex` so they receive a required `user_id` FK and user-prefixed natural uniqueness; shared market/reference entities remain explicitly unscoped and must not use those helpers.
-- This work establishes schema ownership only. Global user-isolation query filters and the explicit current/system scope contract (`DataAccessScope`, `IDataAccessScopeSetter`, `IDataAccessScope`, `ISystemDataAccessScope`) are delivered by this worktask; configured default-user seeding, authentication, and authorization remain owned by later worktasks.
+- Schema ownership, global user-isolation query filters, and the explicit current/system scope contract are delivered. Default-user startup seeding (Host-validated `DefaultUser:UniqueIdentifier`, system-scope idempotent insert after migrate) is delivered with this worktask (T-022/#66). Authentication and authorization remain out of scope (NFR-037).
 
 ## Packages to add when implementing
 
@@ -47,3 +47,4 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 | 2026-07-24 | Added the LADR-015 per-property JSON-document value converter for versioned structured documents. | #59 |
 | 2026-07-24 | Added the user persistence record, Infrastructure-owned metadata document, design-time migration tooling, and migration-based startup initialization. | #60, #61, #65 |
 | 2026-07-24 | Aligned tenant-root naming to `user_record` and documented the reusable user-owned composite-uniqueness helpers. | #60, #61, #65 |
+| 2026-07-24 | Documented default-user startup seed after migrations (system scope, idempotent, Host-validated identity). | #66, #67, #7 |
