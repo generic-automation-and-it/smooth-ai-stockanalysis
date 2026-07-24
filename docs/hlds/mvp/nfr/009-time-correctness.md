@@ -22,10 +22,12 @@ A known technical uncertainty attaches here: the chosen library's first-class in
 
 ## Verification
 
-- Delivery window behaviour tested across a daylight-saving boundary in both directions.
-- Storage round-trip tested for instants, local dates and zoned values.
+- Delivery-window behaviour is tested across the Europe/Paris spring-forward and fall-back boundaries, including cases that fail under either fixed CET offset.
+- Real SQLite storage round-trips nanosecond-precision instants, calendar-aware local dates, and both ambiguous fall-back zoned values.
+- `Instant` storage is asserted as lossless UTC ISO-8601 text. See LADR-014 for the complete representation.
 
 ## Related
 
-- `docs/adr/002-on-disk-sqlite-over-in-memory-snapshots.md`
+- [LADR-002](../ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md)
+- [LADR-014](../ladrs/014-lossless-nodatime-mappings-for-sqlite.md)
 - BR-36 (delivery window)

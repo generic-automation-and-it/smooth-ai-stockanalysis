@@ -1,6 +1,6 @@
 # LADR-007: Visible documentation folder
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context

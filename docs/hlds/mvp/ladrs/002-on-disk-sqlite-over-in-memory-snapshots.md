@@ -1,6 +1,6 @@
 # LADR-002: On-disk SQLite over in-memory with periodic snapshots
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context

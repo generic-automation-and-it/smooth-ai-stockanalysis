@@ -6,7 +6,7 @@ This file provides guidance for AI coding agents working in the smooth-ai-stocka
 
 smooth-ai-stockanalysis is a self-hosted research service that identifies market catalysts, filters candidates through deterministic checks, uses AI to evaluate the strongest opportunities, and emails a small set of recommendations. It is a personal research tool, not financial advice.
 
-**Tech stack:** .NET 10 · ASP.NET Core · Clean Architecture (Domain / Application / Infrastructure / Host) · EF Core + SQLite · Mediator (source-gen CQRS) · xunit.v3 · Aspire-managed WireMock
+**Tech stack:** .NET 10 · ASP.NET Core · Clean Architecture (Domain / Application / Infrastructure / Host) · NodaTime · EF Core + SQLite · Mediator (source-gen CQRS) · xunit.v3 · Aspire-managed WireMock
 
 ## Non-Negotiables
 
@@ -55,7 +55,7 @@ First-party agent skills live under `.agents/skills/` and are registered in `.ag
 
 | Layer | Path | Purpose |
 |---|---|---|
-| Domain | `src/SmoothAiStockAnalysis.Domain/` | Core entities, value objects — no external deps |
+| Domain | `src/SmoothAiStockAnalysis.Domain/` | Core entities and value objects; NodaTime is the sole allowed external value-semantics dependency |
 | Application | `src/SmoothAiStockAnalysis.Application/` | Vertical-slice use cases via Mediator — `Features/<Name>/`, shared code in `Common/` |
 | Infrastructure | `src/SmoothAiStockAnalysis.Infrastructure/` | EF Core + SQLite (`Persistence/`), HTTP clients (`Clients/`) |
 | Host | `src/SmoothAiStockAnalysis.Host/` | ASP.NET Core Web API, Serilog, Scalar OpenAPI |

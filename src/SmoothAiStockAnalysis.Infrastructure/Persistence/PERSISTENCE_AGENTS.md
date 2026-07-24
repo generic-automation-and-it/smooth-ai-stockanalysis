@@ -8,7 +8,7 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 
 - Keep the application database file-backed; do not use in-memory SQLite for the running service.
 - A future analysis cycle must call `IAnalysisCycleUnitOfWork` once; repositories in that scope must not independently save or commit.
-- Keep SQLite and EF Core types out of Domain and Application, and do not add time conversions here—the time-foundation worktask owns that decision.
+- Keep SQLite and EF Core types out of Domain and Application. NodaTime conversion is an Infrastructure concern and follows LADR-014; application/domain code never sees SQLite representations.
 
 ## System Context
 
@@ -32,17 +32,23 @@ C4Context
 
 **Status:** Accepted. **Context:** the target device has constrained memory and finite storage-write endurance. **Decision:** use one on-disk SQLite database with WAL, relaxed synchronous writes, one transaction per cycle, and mandatory retention. **Consequences:** the operating-system page cache serves hot reads; an in-memory database or independent per-stage commits would undermine the durability and write-volume constraints.
 
+### LADR-014 — Lossless NodaTime mappings for SQLite
+
+**Status:** Accepted. `SmoothAiStockAnalysisDbContext.ConfigureConventions` globally maps `Instant`, `LocalDate`, and `ZonedDateTime` through custom text converters. Instants are canonical lossless UTC ISO text; local dates retain calendar identity; and zoned values retain their instant, TZDB IANA zone ID, and calendar ID. See [LADR-014](../../../docs/hlds/mvp/ladrs/014-lossless-nodatime-mappings-for-sqlite.md).
+
 ## Key Behaviors
 
 - `SqlitePragmaConnectionInterceptor` applies WAL and `synchronous=NORMAL` whenever a SQLite connection opens. WAL persists with the database; synchronous mode is connection-scoped, so verify it on an open EF connection.
 - `SqliteDatabaseInitializer` creates the empty local database at Host startup with `EnsureCreatedAsync`. There is no migration until a feature introduces the first persisted entity.
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
 - The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources. Relative SQLite data sources are normalized against `AppContext.BaseDirectory`, never the process working directory.
+- Future EF properties of the mapped NodaTime types inherit the global converters automatically. Do not store an offset/local string as the authoritative form of an instant.
 
 ## Test References
 
 - **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary. `AppliesProductionPragmasToFreshConnectionWithoutEnsureCreated` proves the PRAGMA invariant is applied by `SqlitePragmaConnectionInterceptor` alone — on a scope that never calls `EnsureCreatedAsync` — so it stays green independently of whichever path creates the database.
 - **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file and verifies that the production connection interceptor still applies WAL and `synchronous=NORMAL`.
+- **L1:** `Infrastructure.ComponentTest/NodaTimeSqlitePersistenceTests.cs` derives a test-only model from the production context and round-trips time values through its production converter convention against an isolated SQLite file.
 
 ### L2 fixture override
 
@@ -65,7 +71,7 @@ the production PRAGMAs.
 
 ## Migration Plans
 
-When the first feature adds a persisted entity, introduce the initial migration under `Migrations/` and mark generated migration classes with `[ExcludeFromCodeCoverage]`. The sibling time-foundation change may extend the DbContext with its separately decided NodaTime converters; do not pre-empt that representation here.
+When the first feature adds a persisted entity, introduce the initial migration under `Migrations/` and mark generated migration classes with `[ExcludeFromCodeCoverage]`. NodaTime properties require no per-entity conversion configuration: they use the LADR-014 global convention. The migration's columns are SQLite `TEXT`.
 
 ## Changelog
 
@@ -78,3 +84,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-24 | Fixed Quality Constraints NFR links to `docs/hlds/mvp/nfr/`; documented the fresh-connection PRAGMA test that decouples the invariant from `EnsureCreatedAsync`. | #252 |
 | 2026-07-24 | Deferred Host connection-string resolution to DbContext creation, allowing L2 configuration overrides without re-registering options; anchored relative SQLite paths to the app base directory. | #252 |
 | 2026-07-24 | Added the missing mandatory System Context section (with C4Context diagram) between Non-Negotiables and Architecture Decisions, satisfying the repository AGENTS quality standard. | #252 |
+| 2026-07-24 | Added the LADR-014 global, lossless NodaTime SQLite converter contract and its isolated-file L1 coverage. | #6 |

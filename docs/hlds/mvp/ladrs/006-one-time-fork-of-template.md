@@ -1,6 +1,6 @@
 # LADR-006: One-time fork of the development template
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context

@@ -1,6 +1,6 @@
 # LADR-001: Clean architecture with vertical feature slices
 
-**Status:** Accepted
+**Status:** Completed
 **Date:** July 2026
 
 ## Context

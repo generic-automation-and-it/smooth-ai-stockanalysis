@@ -1,8 +1,15 @@
+using NodaTime;
+using SmoothAiStockAnalysis.Domain.Time;
+using SmoothAiStockAnalysis.Host.Configuration;
 using SmoothAiStockAnalysis.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure();
+builder.Services.AddSingleton<IClock>(SystemClock.Instance);
+
+var deliveryWindow = DeliveryWindowOptions.FromConfiguration(builder.Configuration).ToDeliveryWindow();
+builder.Services.AddSingleton(deliveryWindow);
 
 var app = builder.Build();
 

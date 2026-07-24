@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Host.UnitTest" />
     <InternalsVisibleTo Include="SmoothAiStockAnalysis.Host.IntegrationTest" />
   </ItemGroup>

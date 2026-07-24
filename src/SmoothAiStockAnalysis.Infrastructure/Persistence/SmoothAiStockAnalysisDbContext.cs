@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 
 namespace SmoothAiStockAnalysis.Infrastructure.Persistence;
 
@@ -6,10 +7,13 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence;
 /// EF Core context for the local SQLite database.
 /// </summary>
 /// <remarks>
-/// Domain entities are introduced by their owning features. This foundation intentionally
-/// contains no business tables or time mappings.
+/// Domain entities are introduced by their owning features. NodaTime value mappings are
+/// registered globally so future persisted entities use the same lossless representation.
 /// </remarks>
-public sealed class SmoothAiStockAnalysisDbContext(DbContextOptions<SmoothAiStockAnalysisDbContext> options)
+public class SmoothAiStockAnalysisDbContext(DbContextOptions options)
     : DbContext(options)
 {
+    /// <inheritdoc />
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        NodaTimeSqliteConventions.Configure(configurationBuilder);
 }

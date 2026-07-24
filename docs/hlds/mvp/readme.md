@@ -492,13 +492,13 @@ Maintained in full under `docs/hlds/mvp/nfr/`. Summarised here with the design r
 | **Documentation** | Interactive API documentation | Generated from the API surface and served by the host |
 | **Openness** | Public repository | No credentials in configuration; documentation written for an external reader |
 
-### Two known technical uncertainties
+### Remaining technical uncertainty
 
-Both are identified for resolution during M1 rather than discovered later.
+The remaining open uncertainty from §9 is identified for resolution during M1 rather than discovered later.
 
 | Uncertainty | Concern |
 |---|---|
-| Date and time library support on the chosen store | The library's first-class integration targets a different database engine. Conversion behaviour must be established before any schema depends on it. |
+| Date and time library support on the chosen store | **Resolved by LADR-014:** lossless custom NodaTime-to-SQLite converters are globally registered before any schema depends on them. |
 | Structured-document columns on the chosen store | Support is thinner than on server databases. Whether the contents ever need to be queried — rather than merely read and written whole — determines the approach. |
 
 ---
@@ -507,7 +507,7 @@ Both are identified for resolution during M1 rather than discovered later.
 
 Brief by intent. Each expands into its own design document when it is scheduled.
 
-**M1 — Foundation.** Establishes layer boundaries, persistence, user identity and isolation, deployment to the target hardware, quality gates, and public documentation. Resolves both technical uncertainties in §9. Nothing user-visible ships; everything downstream assumes it.
+**M1 — Foundation.** Establishes layer boundaries, persistence, user identity and isolation, deployment to the target hardware, quality gates, and public documentation. Resolves the remaining technical uncertainty in §9. Nothing user-visible ships; everything downstream assumes it.
 
 **M2 — First recommendation.** The narrowest possible vertical slice: one provider, one catalyst type, deterministic scoring, one email, triggered manually. Proves the host, the run lock, the provider abstraction, persistence and delivery work together before anything expensive is built on top.
 
