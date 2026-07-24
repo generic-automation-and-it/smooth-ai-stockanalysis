@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace SmoothAiStockAnalysis.Infrastructure.Persistence;
 
 /// <summary>
-/// Creates the local database file when the service starts.
+/// Applies local database migrations when the service starts.
 /// </summary>
 internal sealed class SqliteDatabaseInitializer(
     IServiceScopeFactory scopeFactory,
@@ -14,13 +14,13 @@ internal sealed class SqliteDatabaseInitializer(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Initializing the local SQLite database.");
+        logger.LogInformation("Applying local SQLite database migrations.");
 
         await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
-        await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        await dbContext.Database.MigrateAsync(cancellationToken);
 
-        logger.LogInformation("Local SQLite database initialized.");
+        logger.LogInformation("Local SQLite database migrations applied.");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

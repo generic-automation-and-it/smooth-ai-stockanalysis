@@ -33,6 +33,18 @@ public sealed class SmokeTests(HostWebAppFixture fixture) : IClassFixture<HostWe
                 .ShouldBe("wal");
             (await SqliteTestHelpers.ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", cancellationToken))
                 .ShouldBe(1);
+            (await SqliteTestHelpers.ExecuteScalarAsync<long>(
+                connection,
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'users';",
+                cancellationToken)).ShouldBe(1);
+            (await SqliteTestHelpers.ExecuteScalarAsync<long>(
+                connection,
+                """
+                SELECT COUNT(*)
+                FROM "__EFMigrationsHistory"
+                WHERE "MigrationId" LIKE '%_InitialUserSchema';
+                """,
+                cancellationToken)).ShouldBe(1);
         }
         finally
         {

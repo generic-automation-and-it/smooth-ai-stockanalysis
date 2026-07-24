@@ -18,7 +18,7 @@ public sealed class SqlitePersistenceTests : IAsyncDisposable
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
 
-        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        await dbContext.Database.MigrateAsync(TestContext.Current.CancellationToken);
         await dbContext.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
 
         DbConnection connection = dbContext.Database.GetDbConnection();
@@ -36,7 +36,7 @@ public sealed class SqlitePersistenceTests : IAsyncDisposable
         {
             await using AsyncServiceScope setupScope = setupProvider.CreateAsyncScope();
             var setupDbContext = setupScope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
-            await setupDbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+            await setupDbContext.Database.MigrateAsync(TestContext.Current.CancellationToken);
         }
 
         await using ServiceProvider serviceProvider = CreateServiceProvider(_database.ConnectionString);
@@ -61,7 +61,7 @@ public sealed class SqlitePersistenceTests : IAsyncDisposable
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IAnalysisCycleUnitOfWork>();
 
-        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        await dbContext.Database.MigrateAsync(TestContext.Current.CancellationToken);
         await dbContext.Database.ExecuteSqlRawAsync(
             "CREATE TABLE persistence_probe (value TEXT NOT NULL);",
             TestContext.Current.CancellationToken);
@@ -89,7 +89,7 @@ public sealed class SqlitePersistenceTests : IAsyncDisposable
         var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IAnalysisCycleUnitOfWork>();
 
-        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        await dbContext.Database.MigrateAsync(TestContext.Current.CancellationToken);
         await dbContext.Database.ExecuteSqlRawAsync(
             "CREATE TABLE persistence_probe (value TEXT NOT NULL);",
             TestContext.Current.CancellationToken);

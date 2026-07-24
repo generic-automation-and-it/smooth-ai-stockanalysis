@@ -17,6 +17,15 @@ Phase 1 seeds a single user. Nothing assumes there is only one.
 
 Delivered in the foundation milestone, not deferred.
 
+The user has two identifiers with deliberately different roles:
+
+- an internal database-assigned `long Id`, used as the compact tenant key and by future foreign keys;
+- a stable, globally unique `Guid UniqueIdentifier`, suitable for exposure outside the persistence boundary.
+
+The external GUID is an identifier only. It is not an authentication credential, authorization token, or secret. The `users` table is the tenant root, so its primary key is the ownership key and it does not carry a self-referencing `UserId`.
+
+**Implementation status:** delivered by worktask 02 through the dual-identifier Domain model, `users` schema, versioned metadata mapping, and initial migration.
+
 ## Rationale
 
 Retrofitting a tenant key across an established schema is among the more painful migrations available — every table, every query, every unique constraint, with no safe intermediate state. Adding the column while there are no rows costs almost nothing.
@@ -32,5 +41,7 @@ It also aligns naturally with the planned authentication work, which then adds a
 **Uniqueness constraints become composite** — scoped by user rather than global. Free now, a migration later.
 
 **The user record carries metadata.** Its versioned JSON storage representation is decided in [LADR-015](015-json-document-columns-via-value-converter-on-sqlite.md).
+
+The composite rule applies to natural uniqueness on user-owned dependants: `(UserId, NaturalKey...)`. Global uniqueness of `User.UniqueIdentifier` is valid because it identifies the tenant root itself rather than a value owned by a tenant.
 
 Isolation is a property of the data layer rather than of each developer's diligence.
