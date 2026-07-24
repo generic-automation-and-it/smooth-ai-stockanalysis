@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 
@@ -17,9 +18,17 @@ internal static class SqliteJsonSerialization
     /// <summary>
     /// Gets the shared options instance. It is read-only after construction and safe to reuse.
     /// </summary>
-    internal static JsonSerializerOptions Default { get; } = new(JsonSerializerDefaults.General)
+    internal static JsonSerializerOptions Default { get; } = CreateDefault();
+
+    private static JsonSerializerOptions CreateDefault()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.General)
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        };
+        options.MakeReadOnly();
+        return options;
+    }
 }

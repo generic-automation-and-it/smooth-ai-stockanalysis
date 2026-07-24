@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using SmoothAiStockAnalysis.Domain.Documents;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 
@@ -69,7 +70,8 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
             id = (long)(await insert.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         }
 
-        // Read the older-known fields, mutate one, and persist through the converter.
+        // Read the older-known fields, mutate one in place, and persist through the converter.
+        // The production value comparer must detect this without replacing the document instance.
         await using (var readModifyContext = CreateContext(_database.ConnectionString))
         {
             MetadataRecord record = await readModifyContext.MetadataRecords
@@ -80,14 +82,7 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
             record.Metadata.ForwardCompatibleFields.ShouldNotBeNull();
             record.Metadata.ForwardCompatibleFields.ShouldContainKey("experimentalScoringWeight");
 
-            record.Metadata = new ProbeMetadataDocument
-            {
-                SchemaVersion = record.Metadata.SchemaVersion,
-                CompanySizeFloor = record.Metadata.CompanySizeFloor,
-                HoldingHorizonDays = 45,
-                DeliveryWindowZone = record.Metadata.DeliveryWindowZone,
-                ForwardCompatibleFields = record.Metadata.ForwardCompatibleFields
-            };
+            record.Metadata.HoldingHorizonDays = 45;
             await readModifyContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -151,8 +146,10 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
             modelBuilder.Entity<MetadataRecord>(entity =>
             {
                 entity.ToTable("metadata_records");
-                entity.Property(record => record.Metadata)
-                    .HasConversion(new JsonDocumentSqliteValueConverter<ProbeMetadataDocument>());
+                var metadataProperty = entity.Property(record => record.Metadata);
+                metadataProperty.HasConversion(new JsonDocumentSqliteValueConverter<ProbeMetadataDocument>());
+                metadataProperty.Metadata.SetValueComparer(
+                    new JsonDocumentSqliteValueComparer<ProbeMetadataDocument>());
             });
     }
 
@@ -173,7 +170,7 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
 
         public decimal CompanySizeFloor { get; init; }
 
-        public int HoldingHorizonDays { get; init; }
+        public int HoldingHorizonDays { get; set; }
 
         public string DeliveryWindowZone { get; init; } = string.Empty;
 

@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SmoothAiStockAnalysis.Domain.Documents;
 
 namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 
@@ -15,8 +15,8 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 /// document stays an opaque, self-versioned payload rather than an EF-managed entity graph:
 /// <list type="bullet">
 ///   <item>unknown / forward-compatible fields survive a read-modify-write cycle via the document's
-///     extension data, where <c>.ToJson()</c> would silently discard any property absent from the
-///     current CLR model;</item>
+///     extension data, whereas an EF-owned JSON graph has no equivalent opaque-payload
+///     preservation contract;</item>
 ///   <item>the schema version is a first-class member of the payload (NFR-048), not a scattered
 ///     owned-entity column;</item>
 ///   <item>adding a preference is a document-version change, not an EF model migration.</item>
@@ -28,21 +28,22 @@ internal sealed class JsonDocumentSqliteValueConverter<TDocument> : ValueConvert
     where TDocument : class, IVersionedDocument
 {
     /// <summary>
-    /// Initializes a new instance using the canonical <see cref="SqliteJsonSerialization.Default"/>
-    /// serialization contract.
+    /// Initializes a new instance using the canonical SQLite JSON serialization contract.
     /// </summary>
     public JsonDocumentSqliteValueConverter()
-        : this(SqliteJsonSerialization.Default)
+        : base(
+            document => Serialize(document),
+            json => Deserialize(json))
     {
     }
 
-    /// <summary>
-    /// Initializes a new instance using the supplied serialization contract.
-    /// </summary>
-    public JsonDocumentSqliteValueConverter(JsonSerializerOptions options)
-        : base(
-            document => JsonSerializer.Serialize(document, options),
-            json => JsonSerializer.Deserialize<TDocument>(json, options)!)
+    private static string Serialize(TDocument document)
     {
+        ArgumentNullException.ThrowIfNull(document);
+        return System.Text.Json.JsonSerializer.Serialize(document, SqliteJsonSerialization.Default);
     }
+
+    private static TDocument Deserialize(string json) =>
+        System.Text.Json.JsonSerializer.Deserialize<TDocument>(json, SqliteJsonSerialization.Default)
+        ?? throw new InvalidOperationException($"Persisted {typeof(TDocument).Name} JSON must not be null.");
 }

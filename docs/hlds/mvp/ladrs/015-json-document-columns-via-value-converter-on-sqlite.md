@@ -15,16 +15,17 @@ The representation must round-trip losslessly, carry an explicit schema version,
 
 Persist a versioned structured document as a **single canonical JSON `TEXT` column** through a reusable `JsonDocumentSqliteValueConverter<TDocument>` backed by `System.Text.Json`.
 
-- `TDocument` must implement `IVersionedDocument` — an explicit `int SchemaVersion` member (NFR-048). The versioning rule is enforced at the type level, not by convention.
+- `TDocument` must implement the Domain's `IVersionedDocument` — an explicit `int SchemaVersion` member (NFR-048). The versioning rule is enforced at the type level without making Domain depend on Infrastructure.
 - The document should retain unknown members through a `[JsonExtensionData]` property, so a field written by a newer schema version survives a read-modify-write cycle.
 - The stored serialization contract is fixed by `SqliteJsonSerialization.Default` (camelCase names, compact output). Changing those options changes the on-disk representation and is a schema-version concern.
 - The converter is applied **per property** in the owning entity's model configuration. It is not a global convention (unlike the LADR-014 NodaTime converters), because only document-typed properties are mapped this way.
+- Each mapped mutable document also receives `JsonDocumentSqliteValueComparer<TDocument>`, which snapshots and compares canonical JSON so an in-place edit is detected by EF Core change tracking.
 
 ## Alternatives considered
 
 **EF Core native owned-entity JSON mapping (`OwnsOne(...).ToJson()`).** Rejected:
 
-- It materializes only mapped CLR properties and **silently discards any JSON property absent from the current model** on the next write — precisely defeating forward-compatible/unknown-field retention.
+- It is an EF-owned graph whose persistence and update behavior is driven by mapped CLR properties; it provides no opaque-payload contract for retaining unknown members via `[JsonExtensionData]`. That is insufficient for this document's forward-compatibility requirement.
 - It scatters the document's shape across an EF-owned entity graph and ties its evolution to EF model changes and migrations; the version marker becomes just another owned column rather than a self-describing payload field.
 - The SQLite provider's support for querying into JSON columns is limited, and this document does not need it — it is resolved wholesale per user.
 
@@ -35,5 +36,5 @@ Persist a versioned structured document as a **single canonical JSON `TEXT` colu
 - The document stays an opaque, self-versioned, inspectable text payload, consistent with the lossless-text approach in LADR-014. `decimal`, `int`, and `string` preferences round-trip exactly.
 - Adding a preference is a **document-version change, not an EF model migration**. No column migration is required until a feature adds the property that carries the document.
 - Forward compatibility is the document's responsibility (its `[JsonExtensionData]` member), not the converter's; a document without one will drop unknown fields.
-- Worktask 02 (T-016) consumes this converter directly: it defines the `UserMetadataDocument` type implementing `IVersionedDocument`, gives it a `[JsonExtensionData]` member, and applies `JsonDocumentSqliteValueConverter<UserMetadataDocument>` to the metadata property on the `User` entity. The versioning rule and serialization contract are settled here.
+- Worktask 02 (T-016) consumes this converter directly: it defines the `UserMetadataDocument` type in Domain implementing `IVersionedDocument`, gives it a `[JsonExtensionData]` member, and applies both `JsonDocumentSqliteValueConverter<UserMetadataDocument>` and `JsonDocumentSqliteValueComparer<UserMetadataDocument>` to the metadata property on the `User` entity. The versioning rule and serialization contract are settled here.
 - A real-file SQLite component test proves the version marker, representative preference values, unknown-field retention across a read-modify-write cycle, and the inspectable `text` column. No EF InMemory or live provider is used.

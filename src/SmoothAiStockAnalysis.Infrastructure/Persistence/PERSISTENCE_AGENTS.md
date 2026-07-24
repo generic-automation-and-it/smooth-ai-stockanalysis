@@ -38,7 +38,7 @@ C4Context
 
 ### LADR-015 — Structured documents as JSON text via a value converter
 
-**Status:** Accepted. Versioned structured documents (e.g. user metadata) persist as one canonical JSON `TEXT` column through `JsonDocumentSqliteValueConverter<TDocument>` (`Converters/`), **not** EF Core's native `OwnsOne(...).ToJson()`. `TDocument` must implement `IVersionedDocument` (explicit `int SchemaVersion`, NFR-048); the document should keep a `[JsonExtensionData]` member so unknown/forward-compatible fields survive a read-modify-write cycle, which `.ToJson()` would silently drop. Unlike the LADR-014 mappings this converter is applied **per property**, not registered globally. Adding a field is a document-version change, not a schema migration. See [LADR-015](../../../docs/hlds/mvp/ladrs/015-json-document-columns-via-value-converter-on-sqlite.md).
+**Status:** Accepted. Versioned structured documents (e.g. user metadata) persist as one canonical JSON `TEXT` column through `JsonDocumentSqliteValueConverter<TDocument>` (`Converters/`), **not** EF Core's native `OwnsOne(...).ToJson()`. `TDocument` implements the Domain's `IVersionedDocument` (explicit `int SchemaVersion`, NFR-048), keeping Domain independent from Infrastructure; the document should keep a `[JsonExtensionData]` member so unknown/forward-compatible fields survive a read-modify-write cycle — an opaque-payload contract an EF-owned JSON graph does not provide. Apply `JsonDocumentSqliteValueComparer<TDocument>` beside the converter whenever the document is mutable, so EF detects in-place changes. Unlike the LADR-014 mappings this pair is applied **per property**, not registered globally. Adding a field is a document-version change, not a schema migration. See [LADR-015](../../../docs/hlds/mvp/ladrs/015-json-document-columns-via-value-converter-on-sqlite.md).
 
 ## Key Behaviors
 
@@ -47,7 +47,7 @@ C4Context
 - `AnalysisHistoryRetentionHostedService` runs the mandatory retention seam daily with a one-calendar-month policy. It is deliberately a no-op until timestamped analysis-history entities arrive in F-003/M3.
 - The connection string in `appsettings.json` can be overridden at runtime by the environment variable `ConnectionStrings__SmoothAiStockAnalysis` (the standard ASP.NET Core double-underscore section separator), which the default environment-variable configuration provider applies after the JSON sources. Relative SQLite data sources are normalized against `AppContext.BaseDirectory`, never the process working directory.
 - Future EF properties of the mapped NodaTime types inherit the global converters automatically. Do not store an offset/local string as the authoritative form of an instant.
-- `JsonDocumentSqliteValueConverter<TDocument>` serializes a document with `SqliteJsonSerialization.Default` (camelCase, compact) — that options instance **is** the stored contract, so changing it changes every persisted payload. The converter is stateless and safe to construct per model configuration; forward-compatibility is the document's `[JsonExtensionData]` responsibility, not the converter's.
+- `JsonDocumentSqliteValueConverter<TDocument>` serializes a document with `SqliteJsonSerialization.Default` (camelCase, compact) — that options instance **is** the stored contract, so changing it changes every persisted payload. The converter is stateless and safe to construct per model configuration; paired `JsonDocumentSqliteValueComparer<TDocument>` provides deep comparison/snapshotting for mutable documents. Forward compatibility is the document's `[JsonExtensionData]` responsibility, not the converter's.
 
 ## Test References
 
@@ -92,3 +92,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-24 | Added the missing mandatory System Context section (with C4Context diagram) between Non-Negotiables and Architecture Decisions, satisfying the repository AGENTS quality standard. | #252 |
 | 2026-07-24 | Added the LADR-014 global, lossless NodaTime SQLite converter contract and its isolated-file L1 coverage. | #6 |
 | 2026-07-24 | Decided the versioned-document representation (LADR-015): per-property `JsonDocumentSqliteValueConverter` over native `.ToJson()`, with `IVersionedDocument` version marker and `[JsonExtensionData]` forward-compatibility; added the isolated-file L1 proof. | #59 |
+| 2026-07-24 | Corrected the LADR-015 adapter boundary and tracking behavior: `IVersionedDocument` now belongs to Domain, and mutable JSON documents use a canonical deep comparer/snapshot. | #59 |
