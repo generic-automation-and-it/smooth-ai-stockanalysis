@@ -31,4 +31,6 @@ It also aligns naturally with the planned authentication work, which then adds a
 
 **Uniqueness constraints become composite** — scoped by user rather than global. Free now, a migration later.
 
+**The user record carries metadata.** Its versioned JSON storage representation is decided in [LADR-015](015-json-document-columns-via-value-converter-on-sqlite.md).
+
 Isolation is a property of the data layer rather than of each developer's diligence.
