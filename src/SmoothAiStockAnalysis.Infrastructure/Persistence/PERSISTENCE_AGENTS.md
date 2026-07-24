@@ -41,8 +41,8 @@ removed it failed PR Gate run `30040969698`.
 
 ## Quality Constraints
 
-- NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/02-nfrs/persistence.md) for the single-transaction boundary.
-- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/02-nfrs/local-operation.md) and [NFR-079](../../../docs/hlds/02-nfrs/observability.md).
+- NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/mvp/nfr/006-durability-and-concurrency.md) for the single-transaction boundary.
+- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/mvp/nfr/013-deployability.md) and [NFR-079](../../../docs/hlds/mvp/nfr/011-observability.md).
 
 ## Package Notes
 
