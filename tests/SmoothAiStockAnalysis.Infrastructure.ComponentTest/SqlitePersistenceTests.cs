@@ -29,6 +29,32 @@ public sealed class SqlitePersistenceTests
     }
 
     [Fact]
+    public async Task AppliesProductionPragmasToFreshConnectionWithoutEnsureCreated()
+    {
+        await using var database = SqliteTestDatabase.Create();
+
+        await using (ServiceProvider setupProvider = CreateServiceProvider(database.ConnectionString))
+        {
+            await using AsyncServiceScope setupScope = setupProvider.CreateAsyncScope();
+            var setupDbContext = setupScope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+            await setupDbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using ServiceProvider serviceProvider = CreateServiceProvider(database.ConnectionString);
+        await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SmoothAiStockAnalysisDbContext>();
+
+        await dbContext.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+
+        DbConnection connection = dbContext.Database.GetDbConnection();
+        (await ExecuteScalarAsync<string>(connection, "PRAGMA journal_mode;", TestContext.Current.CancellationToken))
+            .ToLowerInvariant()
+            .ShouldBe("wal");
+        (await ExecuteScalarAsync<long>(connection, "PRAGMA synchronous;", TestContext.Current.CancellationToken))
+            .ShouldBe(1);
+    }
+
+    [Fact]
     public async Task UnitOfWorkCommitsOneCycleOfWrites()
     {
         await using var database = SqliteTestDatabase.Create();

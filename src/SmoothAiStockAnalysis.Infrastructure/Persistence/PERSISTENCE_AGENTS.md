@@ -24,7 +24,7 @@ Persistence is an Infrastructure-only, on-disk SQLite foundation that batches ea
 
 ## Test References
 
-- **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary.
+- **L1:** `Infrastructure.ComponentTest/SqlitePersistenceTests.cs` verifies the real-file connection settings and the transaction commit/rollback boundary. `AppliesProductionPragmasToFreshConnectionWithoutEnsureCreated` proves the PRAGMA invariant is applied by `SqlitePragmaConnectionInterceptor` alone — on a scope that never calls `EnsureCreatedAsync` — so it stays green independently of whichever path creates the database.
 - **L2:** `Host.IntegrationTest/SmokeTests.cs` starts the Host against an isolated SQLite file and verifies that the production connection interceptor still applies WAL and `synchronous=NORMAL`.
 
 ### L2 fixture override
@@ -41,8 +41,8 @@ removed it failed PR Gate run `30040969698`.
 
 ## Quality Constraints
 
-- NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/02-nfrs/persistence.md) for the single-transaction boundary.
-- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/02-nfrs/local-operation.md) and [NFR-079](../../../docs/hlds/02-nfrs/observability.md).
+- NFR-034 requires one transaction per analysis cycle. See [NFR-034](../../../docs/hlds/mvp/nfr/006-durability-and-concurrency.md) for the single-transaction boundary.
+- NFR-078 and NFR-079 require local operation and tests with no container runtime or external service. See [NFR-078](../../../docs/hlds/mvp/nfr/013-deployability.md) and [NFR-079](../../../docs/hlds/mvp/nfr/011-observability.md).
 
 ## Package Notes
 
@@ -60,3 +60,4 @@ When the first feature adds a persisted entity, introduce the initial migration 
 | 2026-07-23 | Restructured the context to the repository AGENTS quality standard. | #252 |
 | 2026-07-23 | Documented the L2 SQLite connection-invariant coverage. | #252 |
 | 2026-07-23 | Documented why the L2 `DbContextOptions` replacement is required and not redundant. | #252 |
+| 2026-07-24 | Fixed Quality Constraints NFR links to `docs/hlds/mvp/nfr/`; documented the fresh-connection PRAGMA test that decouples the invariant from `EnsureCreatedAsync`. | #252 |
