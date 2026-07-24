@@ -27,7 +27,7 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Persist users through an Infrastructure-owned EF record with `long Id`, `Guid UniqueIdentifier`, and a required versioned metadata document. Map the internal ID to SQLite `INTEGER`, the external GUID to a unique `TEXT` column, and metadata to canonical JSON `TEXT`.
 - Keep the persistence document separate from Domain metadata. Infrastructure owns `[JsonExtensionData]`, the forward-compatible field bag, the LADR-015 converter/comparer, and explicit Domain-to-persistence translation. `UserRecord.FromDomain` is create-only and accepts transient users; persisted updates use the merge-preserving path, retain unknown fields, and cannot regress the document schema version.
 - The initial EF migration lives under `Persistence/Migrations/`; deterministic design-time context creation is available, the generated migration class carries `[ExcludeFromCodeCoverage]`, and production startup applies migrations through `MigrateAsync`.
-- Treat `users` as the tenant root: its `Id` is the ownership key, so it has no self-referencing `UserId`. Future user-owned dependants require a non-null user FK and user-prefixed natural uniqueness; shared market/reference entities remain explicitly unscoped.
+- Treat `user_record` as the tenant root: its `Id` is the ownership key, so it has no self-referencing `UserId`. Future user-owned dependants must call `ConfigureUserOwnedDependent` / `HasUserScopedUniqueIndex` so they receive a required `user_id` FK and user-prefixed natural uniqueness; shared market/reference entities remain explicitly unscoped and must not use those helpers.
 - This work establishes schema ownership only. Query filters, explicit current/system scopes, configured default-user seeding, authentication, and authorization remain owned by later worktasks.
 
 ## Packages to add when implementing
@@ -46,3 +46,4 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 | 2026-07-24 | Registered global, lossless NodaTime SQLite conversions in the persistence context. | #6 |
 | 2026-07-24 | Added the LADR-015 per-property JSON-document value converter for versioned structured documents. | #59 |
 | 2026-07-24 | Added the user persistence record, Infrastructure-owned metadata document, design-time migration tooling, and migration-based startup initialization. | #60, #61, #65 |
+| 2026-07-24 | Aligned tenant-root naming to `user_record` and documented the reusable user-owned composite-uniqueness helpers. | #60, #61, #65 |

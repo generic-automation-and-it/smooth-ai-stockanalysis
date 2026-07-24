@@ -48,27 +48,27 @@ C4Context
 
 ### Initial user schema
 
-The first production feature schema contains only the tenant-root `users` table plus EF's migration history:
+The first production feature schema contains only the tenant-root `user_record` table plus EF's migration history:
 
 | Table | Classification | Ownership key | Required shape |
 |---|---|---|---|
 | `user_record` | Tenant root containing user identity and owned metadata | `id` itself | `id INTEGER` generated primary key, `unique_identifier TEXT NOT NULL` with a global unique index, and `metadata TEXT NOT NULL` |
 | `__EFMigrationsHistory` | EF infrastructure metadata | None | Framework-managed; never user-filtered |
 
-- The table is named `user_record` after the `UserRecord` persistence type, per the LADR-016 global snake_case naming convention; `InitialUserSchema` created it as `users` and the `SnakeCaseNamingConvention` migration renamed it before any production database existed. Both names below refer to this same tenant root.
+- The physical table is named `user_record` after the `UserRecord` persistence type, per the LADR-016 global snake_case naming convention. `InitialUserSchema` originally created it as `users`; `SnakeCaseNamingConvention` renamed it (`users` → `user_record`, `pk_users` → `pk_user_record`, `ux_users_unique_identifier` → `ix_user_record_unique_identifier`) before any production database existed. Canonical docs and code use `user_record` only.
 - `user_record.id` is a compact internal `long` key for future foreign keys. `user_record.unique_identifier` is a stable externally exposable GUID; it is not a secret or access-control mechanism.
 - The tenant root has no self-referencing `user_id`. Worktask 03 must filter this tenant root by `id`.
 - The initial metadata payload carries `"schemaVersion":1` and no preference business fields. Infrastructure owns its serialization representation and preserves unknown members through extension data. Persisted metadata updates merge into the tracked document and reject schema-version regression.
-- There are no production owned-dependent or shared-reference tables yet; do not create placeholders to demonstrate either category.
+- There are no production owned-dependent or shared-reference tables yet; do not create production placeholders to demonstrate either category. The extension path is the shared configuration helpers below, proven by a test-only probe entity.
 
 ### Ownership and uniqueness convention
 
 - Every future user-owned dependent table has a required `user_id` FK to `user_record.id`.
-- Every natural unique index on a user-owned dependent starts with the ownership key: `(user_id, natural_key...)`. A competing global unique index on the same natural key is prohibited.
-- Shared market/reference tables have no `user_id` and are never user-filtered. Shared examples include market data, company financials, news, computed indicators, and sector aggregates.
+- Configure that FK through `Configurations/UserOwnedEntityTypeBuilderExtensions.ConfigureUserOwnedDependent`, which also applies restrictive delete semantics until user-deletion policy is designed.
+- Every natural unique index on a user-owned dependent starts with the ownership key: `(user_id, natural_key...)`. Create it only through `HasUserScopedUniqueIndex(...)`, which prepends `UserId` automatically and rejects an empty or ownership-only key list. A competing global unique index on the same natural key is prohibited.
+- Shared market/reference tables have no `user_id`, are never user-filtered, and must not call the user-owned helpers. Shared examples include market data, company financials, news, computed indicators, and sector aggregates.
 - Owned examples include watchlists, analysis history, recommendations, alerts, notification preferences, and scoring configuration.
 - Infrastructure tables such as `__EFMigrationsHistory` carry no ownership key.
-- Prefer restrictive deletion for future user FKs until user-deletion and retained-history semantics are explicitly designed.
 
 ### Migration-based initialization
 
@@ -94,6 +94,7 @@ The first production feature schema contains only the tenant-root `users` table 
 - **L1:** `Infrastructure.ComponentTest/NodaTimeSqlitePersistenceTests.cs` derives a test-only model from the production context and round-trips time values through its production converter convention against an isolated SQLite file.
 - **L1:** `Infrastructure.ComponentTest/UserMetadataDocumentSqlitePersistenceTests.cs` proves the reusable LADR-015 mapping (T-015/#59) with a test-only document: it round-trips its version marker and representative preferences, retains an unknown forward-compatible field across a read-modify-write cycle, and stores as inspectable `text`.
 - **L1:** `Infrastructure.ComponentTest/UserSchemaMigrationTests.cs` exercises the production user persistence model and initial migration against isolated SQLite. It proves repeatable migration application, physical column/key/index shape, generated internal IDs, external-identifier uniqueness, explicit metadata version storage, Domain translation, and unknown-field retention.
+- **L1:** `Infrastructure.ComponentTest/UserOwnedUniquenessConventionTests.cs` (via `Persistence/OwnershipProbeFixture`) proves the reusable owned-dependent helpers: required `user_id` FK to `user_record`, restrictive delete, composite unique `(user_id, natural_key...)`, same natural key allowed for two users, and rejection of helper misuse that would omit the ownership prefix.
 - **L1:** `Infrastructure.ComponentTest/SnakeCaseNamingConventionTests.cs` proves the LADR-016 global naming convention: an entity added with no explicit naming configuration yields snake_case table, column, primary-key, and index names through a probe context whose only addition is `UseSnakeCaseNamingConvention()`.
 
 ### L2 fixture override
@@ -118,7 +119,7 @@ the production PRAGMAs.
 
 ## Migration Plans
 
-`InitialUserSchema` is the first production migration. It establishes migration history and the `users` tenant root with a generated numeric primary key, globally unique external GUID, and JSON `TEXT` metadata column; `SnakeCaseNamingConvention` (LADR-016) immediately renames that pre-release table to the convention-derived `user_record` shape. Each migration class carries `[ExcludeFromCodeCoverage]`. Startup applies them through `MigrateAsync`. NodaTime properties continue to require no per-entity conversion configuration because they use the LADR-014 global convention, and relational names require no per-entity naming configuration because they use the LADR-016 global naming convention.
+`InitialUserSchema` is the first production migration. It establishes migration history and the tenant-root table with a generated numeric primary key, globally unique external GUID, and JSON `TEXT` metadata column; `SnakeCaseNamingConvention` (LADR-016) immediately renames that pre-release `users` table to the canonical `user_record` shape. Each migration class carries `[ExcludeFromCodeCoverage]`. Startup applies them through `MigrateAsync`. NodaTime properties continue to require no per-entity conversion configuration because they use the LADR-014 global convention, and relational names require no per-entity naming configuration because they use the LADR-016 global naming convention.
 
 ## Changelog
 
@@ -136,3 +137,4 @@ the production PRAGMAs.
 | 2026-07-24 | Corrected the LADR-015 adapter boundary and tracking behavior: `IVersionedDocument` now belongs to Domain, and mutable JSON documents use a canonical deep comparer/snapshot. | #59 |
 | 2026-07-24 | Added the initial user schema and migration-based startup; documented the delivered ownership inventory and composite-uniqueness convention for future owned tables. | #60, #61, #65 |
 | 2026-07-24 | Adopted lower_snake_case as the global relational naming standard (LADR-016) via `EFCore.NamingConventions`; stripped per-entity naming configuration and renamed the pre-release tenant-root table to the convention-derived `user_record` through the `SnakeCaseNamingConvention` migration. | #259 |
+| 2026-07-24 | Aligned tenant-root naming to `user_record` and added reusable owned-dependent composite-uniqueness helpers with L1 proof. | #60, #61, #65 |
