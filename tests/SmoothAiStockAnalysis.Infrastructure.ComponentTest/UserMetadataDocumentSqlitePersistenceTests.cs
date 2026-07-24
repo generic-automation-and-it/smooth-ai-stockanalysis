@@ -49,7 +49,6 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
     [Fact]
     public async Task PreservesUnknownForwardCompatibleFieldsAcrossAReadModifyWriteCycle()
     {
-        // A newer schema version writes a field this reader does not know about.
         const string forwardCompatibleJson =
             """
             {"schemaVersion":2,"companySizeFloor":100000000,"holdingHorizonDays":30,"deliveryWindowZone":"Europe/Oslo","experimentalScoringWeight":0.42}
@@ -70,8 +69,6 @@ public sealed class UserMetadataDocumentSqlitePersistenceTests : IAsyncDisposabl
             id = (long)(await insert.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         }
 
-        // Read the older-known fields, mutate one in place, and persist through the converter.
-        // The production value comparer must detect this without replacing the document instance.
         await using (var readModifyContext = CreateContext(_database.ConnectionString))
         {
             MetadataRecord record = await readModifyContext.MetadataRecords

@@ -21,7 +21,11 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 ///   <item>adding a preference is a document-version change, not an EF model migration.</item>
 /// </list>
 /// The value stays inspectable SQLite text, consistent with the NodaTime mappings in LADR-014, and
-/// keeps SQLite the single persistence mechanism required by LADR-002. See LADR-015.
+/// keeps SQLite the single persistence mechanism required by LADR-002. The converter is typed
+/// <c>ValueConverter&lt;TDocument, string&gt;</c> and the target column is therefore assumed to be
+/// non-nullable; a SQL <c>NULL</c> will surface as an <see cref="InvalidOperationException"/> from
+/// <see cref="Deserialize"/>. A future <c>TDocument?</c> mapping must add an explicit null-handling
+/// step. See LADR-015.
 /// </remarks>
 internal sealed class VersionedDocumentSqliteValueConverter<TDocument> : ValueConverter<TDocument, string>
     where TDocument : class, IVersionedDocument
