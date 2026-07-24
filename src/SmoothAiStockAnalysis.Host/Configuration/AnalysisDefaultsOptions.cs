@@ -6,10 +6,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// <summary>
 /// Section bound for the user-recognition thresholds and scoring weightings (NFR-049).
 /// </summary>
-public sealed class AnalysisDefaultsOptions
+public sealed class AnalysisDefaultsOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Analysis";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>Minimum company size in account currency. Default 250,000,000.</summary>
     public decimal CompanySizeFloor { get; set; } = 250_000_000m;
@@ -33,14 +36,27 @@ public sealed class AnalysisDefaultsOptions
     public int HoldingHorizonDays { get; set; } = 90;
 
     /// <summary>
-    /// Binds the <c>Analysis</c> section from the supplied configuration.
+    /// Binds the <c>Analysis</c> section from the supplied configuration and validates each
+    /// value against the documented range (NFR-008, NFR-047).
     /// </summary>
     public static AnalysisDefaultsOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new AnalysisDefaultsOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequirePositive(CompanySizeFloor, nameof(CompanySizeFloor));
+        RequirePositive(MinAverageDailyVolume, nameof(MinAverageDailyVolume));
+        RequirePositive(MinDaysTraded, nameof(MinDaysTraded));
+        RequirePositive(HoldingHorizonDays, nameof(HoldingHorizonDays));
+        RequireUnitInterval(ScoringWeightEvent, nameof(ScoringWeightEvent));
+        RequireUnitInterval(ScoringWeightFundamental, nameof(ScoringWeightFundamental));
+        RequireUnitInterval(ScoringWeightSentiment, nameof(ScoringWeightSentiment));
     }
 
     internal AnalysisDefaults ToDefaults() => new(

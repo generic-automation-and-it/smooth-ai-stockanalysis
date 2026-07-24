@@ -6,10 +6,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// <summary>
 /// Section bound for the per-cycle stage caps. Defaults follow NFR-025 (50 / 20 / 10 / 5).
 /// </summary>
-public sealed class CostCapsOptions
+public sealed class CostCapsOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "CostCaps";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>Event-detection stage cap. Default 50.</summary>
     public int Event { get; set; } = 50;
@@ -24,14 +27,25 @@ public sealed class CostCapsOptions
     public int Delivery { get; set; } = 5;
 
     /// <summary>
-    /// Binds the <c>CostCaps</c> section from the supplied configuration.
+    /// Binds the <c>CostCaps</c> section from the supplied configuration and validates each cap
+    /// is strictly positive (NFR-025, NFR-047). Zero or negative caps would silently disable a
+    /// stage, which the worktask-02 contract forbids.
     /// </summary>
     public static CostCapsOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new CostCapsOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequirePositive(Event, nameof(Event));
+        RequirePositive(Fundamental, nameof(Fundamental));
+        RequirePositive(Reasoning, nameof(Reasoning));
+        RequirePositive(Delivery, nameof(Delivery));
     }
 
     internal CostCaps ToDefaults() => new(Event, Fundamental, Reasoning, Delivery);

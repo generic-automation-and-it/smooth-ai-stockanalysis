@@ -1,16 +1,16 @@
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using SmoothAiStockAnalysis.Application.Configuration;
 using SmoothAiStockAnalysis.Host.Configuration;
+using SmoothAiStockAnalysis.Host.Extensions;
 
 namespace SmoothAiStockAnalysis.Host.UnitTest;
 
 /// <summary>
 /// L0 coverage for the F-004 settings catalogue sections (T-025). Each section's
-/// <c>FromConfiguration</c> is exercised for happy-path bind; cycle/window composition is
-/// also exercised for fail-fast on malformed values. Defaults match the catalogue table in
-/// <c>HOST_AGENTS.md</c>.
+/// <c>FromConfiguration</c> is exercised for happy-path bind and fail-fast on invalid values
+/// (NFR-008, NFR-047). Defaults match the catalogue table in <c>HOST_AGENTS.md</c>.
 /// </summary>
 public sealed class CatalogueOptionsTests
 {
@@ -45,6 +45,43 @@ public sealed class CatalogueOptionsTests
         options.HoldingHorizonDays.ShouldBe(180);
     }
 
+    [Theory]
+    [InlineData("Analysis:CompanySizeFloor", "0")]
+    [InlineData("Analysis:CompanySizeFloor", "-1")]
+    [InlineData("Analysis:MinAverageDailyVolume", "0")]
+    [InlineData("Analysis:MinAverageDailyVolume", "-100")]
+    [InlineData("Analysis:MinDaysTraded", "0")]
+    [InlineData("Analysis:MinDaysTraded", "-7")]
+    [InlineData("Analysis:HoldingHorizonDays", "0")]
+    [InlineData("Analysis:HoldingHorizonDays", "-30")]
+    public void AnalysisDefaultsRejectNonPositiveNumericAndInt(string key, string value)
+    {
+        IConfiguration configuration = BuildConfiguration((key, value));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AnalysisDefaultsOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(key);
+        exception.Message.ShouldNotContain(value);
+    }
+
+    [Theory]
+    [InlineData("Analysis:ScoringWeightEvent", "-0.01")]
+    [InlineData("Analysis:ScoringWeightEvent", "1.01")]
+    [InlineData("Analysis:ScoringWeightFundamental", "-0.50")]
+    [InlineData("Analysis:ScoringWeightFundamental", "2.00")]
+    [InlineData("Analysis:ScoringWeightSentiment", "1.50")]
+    public void AnalysisDefaultsRejectOutOfUnitIntervalScoringWeight(string key, string value)
+    {
+        IConfiguration configuration = BuildConfiguration((key, value));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AnalysisDefaultsOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(key);
+        exception.Message.ShouldNotContain(value);
+    }
+
     [Fact]
     public void CostCapsBindTheNfr025Defaults()
     {
@@ -57,6 +94,23 @@ public sealed class CatalogueOptionsTests
         options.Delivery.ShouldBe(5);
     }
 
+    [Theory]
+    [InlineData("CostCaps:Event", "0")]
+    [InlineData("CostCaps:Event", "-1")]
+    [InlineData("CostCaps:Fundamental", "0")]
+    [InlineData("CostCaps:Reasoning", "0")]
+    [InlineData("CostCaps:Delivery", "-5")]
+    public void CostCapsRejectNonPositiveStageCaps(string key, string value)
+    {
+        IConfiguration configuration = BuildConfiguration((key, value));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CostCapsOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(key);
+        exception.Message.ShouldNotContain(value);
+    }
+
     [Fact]
     public void FxMultipliersBindTheDocumentedPlaceholders()
     {
@@ -65,6 +119,22 @@ public sealed class CatalogueOptionsTests
         options.UsdEur.ShouldBe(0.92m);
         options.UsdGbp.ShouldBe(0.79m);
         options.UsdJpy.ShouldBe(150.0m);
+    }
+
+    [Theory]
+    [InlineData("FxMultipliers:UsdEur", "0")]
+    [InlineData("FxMultipliers:UsdEur", "-0.92")]
+    [InlineData("FxMultipliers:UsdGbp", "0")]
+    [InlineData("FxMultipliers:UsdJpy", "-1.5")]
+    public void FxMultipliersRejectNonPositiveMultipliers(string key, string value)
+    {
+        IConfiguration configuration = BuildConfiguration((key, value));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => FxMultipliersOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(key);
+        exception.Message.ShouldNotContain(value);
     }
 
     [Fact]
@@ -90,25 +160,36 @@ public sealed class CatalogueOptionsTests
     }
 
     [Fact]
-    public void CycleRejectsMalformedInterval()
+    public void CycleRejectsMalformedIntervalAtSectionBind()
     {
         IConfiguration configuration = BuildConfiguration(("Cycle:Interval", "not-a-timespan"));
 
-        CycleOptions options = CycleOptions.FromConfiguration(configuration);
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CycleOptions.FromConfiguration(configuration));
 
-        InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => _ = options.ToDefaults());
         exception.Message.ShouldContain(CycleOptions.IntervalPath);
         exception.Message.ShouldNotContain("not-a-timespan");
     }
 
     [Fact]
-    public void CycleRejectsNonPositiveInterval()
+    public void CycleRejectsBlankIntervalAtSectionBind()
+    {
+        IConfiguration configuration = BuildConfiguration(("Cycle:Interval", "   "));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CycleOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(CycleOptions.IntervalPath);
+    }
+
+    [Fact]
+    public void CycleRejectsNonPositiveIntervalAtSectionBind()
     {
         IConfiguration configuration = BuildConfiguration(("Cycle:Interval", "00:00:00"));
 
-        CycleOptions options = CycleOptions.FromConfiguration(configuration);
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => CycleOptions.FromConfiguration(configuration));
 
-        InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => _ = options.ToDefaults());
         exception.Message.ShouldContain(CycleOptions.IntervalPath);
     }
 
@@ -151,6 +232,27 @@ public sealed class CatalogueOptionsTests
         options.MarketDataModel.ShouldBe("gpt-4o-mini");
     }
 
+    [Theory]
+    [InlineData("Provider:Reasoning", "")]
+    [InlineData("Provider:Reasoning", "   ")]
+    [InlineData("Provider:ReasoningModel", "")]
+    [InlineData("Provider:MarketData", "   ")]
+    [InlineData("Provider:MarketDataModel", "")]
+    public void ProviderRejectsBlankProviderAndModelKnobs(string key, string value)
+    {
+        IConfiguration configuration = BuildConfiguration((key, value));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => ProviderOptions.FromConfiguration(configuration));
+
+        exception.Message.ShouldContain(key);
+        // Blank/whitespace is not secret-shaped, but keep the LADR-018 no-echo contract consistent.
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            exception.Message.ShouldNotContain(value);
+        }
+    }
+
     [Fact]
     public void ProviderSectionsContainNoCredentialShapedProperties()
     {
@@ -188,6 +290,67 @@ public sealed class CatalogueOptionsTests
         Should.Throw<ArgumentNullException>(() => ProviderOptions.FromConfiguration(null!));
     }
 
+    [Fact]
+    public void AddConfigurationRejectsInvalidCycleInterval()
+    {
+        IConfiguration configuration = BuildConfiguration(("Cycle:Interval", "00:00:00"));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AddConfigurationForTest(configuration));
+
+        exception.Message.ShouldContain(CycleOptions.IntervalPath);
+    }
+
+    [Fact]
+    public void AddConfigurationRejectsInvalidDeliveryWindowStart()
+    {
+        IConfiguration configuration = BuildConfiguration(("Cycle:DeliveryWindowStart", "not-a-time"));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AddConfigurationForTest(configuration));
+
+        exception.Message.ShouldContain(CycleOptions.DeliveryWindowStartPath);
+        exception.Message.ShouldNotContain("not-a-time");
+    }
+
+    [Fact]
+    public void AddConfigurationRejectsNegativeCostCap()
+    {
+        IConfiguration configuration = BuildConfiguration(("CostCaps:Event", "-1"));
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(
+            () => AddConfigurationForTest(configuration));
+
+        exception.Message.ShouldContain("CostCaps:Event");
+        exception.Message.ShouldNotContain("-1");
+    }
+
+    [Fact]
+    public void AddConfigurationAcceptsCommittedDefaults()
+    {
+        IServiceProvider provider = AddConfigurationForTest(new ConfigurationBuilder().Build());
+        IApplicationDefaults defaults = provider.GetRequiredService<IApplicationDefaults>();
+
+        defaults.CostCaps.Event.ShouldBe(50);
+        defaults.GetDefaultDeliveryWindow().TimeZoneId.ShouldBe("Europe/Paris");
+    }
+
+    [Fact]
+    public void AddConfigurationRegistersOnlyTheValidatedApplicationDefaultsFacade()
+    {
+        IServiceProvider provider = AddConfigurationForTest(new ConfigurationBuilder().Build());
+
+        provider.GetService<IApplicationDefaults>().ShouldNotBeNull();
+
+        // Single validated path: no unvalidated IOptions<section> bindings are registered for the
+        // catalogue sections (NFR-047 / worktask-02 double-bind avoidance).
+        provider.GetService<Microsoft.Extensions.Options.IOptions<AnalysisDefaultsOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<CostCapsOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<FxMultipliersOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<CycleOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<ProviderOptions>>().ShouldBeNull();
+    }
+
     private static ApplicationDefaults CreateApplicationDefaults(
         string deliveryWindowTimeZoneId = "Europe/Paris",
         string deliveryWindowStart = "07:00",
@@ -202,11 +365,19 @@ public sealed class CatalogueOptionsTests
         };
 
         return new ApplicationDefaults(
-            Options.Create(new AnalysisDefaultsOptions()),
-            Options.Create(new CostCapsOptions()),
-            Options.Create(new FxMultipliersOptions()),
-            Options.Create(cycle),
-            Options.Create(new ProviderOptions()));
+            new AnalysisDefaultsOptions(),
+            new CostCapsOptions(),
+            new FxMultipliersOptions(),
+            cycle,
+            new ProviderOptions());
+    }
+
+    private static IServiceProvider AddConfigurationForTest(IConfiguration configuration)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddConfiguration(configuration);
+        return services.BuildServiceProvider();
     }
 
     private static IConfiguration BuildConfiguration(params (string Key, string? Value)[] values)

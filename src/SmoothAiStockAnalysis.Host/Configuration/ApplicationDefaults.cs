@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NodaTime;
 using NodaTime.Text;
 using SmoothAiStockAnalysis.Application.Configuration;
@@ -8,7 +7,7 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 
 /// <summary>
 /// The Host-side composition of <see cref="IApplicationDefaults"/>: the catalogue façade fed
-/// by the section <c>IOptions&lt;T&gt;</c> instances. Constructed once at startup.
+/// by the already-validated section options. Constructed once at startup.
 /// </summary>
 public sealed class ApplicationDefaults : IApplicationDefaults
 {
@@ -19,16 +18,17 @@ public sealed class ApplicationDefaults : IApplicationDefaults
     private readonly DeliveryWindow _defaultDeliveryWindow;
 
     /// <summary>
-    /// Composes the façade from the bound section options. Cross-section validation (delivery
-    /// window parse and TZDB lookup) runs here so a bad deploy config fails when the catalogue
-    /// is composed, not mid-cycle (NFR-047).
+    /// Composes the façade from section options that have already been bound and range-validated
+    /// by <c>FromConfiguration</c>. Cross-section validation (delivery window parse and TZDB
+    /// lookup) runs here so a bad deploy config fails when the catalogue is composed, not
+    /// mid-cycle (NFR-047).
     /// </summary>
-    public ApplicationDefaults(
-        IOptions<AnalysisDefaultsOptions> analysis,
-        IOptions<CostCapsOptions> costCaps,
-        IOptions<FxMultipliersOptions> fxMultipliers,
-        IOptions<CycleOptions> cycle,
-        IOptions<ProviderOptions> provider)
+    internal ApplicationDefaults(
+        AnalysisDefaultsOptions analysis,
+        CostCapsOptions costCaps,
+        FxMultipliersOptions fxMultipliers,
+        CycleOptions cycle,
+        ProviderOptions provider)
     {
         ArgumentNullException.ThrowIfNull(analysis);
         ArgumentNullException.ThrowIfNull(costCaps);
@@ -36,11 +36,11 @@ public sealed class ApplicationDefaults : IApplicationDefaults
         ArgumentNullException.ThrowIfNull(cycle);
         ArgumentNullException.ThrowIfNull(provider);
 
-        Analysis = analysis.Value.ToDefaults();
-        CostCaps = costCaps.Value.ToDefaults();
-        FxMultipliers = fxMultipliers.Value.ToDefaults();
-        _cycle = cycle.Value.ToDefaults();
-        Provider = provider.Value.ToDefaults();
+        Analysis = analysis.ToDefaults();
+        CostCaps = costCaps.ToDefaults();
+        FxMultipliers = fxMultipliers.ToDefaults();
+        _cycle = cycle.ToDefaults();
+        Provider = provider.ToDefaults();
         _defaultDeliveryWindow = CreateDefaultDeliveryWindow(_cycle);
     }
 

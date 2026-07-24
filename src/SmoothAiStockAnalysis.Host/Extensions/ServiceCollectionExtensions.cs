@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using SmoothAiStockAnalysis.Application.Configuration;
 using SmoothAiStockAnalysis.Host.Configuration;
 
@@ -16,9 +15,12 @@ public static class ServiceCollectionExtensions
     /// façade. The composition root should call this once after <c>DefaultUser</c> validation.
     /// </summary>
     /// <remarks>
-    /// Catalogue sections are bound and composed eagerly so invalid deploy configuration fails
-    /// during Host composition (NFR-047), matching the <c>DefaultUser</c> fail-fast style rather
-    /// than waiting for the first settings resolve mid-cycle.
+    /// Catalogue sections are bound, range-validated, and composed eagerly so invalid deploy
+    /// configuration fails during Host composition (NFR-047), matching the <c>DefaultUser</c>
+    /// fail-fast style rather than waiting for the first settings resolve mid-cycle. The Host
+    /// registers only the validated <see cref="IApplicationDefaults"/> singleton — it does not
+    /// also expose unvalidated <c>IOptions&lt;T&gt;</c> section bindings, so there is a single
+    /// validated configuration path.
     /// </remarks>
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
@@ -31,19 +33,14 @@ public static class ServiceCollectionExtensions
         CycleOptions cycle = CycleOptions.FromConfiguration(configuration);
         ProviderOptions provider = ProviderOptions.FromConfiguration(configuration);
 
-        // Eager composition validates interval parsing and the default delivery window (zone + HH:mm).
+        // Eager composition validates the default delivery window (zone + HH:mm) after each
+        // section's own FromConfiguration range checks have already run.
         var applicationDefaults = new ApplicationDefaults(
-            Options.Create(analysis),
-            Options.Create(costCaps),
-            Options.Create(fxMultipliers),
-            Options.Create(cycle),
-            Options.Create(provider));
-
-        services.Configure<AnalysisDefaultsOptions>(configuration.GetSection(AnalysisDefaultsOptions.SectionName));
-        services.Configure<CostCapsOptions>(configuration.GetSection(CostCapsOptions.SectionName));
-        services.Configure<FxMultipliersOptions>(configuration.GetSection(FxMultipliersOptions.SectionName));
-        services.Configure<CycleOptions>(configuration.GetSection(CycleOptions.SectionName));
-        services.Configure<ProviderOptions>(configuration.GetSection(ProviderOptions.SectionName));
+            analysis,
+            costCaps,
+            fxMultipliers,
+            cycle,
+            provider);
 
         services.AddSingleton<IApplicationDefaults>(applicationDefaults);
 

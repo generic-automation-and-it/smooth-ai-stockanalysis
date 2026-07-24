@@ -10,10 +10,13 @@ namespace SmoothAiStockAnalysis.Host.Configuration;
 /// Credentials never belong in this section (NFR-043). Actual API keys are read from
 /// environment variables in worktask 03 (T-027 / #71).
 /// </remarks>
-public sealed class ProviderOptions
+public sealed class ProviderOptions : CatalogueSectionOptions
 {
     /// <summary>Gets the configuration section name.</summary>
     public const string SectionName = "Provider";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => SectionName;
 
     /// <summary>Reasoning provider name. Placeholder only — credential belongs in env. Default "OpenAI".</summary>
     public string Reasoning { get; set; } = "OpenAI";
@@ -28,14 +31,25 @@ public sealed class ProviderOptions
     public string MarketDataModel { get; set; } = "gpt-4o-mini";
 
     /// <summary>
-    /// Binds the <c>Provider</c> section from the supplied configuration.
+    /// Binds the <c>Provider</c> section from the supplied configuration and validates each
+    /// knob is non-blank (NFR-021, NFR-047). A blank model identifier would resolve a missing
+    /// upstream at every cycle, surfacing as an intermittent failure rather than a config error.
     /// </summary>
     public static ProviderOptions FromConfiguration(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         var options = new ProviderOptions();
         configuration.GetSection(SectionName).Bind(options);
+        options.Validate();
         return options;
+    }
+
+    private void Validate()
+    {
+        RequireNonBlank(Reasoning, nameof(Reasoning));
+        RequireNonBlank(ReasoningModel, nameof(ReasoningModel));
+        RequireNonBlank(MarketData, nameof(MarketData));
+        RequireNonBlank(MarketDataModel, nameof(MarketDataModel));
     }
 
     internal ProviderDefaults ToDefaults() => new(Reasoning, ReasoningModel, MarketData, MarketDataModel);
