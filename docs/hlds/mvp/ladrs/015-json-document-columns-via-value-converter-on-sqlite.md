@@ -28,7 +28,7 @@ For user metadata, Domain and persistence use separate representations:
 - Explicit translation connects the representations. Record creation accepts only transient Domain users; persisted updates merge known Domain changes into the existing persistence document so unknown fields are not discarded.
 - A persisted document cannot be downgraded to an earlier schema version. Retaining fields written by a newer contract while lowering `SchemaVersion` would make the marker misrepresent its payload.
 
-**Implementation status:** delivered by worktask 02. Domain `UserMetadata` is serialization-free, while Infrastructure `UserMetadataDocument` owns extension data and the production EF mapping.
+**Implementation status:** delivered by the user-foundation work under story #7 (document converter, Domain/Infra split, production EF mapping). Extended by F-004 (#68/#69): `UserMetadata` / `UserMetadataDocument` schema version **2** carries one nullable typed preference field per settings-catalogue key. A legacy on-disk v1 payload reconstitutes with `SchemaVersion == 1` and all preferences unset (fall through to application defaults); the next `ApplyDomainState` write promotes the marker to the current schema version. Adding a preference remains a document-version change, not an EF migration.
 
 ## Alternatives considered
 
@@ -47,3 +47,4 @@ For user metadata, Domain and persistence use separate representations:
 - Forward compatibility is the document's responsibility (its `[JsonExtensionData]` member), not the converter's; a document without one will drop unknown fields.
 - User metadata uses a serialization-free Domain type implementing `IVersionedDocument` and a separate Infrastructure persistence document with `[JsonExtensionData]`. Infrastructure applies both `VersionedDocumentSqliteValueConverter<UserMetadataDocument>` and `VersionedDocumentSqliteValueComparer<UserMetadataDocument>` to the persisted property and translates explicitly between the two representations.
 - A real-file SQLite component test proves the version marker, representative preference values, unknown-field retention across a read-modify-write cycle, and the inspectable `text` column. No EF InMemory or live provider is used.
+- After F-004, the production user-metadata document also proves typed preference round-trip, legacy v1 read-as-unset-preferences, and schema-version regression rejection on `ApplyDomainState`.

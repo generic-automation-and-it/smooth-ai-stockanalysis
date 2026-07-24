@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SmoothAiStockAnalysis.Application.Common.Configuration;
 using SmoothAiStockAnalysis.Application.Common.Persistence;
+using SmoothAiStockAnalysis.Infrastructure.Configuration;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Retention;
 
@@ -87,6 +89,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAnalysisHistoryRetentionJob, AnalysisHistoryRetentionJob>();
         services.AddHostedService<SqliteDatabaseInitializer>();
         services.AddHostedService<AnalysisHistoryRetentionHostedService>();
+        services.AddScoped<IUserMetadataProvider, Configuration.UserMetadataProvider>();
 
         return services;
     }

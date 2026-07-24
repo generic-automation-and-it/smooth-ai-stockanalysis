@@ -13,8 +13,8 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 
 ## Key Behaviors
 
-- The template `Program.cs` is a bare bootstrap (`CreateBuilder → Build → Run`) with no registered endpoints, so any un-routed request returns `404` — this is exactly what the Host integration smoke test asserts. Replace it with real composition (Serilog, OpenAPI/Scalar, health checks, `AddApplication`/`AddInfrastructure`, endpoint mapping) as features land.
-- Persistence enters the composition root through `AddInfrastructure(defaultUserUniqueIdentifier)` after Host fail-fast validation of `DefaultUser`. That extension resolves the connection string only when EF creates its DbContext options, so configuration providers composed by `WebApplicationFactory` can select the isolated L2 database without replacing those options. The Host-validated GUID is registered as `DefaultUserSeedOptions` for the startup initializer.
+- `Program.cs` is the composition root: after fail-fast `DefaultUser` validation it registers `AddInfrastructure`, eager F-004 `AddConfiguration`, `AddApplication`, and `IClock`. There are still **no mapped endpoints**, so any un-routed request returns `404` — that is what the Host integration smoke test asserts. Remaining composition (Serilog, OpenAPI/Scalar, health checks, endpoint mapping) lands with later features.
+- Persistence enters through `AddInfrastructure(defaultUserUniqueIdentifier)`. That extension resolves the connection string only when EF creates its DbContext options, so configuration providers composed by `WebApplicationFactory` can select the isolated L2 database without replacing those options. The Host-validated GUID is registered as `DefaultUserSeedOptions` for the startup initializer.
 - F-001 verified the solution dependency graph: `SmoothAiStockAnalysis.Domain` has no project references; `SmoothAiStockAnalysis.Application` references Domain; `SmoothAiStockAnalysis.Infrastructure` references Application and Domain to implement application contracts; and this Host references Application, Domain, and Infrastructure. No layer references Host and there are no cycles.
 
 ## Data-access scopes
@@ -27,8 +27,48 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 ### Phase-1 default user configuration (T-022 / #66)
 
 - Committed deployment configuration documents section `DefaultUser` with non-secret placeholder identity only (`DefaultUser:UniqueIdentifier`). Override at deploy time with `DefaultUser__UniqueIdentifier` (NFR-044, NFR-080). No credentials belong in this section (NFR-043).
-- Host binds and validates the section at startup (same fail-fast pattern as `DeliveryWindow`). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
+- Host binds and validates the section at startup (same fail-fast family as the F-004 catalogue composition). Missing, empty, malformed, or `Guid.Empty` values throw before the host builds, and the exception message names `DefaultUser:UniqueIdentifier` (NFR-047). Validated identity is registered for Infrastructure seeding; Host does not write to the database.
 - Phase 1 has **no authentication**. The configured GUID is a stable external identifier for the single seeded tenant (LADR-010), not a credential, session token, or authorization claim. Future sign-in adds a front door; it does not replace this seed contract.
+
+### F-004 settings catalogue composition (T-024, T-025 / #68, #69)
+
+- `AddConfiguration(this IServiceCollection, IConfiguration)` **eagerly** binds five Host-owned section options (`Analysis`, `CostCaps`, `FxMultipliers`, `Cycle`, `Provider`), composes the `IApplicationDefaults` façade immediately, and registers that instance as a singleton. Composition fails fast if `Cycle:Interval` is missing/malformed/non-positive or if the default delivery window (`Cycle:DeliveryWindowTimeZoneId` / `Start` / `End`) cannot form a valid `DeliveryWindow` — exception messages name the configuration path and do not echo invalid payload values (NFR-047). `AddApplication()` then registers the scoped `ISettingsResolver` over the façade. The composition root calls `AddConfiguration` once, after `DefaultUser` validation, before `AddApplication`.
+- The Host-owned section options live in `Configuration/` and follow the `DefaultUser` options style: a `FromConfiguration(IConfiguration)` static bind, a `SectionName` const, and a `ToDefaults()` conversion that produces the corresponding Application `IApplicationDefaults` fragment. Defaults are documented in XML docs beside each property and in the table below (NFR-049).
+- The catalogue exposes only non-secret tunables. The `Provider` section carries provider names and model identifiers (NFR-021) and has no API-key or token property; actual credentials arrive in worktask 03 (T-027 / #71) via environment variables.
+- There is no standalone `DeliveryWindow` Host options class. The cycle section owns the window strings; `ApplicationDefaults` materialises the default `DeliveryWindow` once at composition; the resolver produces the effective per-user window (HLD §7.2 unification, NFR-045).
+- `IApplicationDefaults` captures bound values at composition time. Deploy-time changes require a process restart (NFR-046 is satisfied by configuration/metadata, not by hot-reload of the singleton façade).
+
+## Catalogue Defaults Table
+
+| Section key | Type | Default | NFR / source |
+|---|---|---|---|
+| `Analysis:CompanySizeFloor` | `decimal` | 250,000,000 | Sized floor for "small-cap" cutoff. |
+| `Analysis:MinAverageDailyVolume` | `decimal` | 100,000 | Liquidity floor (LADR-012 median). |
+| `Analysis:MinDaysTraded` | `int` | 30 | Minimum trading days. |
+| `Analysis:ScoringWeightEvent` | `decimal` | 0.50 | Event-driven funnel weight (LADR-005). |
+| `Analysis:ScoringWeightFundamental` | `decimal` | 0.30 | Fundamental weight. |
+| `Analysis:ScoringWeightSentiment` | `decimal` | 0.20 | Sentiment weight. |
+| `Analysis:HoldingHorizonDays` | `int` | 90 | Default holding horizon. |
+| `CostCaps:Event` | `int` | 50 | NFR-025 first stage. |
+| `CostCaps:Fundamental` | `int` | 20 | NFR-025 second stage. |
+| `CostCaps:Reasoning` | `int` | 10 | NFR-025 / NFR-026 reasoning ceiling. |
+| `CostCaps:Delivery` | `int` | 5 | NFR-025 delivery stage. |
+| `FxMultipliers:UsdEur` | `decimal` | 0.92 | NFR-050 placeholder; refresh deferred. |
+| `FxMultipliers:UsdGbp` | `decimal` | 0.79 | NFR-050 placeholder. |
+| `FxMultipliers:UsdJpy` | `decimal` | 150.0 | NFR-050 placeholder. |
+| `Cycle:Interval` | `TimeSpan` | `00:15:00` | Cycle scheduling. |
+| `Cycle:DeliveryWindowTimeZoneId` | `string` | `Europe/Paris` | NFR-052 named zone. |
+| `Cycle:DeliveryWindowStart` | `string` (`HH:mm`) | `07:00` | Delivery window inclusive start. |
+| `Cycle:DeliveryWindowEnd` | `string` (`HH:mm`) | `22:00` | Delivery window exclusive end. |
+| `Provider:Reasoning` | `string` | `OpenAI` | NFR-021 provider selection. |
+| `Provider:ReasoningModel` | `string` | `gpt-4o-mini` | Model identifier. |
+| `Provider:MarketData` | `string` | `OpenAI` | Provider selection. |
+| `Provider:MarketDataModel` | `string` | `gpt-4o-mini` | Model identifier. |
+
+## Test References
+
+- **L0:** `Host.UnitTest/CatalogueOptionsTests.cs` proves each of the five Host-owned section options binds its defaults from an empty `IConfiguration`, that a configured value overrides a default, that `Cycle:Interval` and default delivery-window composition reject malformed values with the configuration key named and without echoing the bad payload (NFR-047), that the default window is materialised once, and that the `Provider` options property set is an allow-list of non-secret knobs only (NFR-043/044).
+- **L0:** `Host.UnitTest/DefaultUserOptionsTests.cs` proves fail-fast bind/validation of `DefaultUser:UniqueIdentifier` (missing, empty, malformed, `Guid.Empty`) names the configuration key.
 
 ## Changelog
 
@@ -39,3 +79,6 @@ ASP.NET Core composition root (Minimal API). Wires the application together and 
 | 2026-07-24 | Registered Infrastructure without eagerly reading its connection string, preserving L2 configuration overrides. | #252 |
 | 2026-07-24 | Documented Host composition of explicit data-access scopes and the global isolation filter (no ambient user). | #62, #63, #64 |
 | 2026-07-24 | Documented Phase-1 default-user configuration keys, fail-fast validation, and identity-vs-auth boundary for seed work. | #66, #67, #7 |
+| 2026-07-24 | Added the F-004 settings catalogue composition (`AddConfiguration` + five section options + `IApplicationDefaults` façade); folded the previous standalone `DeliveryWindow` Host options class into the `Cycle` section. | #68, #69 |
+| 2026-07-24 | Made catalogue composition eager (interval + default delivery window fail at Host build) and tightened Provider allow-list / no-echo validation messages. | #68, #69 |
+| 2026-07-24 | Updated Key Behaviors to describe the real Program composition (Infrastructure + catalogue + Application) while endpoints remain unmapped. | #68, #69 |

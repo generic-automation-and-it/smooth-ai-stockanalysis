@@ -30,6 +30,11 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 - Treat `user_record` as the tenant root: its `Id` is the ownership key, so it has no self-referencing `UserId`. Future user-owned dependants must call `ConfigureUserOwnedDependent` / `HasUserScopedUniqueIndex` so they receive a required `user_id` FK and user-prefixed natural uniqueness; shared market/reference entities remain explicitly unscoped and must not use those helpers.
 - Schema ownership, global user-isolation query filters, and the explicit current/system scope contract are delivered. Default-user startup seeding (Host-validated `DefaultUser:UniqueIdentifier`, system-scope idempotent insert after migrate) is delivered with this worktask (T-022/#66). Authentication and authorization remain out of scope (NFR-037).
 
+### F-004 user metadata port and document v2
+
+- `Configuration/UserMetadataProvider` implements Application's `IUserMetadataProvider`. It loads `UserRecord.Metadata` for the requested internal user id through the current DbContext/scope and translates via `UserMetadataDocument.ToDomain()`. Callers must set `IDataAccessScope` first; missing scope fails closed (LADR-017). There is no ambient/default user fallback.
+- `UserMetadataDocument` schema version **2** mirrors the Domain preference fields and keeps `[JsonExtensionData]`. Legacy v1 JSON reads with preferences unset; write-back via `ApplyDomainState` promotes to the current schema version. Details and L1 proofs live in [`Persistence/PERSISTENCE_AGENTS.md`](Persistence/PERSISTENCE_AGENTS.md).
+
 ## Packages to add when implementing
 
 `Microsoft.EntityFrameworkCore(.Relational/.Design/.Tools/.Sqlite)`, `NodaTime`, `Refit.HttpClientFactory`, `Microsoft.Extensions.Http.Resilience` — declared centrally in `Directory.Packages.props`.
@@ -48,3 +53,4 @@ Implements the contracts defined in Application — EF Core + SQLite persistence
 | 2026-07-24 | Added the user persistence record, Infrastructure-owned metadata document, design-time migration tooling, and migration-based startup initialization. | #60, #61, #65 |
 | 2026-07-24 | Aligned tenant-root naming to `user_record` and documented the reusable user-owned composite-uniqueness helpers. | #60, #61, #65 |
 | 2026-07-24 | Documented default-user startup seed after migrations (system scope, idempotent, Host-validated identity). | #66, #67, #7 |
+| 2026-07-24 | Documented F-004 `IUserMetadataProvider` adapter and metadata document schema v2 preference fields. | #68, #69 |

@@ -16,9 +16,9 @@ Constraints:
 
 ## Decision
 
-1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start, in a fail-fast style analogous to `DeliveryWindow` (also validated at process start). The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values.
+1. **Host validates** section `DefaultUser` with key `UniqueIdentifier` (non-empty GUID) at process start. The exception message names `DefaultUser:UniqueIdentifier` and does not echo invalid payload values. The same fail-fast style is used by the F-004 settings catalogue: Host `AddConfiguration` eagerly composes `IApplicationDefaults`, which parses `Cycle:Interval` and materialises the default `DeliveryWindow` from `Cycle:DeliveryWindowTimeZoneId` / `Start` / `End` before the host builds (NFR-047). There is no standalone `DeliveryWindow` configuration section after F-004.
 2. **Committed placeholder** `00000000-0000-4000-8000-000000000001` documents shape; deploy overrides via `DefaultUser__UniqueIdentifier`.
-3. **Infrastructure seeds** after `MigrateAsync` inside `SqliteDatabaseInitializer`, under `ISystemDataAccessScope`. Lookup/insert is keyed by `unique_identifier`; present → no-op; absent → `User.Create` / `UserRecord.FromDomain` with metadata schema version 1.
+3. **Infrastructure seeds** after `MigrateAsync` inside `SqliteDatabaseInitializer`, under `ISystemDataAccessScope`. Lookup/insert is keyed by `unique_identifier`; present → no-op; absent → `User.Create` / `UserRecord.FromDomain` with metadata at `UserMetadata.CurrentSchemaVersion` (schema version **2** after F-004; preferences start unset so the resolver falls through to application defaults).
 4. **Component-test compositions** may disable seed by omitting the identifier (`DefaultUserSeedOptions.None`) so migrate-only tests stay focused.
 
 The configured GUID remains an external identity only — not a credential, session, or authorization claim. Future authentication adds a front door; it does not replace this seed contract.
@@ -36,4 +36,5 @@ The configured GUID remains an external identity only — not a credential, sess
 - A clean deployment migrates, validates, and creates one configured user; a second start does not duplicate it.
 - Misconfiguration fails before any analysis cycle runs.
 - Future background features will resolve the seeded internal `Id` and call `IDataAccessScopeSetter.SetScope(DataAccessScope.ForUser(id))` explicitly — there is no ambient user lookup.
-- Story #7 closes with L0 config validation, L1 seed idempotence + isolation, L2 Host startup against isolated SQLite, and the existing shared-data inverse L1 proof.
+- Seeded metadata is empty at the current document schema (v2 after F-004). Preference overrides are optional user-document fields resolved by `ISettingsResolver`; they are not part of the seed contract.
+- Story #7 closes with L0 config validation, L1 seed idempotence + isolation, L2 Host startup against isolated SQLite, and the existing shared-data inverse L1 proof. F-004 extends the same fail-fast composition path for the settings catalogue without changing the seed identity contract.
