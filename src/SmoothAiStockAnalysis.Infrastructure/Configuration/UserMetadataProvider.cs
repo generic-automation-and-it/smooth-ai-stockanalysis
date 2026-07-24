@@ -21,10 +21,7 @@ internal sealed class UserMetadataProvider(SmoothAiStockAnalysisDbContext dbCont
     /// <inheritdoc />
     public async Task<UserMetadata> GetForUserAsync(long userId, CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(
-            userId,
-            nameof(userId),
-            "A user identifier must be positive.");
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId, nameof(userId));
 
         UserMetadataDocument metadata = await dbContext.Users()
             .Where(user => user.Id == userId)
