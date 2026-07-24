@@ -6,20 +6,24 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 
 /// <summary>
 /// Detects and snapshots mutations to a JSON document mapped through
-/// <see cref="JsonDocumentSqliteValueConverter{TDocument}"/>.
+/// <see cref="VersionedDocumentSqliteValueConverter{TDocument}"/>.
 /// </summary>
 /// <remarks>
 /// EF Core uses reference equality and a shared reference snapshot for mutable reference types by
 /// default. A document can be edited in place, so comparison and snapshotting must both use the
 /// canonical JSON representation. See LADR-015.
 /// </remarks>
-internal sealed class JsonDocumentSqliteValueComparer<TDocument> : ValueComparer<TDocument>
+/// <remarks>
+/// The deep-copy snapshot is produced via <see cref="JsonSerializer.Deserialize{T}(string, JsonSerializerOptions?)"/>,
+/// so <typeparamref name="TDocument"/> must be JSON-round-trippable (a public parameterless constructor and JSON-serializable members).
+/// </remarks>
+internal sealed class VersionedDocumentSqliteValueComparer<TDocument> : ValueComparer<TDocument>
     where TDocument : class, IVersionedDocument
 {
     /// <summary>
     /// Initializes a comparer using the canonical SQLite JSON serialization contract.
     /// </summary>
-    public JsonDocumentSqliteValueComparer()
+    public VersionedDocumentSqliteValueComparer()
         : base(
             (left, right) => AreEqual(left, right),
             document => GetDocumentHashCode(document),

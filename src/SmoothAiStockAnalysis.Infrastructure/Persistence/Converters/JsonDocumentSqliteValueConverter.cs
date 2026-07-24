@@ -23,13 +23,13 @@ namespace SmoothAiStockAnalysis.Infrastructure.Persistence.Converters;
 /// The value stays inspectable SQLite text, consistent with the NodaTime mappings in LADR-014, and
 /// keeps SQLite the single persistence mechanism required by LADR-002. See LADR-015.
 /// </remarks>
-internal sealed class JsonDocumentSqliteValueConverter<TDocument> : ValueConverter<TDocument, string>
+internal sealed class VersionedDocumentSqliteValueConverter<TDocument> : ValueConverter<TDocument, string>
     where TDocument : class, IVersionedDocument
 {
     /// <summary>
     /// Initializes a new instance using the canonical SQLite JSON serialization contract.
     /// </summary>
-    public JsonDocumentSqliteValueConverter()
+    public VersionedDocumentSqliteValueConverter()
         : base(
             document => Serialize(document),
             json => Deserialize(json))
