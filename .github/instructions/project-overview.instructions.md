@@ -8,7 +8,7 @@ alwaysApply: true
 ---
 # Product Overview
 
-Updated: 2026-05-09
+Updated: 2026-07-24
 
 ## Tech Stack
 
