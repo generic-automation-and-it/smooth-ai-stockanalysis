@@ -18,14 +18,14 @@ Define an explicit scope contract in Application (`Common/Persistence/`) and imp
 
 - `DataAccessScope` (`readonly record struct`) with `Kind` (`User` | `System`) and a validated `UserId`. `DataAccessScope.ForUser(id)` rejects non-positive ids; `DataAccessScope.System()` names the ingestion scope.
 - `IDataAccessScopeSetter.SetScope(scope)` is the deliberate, feature-facing entry point. `IDataAccessScope.Current` exposes the resolved scope. `ISystemDataAccessScope` is a **separate interface** for the system bypass so ordinary feature execution cannot reach it without explicitly taking the dependency.
-- Infrastructure's `DataAccessScopeAccessor` (scoped DI lifetime) implements all three. It stores the scope in a settable field; the EF filter reads a **field-backed auto-property whose getter throws `InvalidOperationException` when no scope is set**. That single member gives both required behaviors: EF inlines the tenant key as a constant when a scope is set (correct per-context value, no parameterization leak), and evaluation throws when it is not (fail-closed).
+- Infrastructure's `DataAccessScopeAccessor` (scoped DI lifetime) implements all three. It stores the scope in a settable field; the EF filter reads a getter (`UserIsolationTenantKey`) on the context instance that resolves through a private `CurrentScope` getter which throws `InvalidOperationException` when no scope is set. EF Core re-evaluates that member on the current context per query, so the tenant key is inlined as a per-context constant and two sequential scopes in one process each see their own key. The system scope resolves `UserIsolationTenantKey` to `null`, which the filter recognizes as the deliberate short-circuit (NFR-040 / BR-48).
 - Filters are applied globally in `OnModelCreating`: the tenant root `UserRecord` filters on `Id == CurrentUserId`; every entity marked user-owned (via the `ConfigureUserOwnedDependent` helper, which now also stamps an `IsUserOwned` model annotation) filters on `UserId == CurrentUserId`. Shared reference entities carry no annotation and no filter, so they remain queryable in every scope (NFR-040 / BR-48).
 
 ## Alternatives considered
 
 **`IgnoreQueryFilters` in feature code.** Prohibited: it is an un-auditable bypass scattered across features. The system scope is the only sanctioned bypass and is a named, greppable interface.
 
-**AsyncLocal / thread-local ambient scope.** Rejected: it is exactly the ambient-user assumption LADR-010 forbids, and it leaks across `await` boundaries in ways that are hard to audit. The scope is set deliberately per execution unit.
+**AsyncLocal / thread-local ambient scope.** Rejected: it is the ambient-user assumption LADR-010 forbids. An ambient scope, by definition, is the very thing the explicit `IDataAccessScopeSetter` was introduced to prevent.
 
 **Computed-property filter (parameterized).** Rejected: the EF Core first-value cache can apply one user's key to another user's query.
 
