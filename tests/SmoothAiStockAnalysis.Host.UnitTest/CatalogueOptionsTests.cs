@@ -1,7 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using SmoothAiStockAnalysis.Application.Configuration;
 using SmoothAiStockAnalysis.Host.Configuration;
 using SmoothAiStockAnalysis.Host.Extensions;
@@ -247,6 +246,11 @@ public sealed class CatalogueOptionsTests
             () => ProviderOptions.FromConfiguration(configuration));
 
         exception.Message.ShouldContain(key);
+        // Blank/whitespace is not secret-shaped, but keep the LADR-018 no-echo contract consistent.
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            exception.Message.ShouldNotContain(value);
+        }
     }
 
     [Fact]
@@ -331,6 +335,22 @@ public sealed class CatalogueOptionsTests
         defaults.GetDefaultDeliveryWindow().TimeZoneId.ShouldBe("Europe/Paris");
     }
 
+    [Fact]
+    public void AddConfigurationRegistersOnlyTheValidatedApplicationDefaultsFacade()
+    {
+        IServiceProvider provider = AddConfigurationForTest(new ConfigurationBuilder().Build());
+
+        provider.GetService<IApplicationDefaults>().ShouldNotBeNull();
+
+        // Single validated path: no unvalidated IOptions<section> bindings are registered for the
+        // catalogue sections (NFR-047 / worktask-02 double-bind avoidance).
+        provider.GetService<Microsoft.Extensions.Options.IOptions<AnalysisDefaultsOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<CostCapsOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<FxMultipliersOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<CycleOptions>>().ShouldBeNull();
+        provider.GetService<Microsoft.Extensions.Options.IOptions<ProviderOptions>>().ShouldBeNull();
+    }
+
     private static ApplicationDefaults CreateApplicationDefaults(
         string deliveryWindowTimeZoneId = "Europe/Paris",
         string deliveryWindowStart = "07:00",
@@ -345,11 +365,11 @@ public sealed class CatalogueOptionsTests
         };
 
         return new ApplicationDefaults(
-            Options.Create(new AnalysisDefaultsOptions()),
-            Options.Create(new CostCapsOptions()),
-            Options.Create(new FxMultipliersOptions()),
-            Options.Create(cycle),
-            Options.Create(new ProviderOptions()));
+            new AnalysisDefaultsOptions(),
+            new CostCapsOptions(),
+            new FxMultipliersOptions(),
+            cycle,
+            new ProviderOptions());
     }
 
     private static IServiceProvider AddConfigurationForTest(IConfiguration configuration)
