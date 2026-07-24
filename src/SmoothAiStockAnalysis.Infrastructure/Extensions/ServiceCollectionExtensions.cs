@@ -18,9 +18,16 @@ public static class ServiceCollectionExtensions
     /// when a <see cref="SmoothAiStockAnalysisDbContext"/> is created so later
     /// configuration providers, including integration-test overrides, are honoured.
     /// </summary>
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services) =>
+    /// <param name="services">The service collection.</param>
+    /// <param name="defaultUserUniqueIdentifier">
+    /// Host-validated external identity for the Phase-1 default user seed (LADR-018).
+    /// </param>
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        Guid defaultUserUniqueIdentifier) =>
         RegisterInfrastructurePersistence(
             services,
+            defaultUserUniqueIdentifier,
             serviceProvider => serviceProvider.GetRequiredService<IConfiguration>()
                 .GetConnectionString("SmoothAiStockAnalysis")
                 ?? throw new InvalidOperationException("Missing connection string 'SmoothAiStockAnalysis'."));
@@ -28,19 +35,32 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the file-backed SQLite database and its lifecycle services.
     /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="connectionString">SQLite connection string.</param>
+    /// <param name="defaultUserUniqueIdentifier">
+    /// External identity for the Phase-1 default user seed. Defaults to empty, which disables
+    /// seed registration — production Host always supplies a validated non-empty GUID.
+    /// </param>
     public static IServiceCollection AddInfrastructurePersistence(
         this IServiceCollection services,
-        string connectionString)
+        string connectionString,
+        Guid defaultUserUniqueIdentifier = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        return RegisterInfrastructurePersistence(services, _ => connectionString);
+        return RegisterInfrastructurePersistence(services, defaultUserUniqueIdentifier, _ => connectionString);
     }
 
     private static IServiceCollection RegisterInfrastructurePersistence(
         IServiceCollection services,
+        Guid defaultUserUniqueIdentifier,
         Func<IServiceProvider, string> connectionStringFactory)
     {
+        DefaultUserSeedOptions seedOptions = defaultUserUniqueIdentifier == Guid.Empty
+            ? DefaultUserSeedOptions.None
+            : new DefaultUserSeedOptions(defaultUserUniqueIdentifier);
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(seedOptions));
+
         services.AddSingleton<SqlitePragmaConnectionInterceptor>();
         services.AddScoped<DataAccessScopeAccessor>();
         services.AddScoped<IDataAccessScope>(sp => sp.GetRequiredService<DataAccessScopeAccessor>());
