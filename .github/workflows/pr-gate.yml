@@ -90,7 +90,10 @@ jobs:
       - name: Secret scan
         id: secret-scan
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        timeout-minutes: 5
+        # 15 min parity with the integration level: a full-history scan from
+        # workflow_dispatch (SCAN_LOG_OPTS empty) on a growing repo could
+        # exceed the previous 5-min cap. A PR-range scan finishes in seconds.
+        timeout-minutes: 15
         env:
           # Resolve the scan range from the event so it works on forks (where the
           # PR head ref is not a local branch) and on push to main. For

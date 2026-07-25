@@ -32,17 +32,15 @@ version="${GITLEAKS_VERSION:?GITLEAKS_VERSION must be set}"
 binary_sha="${GITLEAKS_SHA256:?GITLEAKS_SHA256 must be set}"
 config_sha="${GITLEAKS_CONFIG_SHA256:?GITLEAKS_CONFIG_SHA256 must be set}"
 repo_allowlist="${GITLEAKS_CONFIG:-.gitleaks.toml}"
-# SCAN_LOG_OPTS resolution (contract):
-#   The pr-gate workflow always sets SCAN_LOG_OPTS — to a SHA range for
-#   pull_request / push, or to "" for workflow_dispatch (full-history scan).
-#   External callers must set it explicitly; the previous "unset →
-#   origin/main..HEAD" fallback is removed because the workflow is the only
-#   caller and always sets it.
-if [ -z "${SCAN_LOG_OPTS+x}" ]; then
-  echo "::error::SCAN_LOG_OPTS is not set. The pr-gate workflow must always set it (possibly to empty for workflow_dispatch full-history scans)."
-  exit 2
-fi
-log_opts="${SCAN_LOG_OPTS}"
+# SCAN_LOG_OPTS resolution: the workflow ALWAYS sets this (possibly to empty).
+#   non-empty → use that log range (base..head / before..after from the workflow).
+#   empty     → scan full history (no --log-opts flag).
+# An unset variable is treated the same as empty so external callers that invoke
+# scan.sh without the env var do NOT silently scan "origin/main..HEAD"; they
+# scan full history. The previous "unset -> origin/main..HEAD" branch was dead
+# under the workflow (which always sets the var) and was wrong for an external
+# caller invoking scan.sh from a non-PR context, so it was removed.
+log_opts="${SCAN_LOG_OPTS:-}"
 
 install_dir="${HOME}/.local/bin"
 mkdir -p "${install_dir}"
@@ -90,12 +88,16 @@ fi
 #     `path = "…"` line must not be silently rewritten by this pass.
 runtime_allowlist="${HOME}/.local/share/gitleaks-runtime.toml"
 mkdir -p "$(dirname "${runtime_allowlist}")"
+# Scope the rewrite to the [extend] table only. A blanket sed on every
+# `path = "..."` line would silently replace a future rule's file-scoped path
+# with the upstream default config path and break that rule; awk keeps the
+# rewrite inside the [extend] table regardless of future file shape.
 awk -v path="${default_config}" '
   /^\[extend\]/ { in_extend=1; print; next }
   /^\[/          { in_extend=0; print; next }
   in_extend && /^[[:space:]]*path[[:space:]]*=/ {
-    sub(/^[[:space:]]*path[[:space:]]*=[[:space:]]*".*"[[:space:]]*$/,
-        "path = \"" path "\"")
+    print "path = \"" path "\""
+    next
   }
   { print }
 ' "${repo_allowlist}" > "${runtime_allowlist}"
@@ -114,10 +116,10 @@ mkdir -p artifacts/secret-scan
 
 # On a fork pull_request the base SHA may not be reachable from the local
 # history (actions/checkout fetches the head + origin/main, not the base).
-# Fetch the base ref so --log-opts "base..head" resolves. The fetch error
-# is swallowed so `set -e` does not abort on a transient network blip;
-# gitleaks then fails closed with an unresolvable base.sha and a clear
-# error. GITHUB_BASE_REF is set by the pull_request event.
+# Fetch the base ref so --log-opts "base..head" resolves. Best-effort, not
+# strictly idempotent: GITHUB_BASE_REF is set by the pull_request event; a fetch
+# failure falls through to a non-resolvable base sha, which fails the detect
+# step (fail-closed) rather than silently scanning the wrong range.
 if [ -n "${GITHUB_BASE_REF:-}" ]; then
   git fetch --no-tags --quiet origin "${GITHUB_BASE_REF}" 2>/dev/null || true
 fi
@@ -130,6 +132,10 @@ fi
 # --no-banner keeps the log readable; -v prints each finding inline so a red
 # step shows what was caught before the JSON report is uploaded. --redact keeps
 # secret material out of the log.
+#
+# `detect` is the deprecated alias for `gitleaks git` (since v8.19.0); it is
+# still available on the pinned 8.27.2 and kept here for alias stability. A
+# follow-up can switch to the `git` subcommand when the pin moves upstream.
 set +e
 if [ -n "${log_opts}" ]; then
   "${binary}" detect \

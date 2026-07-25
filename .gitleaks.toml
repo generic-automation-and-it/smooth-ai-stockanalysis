@@ -37,12 +37,11 @@ title = "smooth-ai-stockanalysis gitleaks allowlist"
 
 # `path` is rewritten by scan.sh to the absolute location of the
 # pinned-upstream default config it downloads and checksum-verifies.
-# The placeholder value here is intentionally NOT a real file path so a
-# bare `gitleaks detect --config .gitleaks.toml` invocation fails with
-# a clearly-diagnostic config-load error (instead of silently pointing
-# at a file that does not exist).
+# The placeholder value here is a clearly-marked sentinel so a bare
+# `gitleaks detect --config .gitleaks.toml` (no scan.sh) fails with an
+# obvious diagnostic rather than loading a non-existent file path.
 [extend]
-path = "<rewrite-at-runtime-by-scan.sh>"
+path = "<rewritten-by-scan.sh-at-runtime>"
 
 [allowlist]
 description = "smooth-ai-stockanalysis known-safe matches — every entry is a committed placeholder or a documented test fixture, never a live credential."
