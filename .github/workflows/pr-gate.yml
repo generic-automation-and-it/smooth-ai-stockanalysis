@@ -81,6 +81,12 @@ jobs:
       # in .github/CI_AGENTS.md and closed by WT-10-04's always-runs gate.
       # INVARIANT: like the test levels, this step honours the Build gate — it
       # runs only when Build succeeded. Do not relax to `!= 'failure'`.
+      #
+      # Timeout budget: 5 minutes comfortably covers a single-PR scan (a few
+      # hundred commits) and a workflow_dispatch full-history scan for the
+      # current repo size (~1k commits, <30s observed). Bump to 15 if the
+      # history grows past ~10k commits, or split workflow_dispatch into its
+      # own job with a longer budget.
       - name: Secret scan
         id: secret-scan
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

@@ -18,9 +18,10 @@
 #   GITLEAKS_VERSION       — pinned release tag, e.g. "8.27.2".
 #   GITLEAKS_SHA256        — official sha256 of gitleaks_<ver>_linux_x64.tar.gz.
 #   GITLEAKS_CONFIG_SHA256 — sha256 of the upstream default gitleaks.toml at tag v<ver>.
-#   SCAN_LOG_OPTS          — git log opts. Default "origin/main..HEAD" (pull_request).
-#                            For push to main the workflow sets the pushed range;
-#                            for workflow_dispatch it is blank (full history scan).
+#   SCAN_LOG_OPTS          — git log opts. Required. The pr-gate workflow always
+#                            sets it: a SHA range for pull_request / push, or
+#                            "" for workflow_dispatch (full history scan).
+#                            Unset is a fail-fast gate error (see below).
 #   GITLEAKS_CONFIG        — repo allowlist path (default ".gitleaks.toml").
 #
 # Exit codes: 0 clean, 1 leaks found, 2 install/scan error.
@@ -31,15 +32,17 @@ version="${GITLEAKS_VERSION:?GITLEAKS_VERSION must be set}"
 binary_sha="${GITLEAKS_SHA256:?GITLEAKS_SHA256 must be set}"
 config_sha="${GITLEAKS_CONFIG_SHA256:?GITLEAKS_CONFIG_SHA256 must be set}"
 repo_allowlist="${GITLEAKS_CONFIG:-.gitleaks.toml}"
-# SCAN_LOG_OPTS resolution:
-#   unset (CI pull_request step omits it) → "origin/main..HEAD" (PR range)
-#   set-but-empty (workflow_dispatch)    → "" → scan full history
-#   explicit SHA range (push/fork)       → that range
+# SCAN_LOG_OPTS resolution (contract):
+#   The pr-gate workflow always sets SCAN_LOG_OPTS — to a SHA range for
+#   pull_request / push, or to "" for workflow_dispatch (full-history scan).
+#   External callers must set it explicitly; the previous "unset →
+#   origin/main..HEAD" fallback is removed because the workflow is the only
+#   caller and always sets it.
 if [ -z "${SCAN_LOG_OPTS+x}" ]; then
-  log_opts="origin/main..HEAD"
-else
-  log_opts="${SCAN_LOG_OPTS}"
+  echo "::error::SCAN_LOG_OPTS is not set. The pr-gate workflow must always set it (possibly to empty for workflow_dispatch full-history scans)."
+  exit 2
 fi
+log_opts="${SCAN_LOG_OPTS}"
 
 install_dir="${HOME}/.local/bin"
 mkdir -p "${install_dir}"
@@ -47,26 +50,22 @@ binary="${install_dir}/gitleaks"
 default_config="${install_dir}/gitleaks-default.toml"
 
 # --- install gitleaks binary (pin checksum) ---
-# Cache check: archive integrity implies binary integrity — both are produced
-# in the same `tar -xzf` step below, so validating the archive is sufficient.
-if [ -x "${binary}" ] && sha256sum "${binary}.tar.gz" 2>/dev/null | grep -q "${binary_sha}"; then
-  : # cache hit within this job (see note above)
-else
-  url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
-  archive="/tmp/gitleaks.tar.gz"
-  echo "::group::Install gitleaks ${version}"
-  curl --fail --silent --show-error --location --output "${archive}" "${url}"
-  actual_sha="$(sha256sum "${archive}" | awk '{print $1}')"
-  if [ "${actual_sha}" != "${binary_sha}" ]; then
-    echo "::error::gitleaks binary checksum mismatch: expected ${binary_sha}, got ${actual_sha}"
-    exit 2
-  fi
-  cp "${archive}" "${binary}.tar.gz"
-  tar --extract --gzip --file "${archive}" --directory /tmp gitleaks
-  mv /tmp/gitleaks "${binary}"
-  chmod +x "${binary}"
-  echo "::endgroup::"
+# `scan.sh` is invoked once per gate run, so a within-job cache check would
+# always miss and is omitted. Archive integrity is verified against the
+# pinned SHA below; that is sufficient.
+url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
+archive="/tmp/gitleaks.tar.gz"
+echo "::group::Install gitleaks ${version}"
+curl --fail --silent --show-error --location --output "${archive}" "${url}"
+actual_sha="$(sha256sum "${archive}" | awk '{print $1}')"
+if [ "${actual_sha}" != "${binary_sha}" ]; then
+  echo "::error::gitleaks binary checksum mismatch: expected ${binary_sha}, got ${actual_sha}"
+  exit 2
 fi
+tar --extract --gzip --file "${archive}" --directory /tmp gitleaks
+mv /tmp/gitleaks "${binary}"
+chmod +x "${binary}"
+echo "::endgroup::"
 
 # --- fetch upstream default config at the SAME pinned tag (pin checksum) ---
 if [ -f "${default_config}" ] && sha256sum "${default_config}" 2>/dev/null | grep -q "${config_sha}"; then
@@ -87,10 +86,19 @@ fi
 # --- rewrite the [extend] path in a runtime copy of the repo allowlist so it
 #     points at the absolute fetched default config. The committed .gitleaks.toml
 #     carries a placeholder path so the file stays portable and reviewable. ---
+#     Scoped to the [extend] table only: a future [[rules]] block with its own
+#     `path = "…"` line must not be silently rewritten by this pass.
 runtime_allowlist="${HOME}/.local/share/gitleaks-runtime.toml"
 mkdir -p "$(dirname "${runtime_allowlist}")"
-sed -E 's|^[[:space:]]*path[[:space:]]*=[[:space:]]*"[^"]*"[[:space:]]*$|path = "'"${default_config}"'"|' \
-  "${repo_allowlist}" > "${runtime_allowlist}"
+awk -v path="${default_config}" '
+  /^\[extend\]/ { in_extend=1; print; next }
+  /^\[/          { in_extend=0; print; next }
+  in_extend && /^[[:space:]]*path[[:space:]]*=/ {
+    sub(/^[[:space:]]*path[[:space:]]*=[[:space:]]*".*"[[:space:]]*$/,
+        "path = \"" path "\"")
+  }
+  { print }
+' "${repo_allowlist}" > "${runtime_allowlist}"
 
 echo "::group::gitleaks ${version}"
 "${binary}" version
@@ -106,12 +114,19 @@ mkdir -p artifacts/secret-scan
 
 # On a fork pull_request the base SHA may not be reachable from the local
 # history (actions/checkout fetches the head + origin/main, not the base).
-# Fetch the base ref so --log-opts "base..head" resolves; idempotent and safe
-# on success. GITHUB_BASE_REF is set by the pull_request event.
+# Fetch the base ref so --log-opts "base..head" resolves. Failures are
+# swallowed so a transient network blip does not block the scan; gitleaks
+# then fails closed with an unresolvable base.sha and a clear error.
+# GITHUB_BASE_REF is set by the pull_request event.
 if [ -n "${GITHUB_BASE_REF:-}" ]; then
   git fetch --no-tags --quiet origin "${GITHUB_BASE_REF}" 2>/dev/null || true
 fi
 
+# `gitleaks detect` is the legacy alias and has been deprecated since
+# gitleaks v8.19.0; `gitleaks git` is the recommended subcommand. The alias
+# still works on 8.27.2 (pinned above) but should be migrated on the next
+# gitleaks bump — see WT-10-04 follow-up.
+#
 # --no-banner keeps the log readable; -v prints each finding inline so a red
 # step shows what was caught before the JSON report is uploaded. --redact keeps
 # secret material out of the log.
