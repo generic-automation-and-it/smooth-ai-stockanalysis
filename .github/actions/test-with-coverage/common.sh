@@ -48,11 +48,15 @@ integration_projects=(
   "tests/SmoothAiStockAnalysis.Host.IntegrationTest/SmoothAiStockAnalysis.Host.IntegrationTest.csproj"
 )
 
+# MUST return 0. Callers invoke this from the body of `if ! wait ...; then ... fi`, which is
+# not a condition context, so under `set -e` a non-zero return here kills the script at the
+# first failing project: the remaining `wait` calls never run, parallel failures are hidden,
+# and `fail_if_any` never prints the summary. Recording a failure is not itself a failure —
+# `fail_if_any` owns the exit code.
 record_failure() {
   local message="$1"
   failures+=("${message}")
   echo "ERROR: ${message}"
-  return 1
 }
 
 fail_if_any() {
