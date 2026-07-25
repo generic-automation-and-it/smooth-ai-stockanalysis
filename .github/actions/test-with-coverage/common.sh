@@ -17,6 +17,20 @@ wiremock_health_url="http://127.0.0.1:19091/__admin/health"
 aspire_pid=""
 failures=()
 
+# Pre-warming WireMock is an OPTIMISATION, never a requirement. AspireFixture probes the
+# well-known endpoint first and starts its own AppHost when nothing answers, so a level that
+# skips the pre-warm still works — it just pays container startup inside the test host.
+# Default off: no integration test currently opts into AspireCollection, and provisioning a
+# container for zero consumers would make L2 need a container runtime for no benefit.
+prewarm_wiremock="${PREWARM_WIREMOCK:-0}"
+
+is_prewarm_requested() {
+  case "${prewarm_wiremock}" in
+    1 | true | TRUE | yes | YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 unit_projects=(
   "tests/SmoothAiStockAnalysis.Domain.UnitTest/SmoothAiStockAnalysis.Domain.UnitTest.csproj"
   "tests/SmoothAiStockAnalysis.Application.UnitTest/SmoothAiStockAnalysis.Application.UnitTest.csproj"
@@ -139,22 +153,34 @@ wait_for_http() {
   echo "${name} is healthy after ${elapsed}s."
 }
 
+# Last-resort sweep for a WireMock container Aspire failed to reap. Aspire names the resource
+# `wiremock-<suffix>`, not `wiremock`, so this must match by prefix — the filter is anchored so
+# an unrelated container such as `my-wiremock-dev` is left alone.
+remove_wiremock_containers() {
+  local container_ids
+  container_ids=$(docker ps -aq --filter "name=^wiremock" 2>/dev/null || true)
+  if [ -n "${container_ids}" ]; then
+    # shellcheck disable=SC2086
+    docker rm -f ${container_ids} > /dev/null 2>&1 || true
+  fi
+}
+
 cleanup_aspire() {
   if [ -z "${aspire_pid}" ] || ! kill -0 "${aspire_pid}" 2>/dev/null; then
-    docker rm -f wiremock >/dev/null 2>&1 || true
+    remove_wiremock_containers
     return
   fi
 
   if ! kill "${aspire_pid}" 2>/dev/null; then
     echo "ERROR: Failed to terminate Aspire host ${aspire_pid}."
-    docker rm -f wiremock >/dev/null 2>&1 || true
+    remove_wiremock_containers
     return
   fi
 
   for _ in $(seq 1 15); do
     if ! kill -0 "${aspire_pid}" 2>/dev/null; then
       wait "${aspire_pid}" 2>/dev/null || true
-      docker rm -f wiremock >/dev/null 2>&1 || true
+      remove_wiremock_containers
       return
     fi
     sleep 1
@@ -165,7 +191,7 @@ cleanup_aspire() {
     echo "ERROR: Failed to force-stop Aspire host ${aspire_pid}."
   fi
   wait "${aspire_pid}" 2>/dev/null || true
-  docker rm -f wiremock >/dev/null 2>&1 || true
+  remove_wiremock_containers
 }
 
 start_aspire_wiremock() {

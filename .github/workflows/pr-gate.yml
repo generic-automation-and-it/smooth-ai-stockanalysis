@@ -64,21 +64,21 @@ jobs:
       # Levels run even when a previous level failed so the PR checks stay distinguishable.
       - name: Unit tests
         id: unit
-        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash .github/actions/test-with-coverage/run-level.sh unit
 
       - name: Component tests
         id: component
-        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash .github/actions/test-with-coverage/run-level.sh component
 
       - name: Integration tests
         id: integration
-        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash .github/actions/test-with-coverage/run-level.sh integration
 
       - name: Merge coverage
-        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash .github/actions/test-with-coverage/merge-coverage.sh
 
       - name: Publish coverage summary
