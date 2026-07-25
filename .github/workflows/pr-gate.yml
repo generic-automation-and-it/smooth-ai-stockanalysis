@@ -39,6 +39,8 @@ jobs:
     env:
       BUILD_CONFIGURATION: Release
       DOTNET_VERSION: 10.0.x
+      ARTIFACTS_ROOT: artifacts
+      DEPENDENCY_TIMEOUT_SECONDS: "120"
 
     steps:
       - name: Checkout
@@ -56,15 +58,28 @@ jobs:
         run: dotnet format whitespace smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
 
       - name: Build
+        id: build
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
 
-      - name: Aspire test with coverage
-        uses: ./.github/actions/test-with-coverage
-        timeout-minutes: 25
-        with:
-          build-configuration: ${{ env.BUILD_CONFIGURATION }}
-          artifacts-root: artifacts
-          dependency-timeout-seconds: "120"
+      # Levels run even when a previous level failed so the PR checks stay distinguishable.
+      - name: Unit tests
+        id: unit
+        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        run: bash .github/actions/test-with-coverage/run-level.sh unit
+
+      - name: Component tests
+        id: component
+        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        run: bash .github/actions/test-with-coverage/run-level.sh component
+
+      - name: Integration tests
+        id: integration
+        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        run: bash .github/actions/test-with-coverage/run-level.sh integration
+
+      - name: Merge coverage
+        if: ${{ always() && !cancelled() && steps.build.outcome == 'success' }}
+        run: bash .github/actions/test-with-coverage/merge-coverage.sh
 
       - name: Publish coverage summary
         if: always()
@@ -72,6 +87,30 @@ jobs:
           if [ -f artifacts/coverage/SummaryGithub.md ]; then
             cat artifacts/coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit
+          path: artifacts/testresults/unit/
+          if-no-files-found: warn
+
+      - name: Upload component test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-component
+          path: artifacts/testresults/component/
+          if-no-files-found: warn
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-integration
+          path: artifacts/testresults/integration/
+          if-no-files-found: warn
 
       - name: Upload coverage artifacts
         if: always()
