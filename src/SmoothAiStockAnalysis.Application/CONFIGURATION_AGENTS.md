@@ -11,7 +11,7 @@ The F-004 settings catalogue façade, the immutable `EffectiveSettings` snapshot
 - **String overrides treat blank as unset at resolve time**: `SettingsResolver` uses `string.IsNullOrWhiteSpace` for provider names/models and delivery-window strings, so whitespace-only overrides fall through to the catalogue default. Domain still stores the raw string if written; clearing an override is done by persisting `null` via a full `WithPreferences` snapshot replace.
 - **`UserMetadata.WithPreferences` is a full snapshot replace** (see Domain AGENTS): omitted/`null` arguments unset those fields on the new instance rather than preserving prior values.
 - **`EffectiveSettings` is an immutable DTO snapshot**, not an `IOptions` wrapper — feature code receives a stable value at the start of a unit of work and reads it without surprise.
-- **No credentials in the catalogue**: `IApplicationDefaults` carries non-secret tunables only (NFR-043/044). The `Provider` section exposes provider names and model identifiers; secrets arrive in worktask 03 (T-027 / #71) via environment variables.
+- **No credentials in the catalogue**: `IApplicationDefaults` carries non-secret tunables only (NFR-043/044). The `Provider` section exposes provider names and model identifiers; secrets arrive in worktask 03 (T-027 / #71) via environment variables. The Host owns a separate `CredentialsOptions` singleton for provider API keys (validate-when-enabled, placeholder-token rejection); it is never part of `EffectiveSettings` or the resolver merge.
 
 ## Key Behaviors
 
@@ -47,3 +47,4 @@ The façade mirrors the five Host `Configuration/` sections:
 |:-----|:-------|:----|
 | 2026-07-24 | Added the F-004 settings catalogue façade (`IApplicationDefaults`), the immutable `EffectiveSettings` DTO, and the `ISettingsResolver` (pure merge function + scoped orchestrator) wired through `AddApplication`. | #68, #69 |
 | 2026-07-24 | Clarified blank-string fall-through, zero-override semantics, full-replace `WithPreferences`, and eager default-window composition. | #68, #69 |
+| 2026-07-24 | Documented that `CredentialsOptions` (env-only, placeholder-commit, validate-when-enabled) stays outside the catalogue façade and the resolver merge. | #71, #72, #8 |

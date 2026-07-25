@@ -21,6 +21,12 @@ public static class ServiceCollectionExtensions
     /// registers only the validated <see cref="IApplicationDefaults"/> singleton — it does not
     /// also expose unvalidated <c>IOptions&lt;T&gt;</c> section bindings, so there is a single
     /// validated configuration path.
+    /// <para>
+    /// Credentials are bound and validated in the same pass. The committed <c>appsettings.json</c>
+    /// carries placeholder tokens only (NFR-044); real values arrive from environment variables
+    /// (or <c>dotnet user-secrets</c> for local dev) at deploy time. <see cref="CredentialsOptions"/>
+    /// is registered as a singleton so future Infrastructure clients can resolve it.
+    /// </para>
     /// </remarks>
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
@@ -42,7 +48,15 @@ public static class ServiceCollectionExtensions
             cycle,
             provider);
 
+        // Credentials bind from the same configuration sources but the committed JSON carries
+        // placeholder tokens only; validate-when-enabled rejects the placeholder at startup
+        // (NFR-043/044/047). Registered separately from IApplicationDefaults — credentials never
+        // enter the catalogue façade.
+        CredentialsOptions credentials = CredentialsOptions.FromConfiguration(configuration);
+        credentials.Validate(provider);
+
         services.AddSingleton<IApplicationDefaults>(applicationDefaults);
+        services.AddSingleton(credentials);
 
         return services;
     }
