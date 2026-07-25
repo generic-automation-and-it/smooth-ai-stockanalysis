@@ -114,10 +114,10 @@ mkdir -p artifacts/secret-scan
 
 # On a fork pull_request the base SHA may not be reachable from the local
 # history (actions/checkout fetches the head + origin/main, not the base).
-# Fetch the base ref so --log-opts "base..head" resolves. Failures are
-# swallowed so a transient network blip does not block the scan; gitleaks
-# then fails closed with an unresolvable base.sha and a clear error.
-# GITHUB_BASE_REF is set by the pull_request event.
+# Fetch the base ref so --log-opts "base..head" resolves. The fetch error
+# is swallowed so `set -e` does not abort on a transient network blip;
+# gitleaks then fails closed with an unresolvable base.sha and a clear
+# error. GITHUB_BASE_REF is set by the pull_request event.
 if [ -n "${GITHUB_BASE_REF:-}" ]; then
   git fetch --no-tags --quiet origin "${GITHUB_BASE_REF}" 2>/dev/null || true
 fi
