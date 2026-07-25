@@ -7,8 +7,6 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "${script_dir}/common.sh"
 
-dotnet tool restore || exit 1
-
 rm -rf "${coverage_directory}"
 mkdir -p "${coverage_directory}"
 
@@ -17,6 +15,8 @@ if [ "${coverage_count}" = "0" ]; then
   echo "WARNING: no cobertura files found under ${results_root}; skipping reportgenerator."
   exit 0
 fi
+
+dotnet tool restore || exit 1
 
 echo "Merging ${coverage_count} cobertura file(s)..."
 dotnet tool run reportgenerator \

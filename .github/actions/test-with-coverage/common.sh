@@ -35,7 +35,7 @@ integration_projects=(
 )
 
 record_failure() {
-  local message=$1
+  local message="$1"
   failures+=("${message}")
   echo "ERROR: ${message}"
 }
@@ -109,8 +109,8 @@ ensure_aspire_alive() {
 }
 
 wait_for_http() {
-  local url=$1
-  local name=$2
+  local url="$1"
+  local name="$2"
   local started_at
   local deadline
   local elapsed

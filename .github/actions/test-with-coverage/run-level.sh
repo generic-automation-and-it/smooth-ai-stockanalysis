@@ -17,7 +17,6 @@ if [ -z "${level}" ]; then
 fi
 
 level_results_directory="${results_root}/${level}"
-mkdir -p "${level_results_directory}"
 
 case "${level}" in
   unit)

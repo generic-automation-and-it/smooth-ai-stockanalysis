@@ -19,7 +19,7 @@ The pipeline is a single PR gate that checks whitespace, builds with analyzers, 
 6. **Unit tests** — `bash .github/actions/test-with-coverage/run-level.sh unit`. Domain/Application/Infrastructure/Host unit tests plus `Architecture.UnitTest` (NFR-090). **No WireMock.** Projects in the level run in parallel; failures accumulate then fail the step.
 7. **Component tests** — `run-level.sh component`. Application (EF in-memory) and Infrastructure (isolated SQLite) component projects. **No WireMock** unless a future test opts into Aspire. Runs even if Unit failed (after a successful Build) so the check stays visible.
 8. **Integration tests** — `run-level.sh integration`. Starts the WireMock-only Aspire AppHost, waits for `http://127.0.0.1:19091/__admin/health`, runs `Host.IntegrationTest`, tears down Aspire (SIGTERM → SIGKILL → `docker rm -f wiremock`).
-9. **Merge coverage** — `merge-coverage.sh` runs `reportgenerator` over `artifacts/testresults/**/coverage.cobertura.xml` into `artifacts/coverage/`. Include filter is the four product assemblies only.
+9. **Merge coverage** — `merge-coverage.sh` runs `reportgenerator` over `artifacts/testresults/**/coverage.cobertura.xml` into `artifacts/coverage/`. Include filter targets the four product-assembly name prefixes (Domain, Application, Infrastructure, Host); test/architecture projects must not dilute coverage.
 10. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
 11. **Upload artifacts** (`if: always()`) — `test-results-unit`, `test-results-component`, `test-results-integration`, and `coverage-report`.
 

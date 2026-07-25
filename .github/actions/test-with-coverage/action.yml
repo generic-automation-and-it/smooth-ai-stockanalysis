@@ -1,3 +1,6 @@
+# No workflow currently calls this composite action; the PR gate invokes
+# run-level.sh / merge-coverage.sh directly. Remove this file if that
+# remains true after WT-10-03.
 name: Test with coverage (all levels)
 description: >
   Compatibility composite that runs unit, component, and integration levels
