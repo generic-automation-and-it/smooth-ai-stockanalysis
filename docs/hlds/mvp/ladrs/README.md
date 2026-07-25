@@ -38,6 +38,7 @@ Each record carries a status, the context that forced a choice, the decision its
 | [LADR-017](017-explicit-data-access-scopes-and-global-user-isolation-filter.md) | Explicit data-access scopes and global user-isolation filter | Accepted |
 | [LADR-018](018-startup-default-user-seed-from-deployment-configuration.md) | Startup default-user seed from deployment configuration | Completed |
 | [LADR-019](019-direct-ilogger-calls-over-loggermessage.md) | Direct ILogger calls over LoggerMessage delegates | Accepted |
+| [LADR-020](020-per-level-test-execution-and-architecture-gate.md) | Per-level test execution and architecture gate | Accepted |
 
 ## Related documents
 

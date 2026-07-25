@@ -23,11 +23,11 @@ NFR-094 exists because this system contains several decisions whose reasoning is
 
 ## Verification
 
-- Layer dependency rules checked in the build.
+- Layer dependency rules checked in the build (`tests/SmoothAiStockAnalysis.Architecture.UnitTest`, LADR-020).
 - New funnel stages reviewed for confinement to a single slice.
 
 ## Related
 
-- `docs/adr/001-clean-architecture-with-vertical-slices.md`
-- `docs/adr/` (all records)
+- `docs/hlds/mvp/ladrs/001-clean-architecture-with-vertical-slices.md`
+- `docs/hlds/mvp/ladrs/020-per-level-test-execution-and-architecture-gate.md` — per-level CI execution + NetArchTest gate (NFR-090 verification)
 - `docs/hlds/mvp/ladrs/019-direct-ilogger-calls-over-loggermessage.md` — CA1848 (`LoggerMessage`) kept at suggestion severity as an NFR-092 interpretation for low-volume logging

@@ -8,13 +8,13 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 
 - Keep this AppHost WireMock-only unless a future requirement explicitly adds another external test dependency.
 - Do not add PostgreSQL, Redis, Npgsql, or Respawn; database tests use the SQLite fixtures in `SmoothAiStockAnalysis.TestFramework`.
-- Keep WireMock on the well-known local port `19091` so CI can pre-warm it once for all ordered test projects.
+- Keep WireMock on the well-known local port `19091`. That address is the contract `AspireFixture` probes before starting its own host, and the one an optional CI pre-warm binds.
 
 ## Key Behaviors
 
 - `WireMockTestDependency` is the public resource-name, port, and default-URL contract shared with the reusable test fixture.
 - `DistributedApplicationBuilderExtensions.AddWireMockTestDependency` declares the `wiremock/wiremock` container from that shared contract.
-- The CI coverage action starts this AppHost, waits for `http://127.0.0.1:19091/__admin/health`, runs the tests, and terminates the AppHost.
+- CI does **not** start this AppHost by default. Pre-warm is opt-in, gated by `PREWARM_WIREMOCK=1`; today no test consumes the `AspireCollection`, so the default path does not need a container runtime (LADR-020). Pre-warming waits for `http://127.0.0.1:19091/__admin/health` and terminates the AppHost afterwards; skipping it is safe because `AspireFixture` probes that endpoint and starts its own AppHost when nothing answers.
 - Tests can opt into `AspireFixture` when they need the WireMock endpoint or admin client; tests without external HTTP dependencies remain container-free.
 
 ## Changelog
@@ -23,3 +23,4 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 |:-----|:-------|:----|
 | 2026-07-23 | Restored Aspire as a WireMock-only test dependency host. | #252 |
 | 2026-07-24 | Centralized the WireMock resource contract for downstream fixtures. | #252 |
+| 2026-07-25 | CI pre-warm limited to the integration level and made opt-in via `PREWARM_WIREMOCK`; no level requires a container runtime until a test opts into `AspireCollection`. | #83 / WT-10-02 |

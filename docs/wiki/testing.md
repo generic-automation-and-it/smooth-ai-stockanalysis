@@ -2,13 +2,17 @@
 
 ## Test levels
 
-| Level | Label | Projects | Dependencies | Description |
-|---|---|---|---|---|
-| L0 | Unit | `*.UnitTest` | None | Isolated logic, no I/O. |
-| L1 | Component | `Application.ComponentTest`, `Infrastructure.ComponentTest` | Isolated SQLite files where persistence is involved | End-to-end behaviour within a layer. |
-| L2 | Integration | `Host.IntegrationTest` | Isolated SQLite file | Full Host stack through `WebApplicationFactory`. |
+| Level | Label | Projects | May touch | Must not | Infrastructure | Command |
+|---|---|---|---|---|---|---|
+| L0 | Unit | `*.UnitTest`, `Architecture.UnitTest` | In-process logic, pure domain, fakes | Network, disk I/O as product behaviour, containers | **None** | `bash .github/actions/test-with-coverage/run-level.sh unit` |
+| L1 | Component | `Application.ComponentTest` (EF in-memory), `Infrastructure.ComponentTest` (isolated SQLite files) | One layer end-to-end; switch Application to isolated SQLite if any Application slice needs schema/relational features | Live providers, shared DB servers | No container runtime today | `bash .github/actions/test-with-coverage/run-level.sh component` |
+| L2 | Integration | `Host.IntegrationTest` | Full Host via `WebApplicationFactory` + isolated SQLite | Live providers | **None today.** A test that opts into `AspireCollection` starts WireMock itself; CI can pre-warm it with `PREWARM_WIREMOCK=1` | `bash .github/actions/test-with-coverage/run-level.sh integration` |
 
-Database tests run without a database container or external persistence service. Tests that exercise external HTTP integrations can opt into the Aspire-managed WireMock container.
+The three levels are **distinguishable and separately runnable** (NFR-069). CI reports each as its own named step and uploads a per-level test-results artifact. See [LADR-020](../hlds/mvp/ladrs/020-per-level-test-execution-and-architecture-gate.md).
+
+### Architecture tests (L0)
+
+`tests/SmoothAiStockAnalysis.Architecture.UnitTest` uses `NetArchTest.Rules` to enforce inward layer dependencies (NFR-090). It runs in the unit level with no I/O. Details and the list of rules **not** mechanically enforced: [`ARCHITECTURE_AGENTS.md`](../../tests/SmoothAiStockAnalysis.Architecture.UnitTest/ARCHITECTURE_AGENTS.md).
 
 ## Shared fixtures
 
@@ -16,7 +20,7 @@ Fixtures live in `tests/SmoothAiStockAnalysis.TestFramework/`.
 
 ### SqliteTestDatabase
 
-`new SqliteTestDatabase()` allocates a unique, on-disk database file below the operating-system temporary directory. It disables pooling and removes the `.db`, `-wal`, `-shm`, and `-journal` files on disposal. L1 test classes own one instance and implement `IAsyncDisposable`; because xUnit creates a new test-class instance for each test, this preserves per-test database isolation without static helpers.
+`new SqliteTestDatabase()` allocates a unique, on-disk database file below the operating-system temporary directory (`Guid` file name per instance/process). It disables pooling and removes the `.db`, `-wal`, `-shm`, and `-journal` files on disposal. L1 test classes own one instance and implement `IAsyncDisposable`; because xUnit creates a new test-class instance for each test, this preserves per-test database isolation. Unique paths also make **parallel-within-level** CI execution safe.
 
 ### WebAppFixture&lt;T&gt;
 
@@ -53,23 +57,45 @@ public sealed class ExternalApiTests(AspireFixture aspire)
 
 ## Running tests
 
+Prefer the per-level scripts (same path CI uses; requires bash — Linux/macOS/WSL or Git Bash on Windows). Build Release first when using `--no-build` inside the scripts after a local `dotnet build -c Release`. On Windows without bash, use `dotnet test` against a project or the solution instead.
+
 ```bash
-# All projects; tests that opt into AspireFixture require a container runtime
+dotnet build smooth-ai-stockanalysis.slnx -c Release
+
+# DOCKER_HOST=unix:///nonexistent makes any unexpected Docker call fail-fast rather
+# than silently succeed against the host daemon; remove the prefix to allow real
+# container use (e.g. for AspireCollection opt-in tests).
+# L0 only — no Docker / no network required
+DOCKER_HOST=unix:///nonexistent bash .github/actions/test-with-coverage/run-level.sh unit
+
+# L1 component tests — no WireMock
+DOCKER_HOST=unix:///nonexistent bash .github/actions/test-with-coverage/run-level.sh component
+
+# L2 integration tests — also container-free, until a test opts into AspireCollection
+DOCKER_HOST=unix:///nonexistent bash .github/actions/test-with-coverage/run-level.sh integration
+
+# ...optionally with WireMock pre-warmed (starts Aspire, stops it on exit)
+PREWARM_WIREMOCK=1 bash .github/actions/test-with-coverage/run-level.sh integration
+
+# Merge cobertura into artifacts/coverage/ (after any combination of levels)
+bash .github/actions/test-with-coverage/merge-coverage.sh
+
+# Full suite convenience wrapper (all three levels + merge)
+bash .github/actions/test-with-coverage/run.sh
+```
+
+Individual projects remain valid:
+
+```bash
+dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest
+dotnet test tests/SmoothAiStockAnalysis.Application.ComponentTest
+dotnet test tests/SmoothAiStockAnalysis.Host.IntegrationTest
+```
+
+```bash
+# All projects via the solution; tests that opt into AspireFixture require a container runtime
 dotnet test smooth-ai-stockanalysis.slnx
 
-# Pre-warm WireMock through the Aspire AppHost
+# Pre-warm WireMock through the Aspire AppHost (optional locally)
 dotnet run --project tests/SmoothAiStockAnalysis.TestFramework.Aspire
-
-# L0 only
-dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest
-dotnet test tests/SmoothAiStockAnalysis.Application.UnitTest
-dotnet test tests/SmoothAiStockAnalysis.Infrastructure.UnitTest
-dotnet test tests/SmoothAiStockAnalysis.Host.UnitTest
-
-# L1 component tests
-dotnet test tests/SmoothAiStockAnalysis.Application.ComponentTest
-dotnet test tests/SmoothAiStockAnalysis.Infrastructure.ComponentTest
-
-# L2 integration tests
-dotnet test tests/SmoothAiStockAnalysis.Host.IntegrationTest
 ```

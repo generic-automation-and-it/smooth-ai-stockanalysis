@@ -1,5 +1,11 @@
-name: Aspire test with coverage
-description: Start WireMock with Aspire, run the ordered test suite with coverage, and generate reports.
+# No workflow currently calls this composite action; the PR gate invokes
+# run-level.sh / merge-coverage.sh directly. Remove this file if that
+# remains true after WT-10-03.
+name: Test with coverage (all levels)
+description: >
+  Compatibility composite that runs unit, component, and integration levels
+  then merges coverage. Prefer calling run-level.sh from workflow steps so each
+  level is a distinguishable check.
 
 inputs:
   build-configuration:
@@ -11,14 +17,14 @@ inputs:
     required: false
     default: artifacts
   dependency-timeout-seconds:
-    description: Seconds to wait for Aspire-managed WireMock.
+    description: Seconds to wait for Aspire-managed WireMock (integration level only).
     required: false
     default: "120"
 
 runs:
   using: composite
   steps:
-    - name: Run Aspire tests with coverage
+    - name: Run all test levels with coverage
       shell: bash
       env:
         BUILD_CONFIGURATION: ${{ inputs.build-configuration }}

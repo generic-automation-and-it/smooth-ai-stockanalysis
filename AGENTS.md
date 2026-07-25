@@ -80,22 +80,32 @@ All rules live under `.agents/rules/` as `*.instructions.md` files and are auto-
 ## Build / Test Commands
 
 ```bash
-dotnet build smooth-ai-stockanalysis.slnx                  # build
-dotnet test  smooth-ai-stockanalysis.slnx                  # run all tests
+dotnet build smooth-ai-stockanalysis.slnx -c Release       # build
 dotnet run --project src/SmoothAiStockAnalysis.Host        # run the API
+
+# Per-level test runs (same scripts CI uses; NFR-069).
+# Requires bash (Linux/macOS/WSL or Git Bash on Windows). On Windows PowerShell:
+#   bash .github/actions/test-with-coverage/run-level.sh unit
+# Cross-platform without bash: dotnet test <project|slnx> (below).
+bash .github/actions/test-with-coverage/run-level.sh unit
+bash .github/actions/test-with-coverage/run-level.sh component
+bash .github/actions/test-with-coverage/run-level.sh integration
+bash .github/actions/test-with-coverage/merge-coverage.sh
+# Container-free local default; only AspireCollection opt-in tests need a container runtime
+dotnet test smooth-ai-stockanalysis.slnx
 ```
 
-Target a single test project directly when needed (e.g. `dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest`); `ls tests/` lists them — no Trait annotations required.
+Target a single test project directly when needed (e.g. `dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest`); `ls tests/` lists them — no Trait annotations required. Architecture boundary tests live in `tests/SmoothAiStockAnalysis.Architecture.UnitTest` and run in the unit level.
 
 ## Test Framework
 
 xunit.v3 · Shouldly · Bogus. Three tiers (the distinction is non-obvious and drives where a test belongs):
 
-- **L0** `*.UnitTest` — no I/O, all in-process.
-- **L1** component — `Application.ComponentTest` uses in-memory EF Core; `Infrastructure.ComponentTest` uses a real isolated SQLite file.
-- **L2** `*.IntegrationTest` — full Host stack using an isolated local SQLite file.
+- **L0** unit — `*.UnitTest` plus `Architecture.UnitTest` (NetArchTest layer rules). No I/O, all in-process; must stay runnable on every CI matrix image (Linux + Windows) without a container runtime.
+- **L1** component — `Application.ComponentTest` uses in-memory EF Core; `Infrastructure.ComponentTest` uses a real isolated SQLite file. No WireMock unless a test opts into Aspire.
+- **L2** integration — `Host.IntegrationTest` full Host stack with an isolated local SQLite file; CI may pre-warm Aspire WireMock for this level only, when `PREWARM_WIREMOCK=1` is set or a test opts into `AspireCollection`.
 
-Shared fixtures, including isolated SQLite test-database support and the opt-in Aspire/WireMock fixture, live in `tests/SmoothAiStockAnalysis.TestFramework/`. The WireMock-only AppHost lives in `tests/SmoothAiStockAnalysis.TestFramework.Aspire/`. See `docs/wiki/testing.md`.
+Levels are separately runnable via `run-level.sh` (LADR-020). Shared fixtures, including isolated SQLite test-database support and the opt-in Aspire/WireMock fixture, live in `tests/SmoothAiStockAnalysis.TestFramework/`. The WireMock-only AppHost lives in `tests/SmoothAiStockAnalysis.TestFramework.Aspire/`. See `docs/wiki/testing.md`.
 
 ## Style and Dependencies
 
@@ -107,7 +117,7 @@ Human-facing reviewer documentation lives in `docs/wiki/`. Detailed high-level d
 
 ## CI/CD
 
-PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → format (`dotnet format whitespace --verify-no-changes`) → build (Release, SDK analyzers + code style as errors) → start WireMock through the Aspire AppHost → test with coverage via the local action `.github/actions/test-with-coverage` → publish + upload the coverage report. SQLite remains local and container-free. Authoritative agent context: [`.github/CI_AGENTS.md`](.github/CI_AGENTS.md). Full step list and local .NET tools: `docs/wiki/ci.md`.
+PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → `dotnet format whitespace --verify-no-changes` → build (Release, SDK analyzers + code style as errors) → **Unit tests** → **Component tests** → **Integration tests** (no container runtime; WireMock pre-warm is opt-in via `PREWARM_WIREMOCK`) → merge coverage → upload per-level test-results + coverage artifacts. Scripts: `.github/actions/test-with-coverage/run-level.sh`. SQLite remains local and container-free outside the integration WireMock host. Authoritative agent context: [`.github/CI_AGENTS.md`](.github/CI_AGENTS.md). Full step list and local .NET tools: `docs/wiki/ci.md`.
 
 AI review pipelines — `.github/workflows/pipeline-code-review-report.yml` is a thin caller that generates PR review reports through the reusable workflow in `generic-automation-and-it/smooth-ai-report-review`; `.github/workflows/pipeline-ai-analyse.yml` follows successful reports with a bounded, same-repository low/medium self-fix loop. Only the local `/ai-review` consumer skill is vendored. The generator and `ai-analyse` tooling stay upstream and are fetched at runtime.
 
