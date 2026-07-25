@@ -10,6 +10,39 @@ insert_final_newline = true
 [*.{cs,csx}]
 indent_size = 4
 
+# Explicit CA severities — reviewable policy for the PR analyzer gate.
+# Resolution order: SDK default → AnalysisLevel → this file.
+# TreatWarningsAsErrors=true promotes warning to build failure.
+
+# Specify IFormatProvider for locale-sensitive conversions.
+dotnet_diagnostic.CA1305.severity = warning
+
+# Parameter names should match base declaration.
+dotnet_diagnostic.CA1725.severity = warning
+
+# Call GC.SuppressFinalize when implementing Dispose patterns.
+dotnet_diagnostic.CA1816.severity = warning
+
+# Members that do not access instance data should be static.
+dotnet_diagnostic.CA1822.severity = warning
+
+# Prefer concrete types over interfaces for locals where the concrete type is known.
+dotnet_diagnostic.CA1859.severity = warning
+
+# Identifiers should not match keywords (virtual/interface members).
+dotnet_diagnostic.CA1716.severity = warning
+
+# CA1848 (LoggerMessage delegates): suggestion, not enforced.
+# NFR-092 prefers explicit low-indirection ILogger.Log* call sites over source-generated
+# LoggerMessage partial methods for this codebase's low-volume startup/retention logging.
+# Rejected alternative: adopt LoggerMessage across Infrastructure call sites.
+dotnet_diagnostic.CA1848.severity = suggestion
+
+# CA1711 (incorrect suffix): off.
+# xUnit [CollectionDefinition] types conventionally end in "Collection" (e.g. AspireCollection).
+# Enforcing CA1711 would fight the test-framework naming pattern.
+dotnet_diagnostic.CA1711.severity = none
+
 [*.{csproj,props,targets,slnx}]
 indent_size = 2
 
