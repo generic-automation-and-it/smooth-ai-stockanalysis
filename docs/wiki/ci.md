@@ -8,6 +8,9 @@ The pipeline is a single PR gate that checks whitespace, builds with analyzers, 
 - **Agent context:** [`.github/CI_AGENTS.md`](../../.github/CI_AGENTS.md)
 - **Triggers:** `pull_request` → `main` (including PR branch updates), `push` → `main`, and manual `workflow_dispatch`.
 - **No path filters.** The gate runs on every pull request, whatever it touches — including documentation-only and `.agents/` / `.context/` changes. Two reasons: the job (`build-and-test`) is a required status check, and a path-filtered workflow never creates its check run, so the requirement would stay unreported and the PR unmergeable; and the Secret scan step must see every changed file (NFR-043). The filters were inherited from the reference catalogue port and removed in WT-10-04.
+  Verified after that change landed: this documentation-only pull request — which touches no path the
+  old filter matched — runs the full gate. Before the change, PR #272 (`.agents/**` only) had no
+  `build-and-test` check on it at all.
 
 ### Required status checks
 
