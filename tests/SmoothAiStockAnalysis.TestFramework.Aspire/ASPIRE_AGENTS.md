@@ -23,5 +23,4 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 |:-----|:-------|:----|
 | 2026-07-23 | Restored Aspire as a WireMock-only test dependency host. | #252 |
 | 2026-07-24 | Centralized the WireMock resource contract for downstream fixtures. | #252 |
-| 2026-07-25 | CI pre-warm limited to the integration level; unit/component stay container-free. | #83 / WT-10-02 |
-| 2026-07-25 | Pre-warm made opt-in (`PREWARM_WIREMOCK`); no level requires a container runtime until a test opts into `AspireCollection`. | #83 / WT-10-02 |
+| 2026-07-25 | CI pre-warm limited to the integration level and made opt-in via `PREWARM_WIREMOCK`; no level requires a container runtime until a test opts into `AspireCollection`. | #83 / WT-10-02 |

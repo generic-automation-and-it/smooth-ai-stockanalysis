@@ -21,9 +21,11 @@ The pipeline is a single PR gate that checks whitespace, builds with analyzers, 
 8. **Integration tests** — `run-level.sh integration`. Runs `Host.IntegrationTest` against isolated SQLite. **No container runtime**: no current test opts into `AspireCollection`, so WireMock is not started. With `PREWARM_WIREMOCK=1` the step starts the WireMock-only Aspire AppHost first, waits for `http://127.0.0.1:19091/__admin/health`, and tears it down afterwards (SIGTERM → SIGKILL → sweep containers matching `name=^wiremock`).
 9. **Merge coverage** — `merge-coverage.sh` runs `reportgenerator` over `artifacts/testresults/**/coverage.cobertura.xml` into `artifacts/coverage/`. Include filter targets the four product-assembly name prefixes (Domain, Application, Infrastructure, Host); test/architecture projects must not dilute coverage.
 10. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
-11. **Upload artifacts** (`if: always()`) — `test-results-unit`, `test-results-component`, `test-results-integration`, and `coverage-report`.
+11. **Upload artifacts** — `test-results-unit`, `test-results-component`, `test-results-integration`, and `coverage-report`. All four upload steps use `if: always()` so missing files warn rather than fail (`if-no-files-found: warn`).
 
 ## Local equivalents
+
+Requires bash (Linux/macOS/WSL or Git Bash on Windows). On Windows without bash, use `dotnet test` against a project or the solution instead.
 
 ```bash
 dotnet restore

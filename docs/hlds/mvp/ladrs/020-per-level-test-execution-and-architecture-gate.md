@@ -13,7 +13,7 @@ NFR-069 requires three test levels (unit, component, integration) that are disti
 2. **One PR-gate job, three named test steps** (Unit → Component → Integration) plus a Merge coverage step. Later levels still run when an earlier level fails (`if: !cancelled() && steps.build.outcome == 'success'`) so the checks stay distinguishable.
 3. **No level starts WireMock by default.** `AspireFixture` probes the well-known endpoint and starts its own AppHost when nothing answers, so pre-warming is an optimisation, never a requirement. `run-level.sh integration` pre-warms only when `PREWARM_WIREMOCK=1`; CI leaves it unset while no integration test opts into `AspireCollection`. All three levels therefore run with no container runtime present (NFR-074).
 4. **Parallel-within-level** project execution (catalogue pattern), safe because `SqliteTestDatabase` uses a Guid path per process. Measured on the unit level: **9.3 s sequential → 3.5 s parallel (~2.6×)**, and the sequential baseline excluded coverage collection, so the real margin is wider.
-5. **L0 `Architecture.UnitTest`** project with `NetArchTest.Rules` 1.3.2 enforces inward layer edges and Domain's NodaTime-only external package rule.
+5. **L0 `Architecture.UnitTest`** project with `NetArchTest.Rules` 1.3.2 enforces inward layer edges (NetArchTest) and Domain's NodaTime-only external rule (assembly-reference allow-list on `DomainAssembly.GetReferencedAssemblies()`).
 6. **Coverage Include** narrowed to the four product assemblies so test/architecture projects are not instrumented as product code.
 
 ## Alternatives considered

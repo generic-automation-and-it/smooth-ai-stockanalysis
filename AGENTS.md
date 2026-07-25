@@ -103,7 +103,7 @@ xunit.v3 · Shouldly · Bogus. Three tiers (the distinction is non-obvious and d
 
 - **L0** unit — `*.UnitTest` plus `Architecture.UnitTest` (NetArchTest layer rules). No I/O, all in-process; must stay runnable on every CI matrix image (Linux + Windows) without a container runtime.
 - **L1** component — `Application.ComponentTest` uses in-memory EF Core; `Infrastructure.ComponentTest` uses a real isolated SQLite file. No WireMock unless a test opts into Aspire.
-- **L2** integration — `Host.IntegrationTest` full Host stack with an isolated local SQLite file; CI starts Aspire WireMock only for this level.
+- **L2** integration — `Host.IntegrationTest` full Host stack with an isolated local SQLite file; CI may pre-warm Aspire WireMock for this level only, when `PREWARM_WIREMOCK=1` is set or a test opts into `AspireCollection`.
 
 Levels are separately runnable via `run-level.sh` (LADR-020). Shared fixtures, including isolated SQLite test-database support and the opt-in Aspire/WireMock fixture, live in `tests/SmoothAiStockAnalysis.TestFramework/`. The WireMock-only AppHost lives in `tests/SmoothAiStockAnalysis.TestFramework.Aspire/`. See `docs/wiki/testing.md`.
 

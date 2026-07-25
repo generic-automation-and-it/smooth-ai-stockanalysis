@@ -16,6 +16,7 @@ L0 NetArchTest suite that structurally enforces inward layer dependencies (NFR-0
 NFR-090 requires layer dependency rules to be checked in the build. LADR-001 states clean-architecture dependencies point inward. This project is that check. It runs beside the other `*.UnitTest` projects in the PR gate's **Unit tests** step.
 
 ```mermaid
+%% Arrows point in the "depends on" direction (outer → inner).
 flowchart LR
   Host --> Application
   Host --> Infrastructure
@@ -39,10 +40,11 @@ flowchart LR
 
 ### Not mechanically enforced
 
-- Vertical-slice folder shape inside Application (`Features/<Name>/`).
-- "No business rules in Infrastructure" beyond assembly edges.
+- Vertical-slice folder shape inside Application (`Features/<Name>/`; would need reflection over Mediator handler types — too brittle today).
+- "No business rules in Infrastructure" beyond assembly edges (would need reflection over `AddXxx` extension methods to detect "business rules" vs. wiring — too brittle today).
 - Host endpoints must go through Mediator (no endpoints exist yet; when they do, prefer review + targeted tests over brittle reflection).
 - Package versions / central package management hygiene.
+- Generator-emitted sub-namespaces that re-export types from a forbidden layer (NetArchTest `HaveDependencyOnAny` matches by namespace prefix, not by type; see `LayerBoundaryTests.cs` comments).
 
 ## Test References
 
