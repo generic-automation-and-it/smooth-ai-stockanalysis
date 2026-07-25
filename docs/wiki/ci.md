@@ -1,27 +1,39 @@
 # CI/CD
 
-The pipeline is a single PR gate that builds and tests every change before it can merge to `main`.
+The pipeline is a single PR gate that formats, builds with analyzers, and tests every change before it can merge to `main`.
 
 ## PR Gate
 
 - **Workflow:** `.github/workflows/pr-gate.yml`
+- **Agent context:** [`.github/CI_AGENTS.md`](../../.github/CI_AGENTS.md)
 - **Triggers:** `pull_request` → `main` (including PR branch updates), `push` → `main`, and manual `workflow_dispatch`.
+- **Path filters (push + pull_request):** `Directory.Packages.props`, `Directory.Build.props`, `.editorconfig`, `.config/dotnet-tools.json`, `*.slnx`, `src/**`, `tests/**`, `.github/actions/**`, `.github/workflows/pr-gate.yml`. Docs-only PRs skip the gate until WT-10-04.
 
 ### Steps
 
 1. **Checkout** — `actions/checkout@v4`.
 2. **Install .NET SDK** — `actions/setup-dotnet@v4` (version from the `DOTNET_VERSION` env, currently `10.0.x`).
-3. **Restore** — `dotnet restore smooth-ai-stockanalysis.slnx`.
-4. **Build** — `dotnet build --no-restore --configuration Release`.
-5. **Aspire test with coverage** — local action `.github/actions/test-with-coverage`:
+3. **Restore** — `dotnet restore`.
+4. **Format** — `dotnet format smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore`. Fails the job on formatting drift, distinct from compile failures.
+5. **Build** — `dotnet build --no-restore --configuration Release`. SDK analyzers and code-style enforcement are enabled via `Directory.Build.props` (`EnableNETAnalyzers`, `AnalysisLevel=latest-recommended`, `EnforceCodeStyleInBuild`) with `TreatWarningsAsErrors=true`. Explicit CA severities live in `.editorconfig`.
+6. **Aspire test with coverage** — local action `.github/actions/test-with-coverage`:
    - Starts the WireMock-only Aspire AppHost, waits for `http://127.0.0.1:19091/__admin/health`, and stops the AppHost during action teardown.
    - Requires a container runtime for WireMock only. Infrastructure component and Host integration tests allocate isolated local SQLite files; Application component tests use the EF Core in-memory provider.
    - Restores .NET tools (`dotnet tool restore`) before executing the test suite.
    - Prepares `artifacts/testresults/` and `artifacts/coverage/`.
    - Runs test projects in order: Host integration → Application/Infrastructure component → Domain/Application/Infrastructure/Host unit tests.
    - Generates coverage reports with `dotnet tool run reportgenerator`.
-6. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
-7. **Upload coverage artifacts** (`if: always()`) — uploads `artifacts/coverage/` as `coverage-report`.
+7. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
+8. **Upload coverage artifacts** (`if: always()`) — uploads `artifacts/coverage/` as `coverage-report`.
+
+## Local equivalents
+
+```bash
+dotnet restore
+dotnet format smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
+dotnet build smooth-ai-stockanalysis.slnx -c Release --no-restore
+dotnet test  smooth-ai-stockanalysis.slnx
+```
 
 ## .NET local tools
 
