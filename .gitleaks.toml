@@ -1,0 +1,95 @@
+# gitleaks configuration for the smooth-ai-stockanalysis repository.
+#
+# NFR-043 verification clause: "Repository scanned for committed credentials as
+# part of the build." This file is the reviewable, in-repo allowlist that
+# accompanies the scan step added in WT-10-03 (PR #270). The step lives in
+# .github/workflows/pr-gate.yml and is implemented by
+# .github/actions/secret-scan/scan.sh.
+#
+# IMPORTANT — ruleset resolution:
+#   The gitleaks *default* ruleset is compiled into the binary, BUT the moment a
+#   config file is supplied (via --config or auto-discovered .gitleaks.toml) the
+#   built-in default is REPLACED, not extended. `useSystem = true` only loads a
+#   system-installed config (e.g. /etc/gitleaks/), which the CI runner does not
+#   have — so it silently yields an EMPTY ruleset and nothing is ever flagged.
+#
+#   To keep the full upstream ruleset while adding only this repo's allowlist,
+#   scan.sh fetches the upstream default config at the SAME pinned release tag
+#   as the binary, verifies it against a committed SHA-256, and this file
+#   extends it by path:
+#
+#       [extend] path = "<runtime path to fetched default>"
+#
+#   The allowlist below is therefore the ONLY reviewable suppression surface.
+#   Every entry carries a comment saying why it is safe. An unexplained
+#   allowlist entry is how a real key gets ignored — do not add one without a
+#   reason.
+#
+# Scan scope and known blind spot:
+#   The scan runs against the PR commit range (origin/main...HEAD), not the full
+#   repository history. A key committed and later removed within the same PR is
+#   still caught; history before the PR merge base is not scanned on every run.
+#   That blind spot, and the path-filter gap (docs/**, .agents/** are not gated
+#   today), are documented in .github/CI_AGENTS.md and closed by WT-10-04's
+#   always-runs gate.
+
+title = "smooth-ai-stockanalysis gitleaks allowlist"
+
+# `path` is rewritten by scan.sh to the absolute location of the
+# pinned-upstream default config it downloads and checksum-verifies.
+# The placeholder value here is a clearly-marked sentinel so a bare
+# `gitleaks detect --config .gitleaks.toml` (no scan.sh) fails with an
+# obvious diagnostic rather than loading a non-existent file path.
+[extend]
+path = "<rewritten-by-scan.sh-at-runtime>"
+
+[allowlist]
+description = "smooth-ai-stockanalysis known-safe matches — every entry is a committed placeholder or a documented test fixture, never a live credential."
+
+# --- regexes: suppress specific SHAPES wherever they appear ---
+regexes = [
+  # Env-var-mirroring placeholder committed in appsettings.json
+  # (Credentials:OpenAi:ApiKey). The real OpenAI API key arrives at deploy time
+  # from CREDENTIALS__OPENAI__APIKEY (NFR-080). Not a secret; rejected by
+  # CredentialsOptions.Validate (NFR-047). This bare form is NOT matched by the
+  # upstream default (which matches ^\{\{...}}$), so it is the live entry; the
+  # braced form was dropped as redundant with the upstream default.
+  '''^CREDENTIALS__OPENAI__APIKEY$''',
+]
+
+# --- paths: suppress everything under files that are documented fixtures ---
+paths = [
+  # Committed deployment configuration carries placeholder tokens, not values
+  # (NFR-044, verified by CommittedConfigurationGuardTests).
+  '''src/SmoothAiStockAnalysis\.Host/appsettings(\.Development)?\.json$''',
+
+  # gitleaks itself: the allowlist, the scan script, and the gate workflow
+  # legitimately mention secret-shaped tokens (sk-, ghp_, AKIA, etc.) as the
+  # catalog of patterns the scanner and the L0 guard detect. These are pattern
+  # names, not credentials.
+  '''\.gitleaks\.toml$''',
+  '''\.github/actions/secret-scan/.*$''',
+  '''\.github/workflows/pr-gate\.yml$''',
+
+  # L0 guard that scans committed config for secret-shaped literals. Its
+  # source lists the same prefixes (sk-, ghp_, sk-ant-, AKIA, AIza,
+  # github_pat_) as detection patterns, not as live credentials.
+  '''tests/SmoothAiStockAnalysis\.Host\.UnitTest/CommittedConfigurationGuardTests\.cs$''',
+
+  # HOST_AGENTS.md and CONFIGURATION_AGENTS.md document the placeholder
+  # contract, the env-var convention, and the prefix catalogue as prose.
+  '''src/SmoothAiStockAnalysis\.Host/HOST_AGENTS\.md$''',
+  '''src/SmoothAiStockAnalysis\.Application/CONFIGURATION_AGENTS\.md$''',
+  '''src/SmoothAiStockAnalysis\.Host/Configuration/CredentialsOptions\.cs$''',
+
+  # Integration-test fixture commits a deliberately non-secret override
+  # ("integration-test-openai-api-key") so the Host's credential validation
+  # passes during L2 boot (HostWebAppFixture). It is not a real key and is
+  # never sent to a provider.
+  '''tests/SmoothAiStockAnalysis\.Host\.IntegrationTest/HostWebAppFixture\.cs$''',
+
+  # Unit tests for the credential options intentionally exercise placeholder
+  # and non-placeholder shapes; they contain no live credentials.
+  '''tests/SmoothAiStockAnalysis\.Host\.UnitTest/CredentialsOptionsTests\.cs$''',
+  '''tests/SmoothAiStockAnalysis\.Host\.UnitTest/CatalogueOptionsTests\.cs$''',
+]
