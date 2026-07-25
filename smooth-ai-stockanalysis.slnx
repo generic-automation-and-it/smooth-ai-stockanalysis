@@ -15,6 +15,7 @@
     <Project Path="tests/SmoothAiStockAnalysis.Application.UnitTest/SmoothAiStockAnalysis.Application.UnitTest.csproj" />
     <Project Path="tests/SmoothAiStockAnalysis.Infrastructure.UnitTest/SmoothAiStockAnalysis.Infrastructure.UnitTest.csproj" />
     <Project Path="tests/SmoothAiStockAnalysis.Host.UnitTest/SmoothAiStockAnalysis.Host.UnitTest.csproj" />
+    <Project Path="tests/SmoothAiStockAnalysis.Architecture.UnitTest/SmoothAiStockAnalysis.Architecture.UnitTest.csproj" />
   </Folder>
   <Folder Name="/tests/L1/">
     <Project Path="tests/SmoothAiStockAnalysis.Application.ComponentTest/SmoothAiStockAnalysis.Application.ComponentTest.csproj" />
