@@ -50,7 +50,7 @@ default_config="${install_dir}/gitleaks-default.toml"
 # Cache check: archive integrity implies binary integrity — both are produced
 # in the same `tar -xzf` step below, so validating the archive is sufficient.
 if [ -x "${binary}" ] && sha256sum "${binary}.tar.gz" 2>/dev/null | grep -q "${binary_sha}"; then
-  : # cache hit within this job
+  : # cache hit within this job (see note above)
 else
   url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
   archive="/tmp/gitleaks.tar.gz"
@@ -89,7 +89,7 @@ fi
 #     carries a placeholder path so the file stays portable and reviewable. ---
 runtime_allowlist="${HOME}/.local/share/gitleaks-runtime.toml"
 mkdir -p "$(dirname "${runtime_allowlist}")"
-sed -E "s|^[[:space:]]*path[[:space:]]*=[[:space:]]*\"[^\"]*\"[[:space:]]*$|path = \"${default_config}\"|" \
+sed -E 's|^[[:space:]]*path[[:space:]]*=[[:space:]]*"[^"]*"[[:space:]]*$|path = "'"${default_config}"'"|' \
   "${repo_allowlist}" > "${runtime_allowlist}"
 
 echo "::group::gitleaks ${version}"
@@ -103,6 +103,14 @@ fi
 echo "::endgroup::"
 
 mkdir -p artifacts/secret-scan
+
+# On a fork pull_request the base SHA may not be reachable from the local
+# history (actions/checkout fetches the head + origin/main, not the base).
+# Fetch the base ref so --log-opts "base..head" resolves; idempotent and safe
+# on success. GITHUB_BASE_REF is set by the pull_request event.
+if [ -n "${GITHUB_BASE_REF:-}" ]; then
+  git fetch --no-tags --quiet origin "${GITHUB_BASE_REF}" 2>/dev/null || true
+fi
 
 # --no-banner keeps the log readable; -v prints each finding inline so a red
 # step shows what was caught before the JSON report is uploaded. --redact keeps

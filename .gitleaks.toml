@@ -2,7 +2,7 @@
 #
 # NFR-043 verification clause: "Repository scanned for committed credentials as
 # part of the build." This file is the reviewable, in-repo allowlist that
-# accompanies the scan step added in WT-10-03 (PR #<n>). The step lives in
+# accompanies the scan step added in WT-10-03 (PR #270). The step lives in
 # .github/workflows/pr-gate.yml and is implemented by
 # .github/actions/secret-scan/scan.sh.
 #
@@ -49,9 +49,9 @@ regexes = [
   # Env-var-mirroring placeholder committed in appsettings.json
   # (Credentials:OpenAi:ApiKey). The real OpenAI API key arrives at deploy time
   # from CREDENTIALS__OPENAI__APIKEY (NFR-080). Not a secret; rejected by
-  # CredentialsOptions.Validate (NFR-047). The braced {{...}} form is already
-  # matched upstream by gitleaks 8.27.2's default [allowlist].regexes
-  # (^\\{\\{...}}$), so the bare form alone is sufficient here.
+  # CredentialsOptions.Validate (NFR-047). This bare form is NOT matched by the
+  # upstream default (which matches ^\{\{...}}$), so it is the live entry; the
+  # braced form was dropped as redundant with the upstream default.
   '''CREDENTIALS__OPENAI__APIKEY''',
 ]
 
