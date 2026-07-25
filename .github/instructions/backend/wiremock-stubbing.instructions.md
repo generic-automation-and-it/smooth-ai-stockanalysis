@@ -16,7 +16,7 @@ alwaysApply: false
 - Do not add PostgreSQL, Redis, Npgsql, or Respawn to the Aspire test host; persistence tests use isolated SQLite files.
 - Keep `WireMockAdminClient` as the shared admin API adapter. Tests must not duplicate raw `__admin` request construction.
 - A test that changes mappings or request history must reset the WireMock instance before installing its own stubs.
-- Keep the well-known CI endpoint at `http://127.0.0.1:19091`; the coverage action pre-warms it once for the ordered test suite.
+- Keep the well-known CI endpoint at `http://127.0.0.1:19091`; CI pre-warms it for the **integration** level only (`run-level.sh integration`). Unit and component levels must not require it.
 
 > **HLD-12 context.** The dev AppHost previously provisioned its own WireMock container for local end-to-end work; that responsibility was removed in favour of the shared Aspire test dependency described here. If a future requirement reintroduces a dev-AppHost WireMock, align the orchestration with this rule set before merging.
 

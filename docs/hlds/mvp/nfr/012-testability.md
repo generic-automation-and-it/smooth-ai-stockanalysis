@@ -24,8 +24,9 @@ NFR-075 draws the only line available around the reasoning stage. Its output can
 
 ## Verification
 
-- Test levels runnable independently in the build.
+- Test levels runnable independently in the build (`run-level.sh unit|component|integration`, LADR-020).
 - Suite executes successfully with no network access.
+- Unit level requires no container runtime.
 
 ## Related
 

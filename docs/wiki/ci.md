@@ -1,6 +1,6 @@
 # CI/CD
 
-The pipeline is a single PR gate that checks whitespace, builds with analyzers, and tests every change before it can merge to `main`.
+The pipeline is a single PR gate that checks whitespace, builds with analyzers, and runs each test level as its own named step before merge to `main`.
 
 ## PR Gate
 
@@ -16,15 +16,12 @@ The pipeline is a single PR gate that checks whitespace, builds with analyzers, 
 3. **Restore** — `dotnet restore`.
 4. **Format** — `dotnet format whitespace smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore`. Fails the job on whitespace drift only. The `whitespace` subcommand is deliberate: bare `dotnet format` also runs the style and analyzer passes, and because Format precedes Build it would report analyzer violations as formatting failures.
 5. **Build** — `dotnet build --no-restore --configuration Release`. SDK analyzers and code-style enforcement are enabled via `Directory.Build.props` (`EnableNETAnalyzers`, `AnalysisLevel=10.0-recommended`, `EnforceCodeStyleInBuild`) with `TreatWarningsAsErrors=true`, so every CA and IDE diagnostic fails here. Explicit CA severities live in `.editorconfig`; `AnalysisLevel` is pinned rather than `latest-*` so an SDK bump cannot silently change the enforced set.
-6. **Aspire test with coverage** — local action `.github/actions/test-with-coverage`:
-   - Starts the WireMock-only Aspire AppHost, waits for `http://127.0.0.1:19091/__admin/health`, and stops the AppHost during action teardown.
-   - Requires a container runtime for WireMock only. Infrastructure component and Host integration tests allocate isolated local SQLite files; Application component tests use the EF Core in-memory provider.
-   - Restores .NET tools (`dotnet tool restore`) before executing the test suite.
-   - Prepares `artifacts/testresults/` and `artifacts/coverage/`.
-   - Runs test projects in order: Host integration → Application/Infrastructure component → Domain/Application/Infrastructure/Host unit tests.
-   - Generates coverage reports with `dotnet tool run reportgenerator`.
-7. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
-8. **Upload coverage artifacts** (`if: always()`) — uploads `artifacts/coverage/` as `coverage-report`.
+6. **Unit tests** — `bash .github/actions/test-with-coverage/run-level.sh unit`. Domain/Application/Infrastructure/Host unit tests plus `Architecture.UnitTest` (NFR-090). **No WireMock.** Projects in the level run in parallel; failures accumulate then fail the step.
+7. **Component tests** — `run-level.sh component`. Application (EF in-memory) and Infrastructure (isolated SQLite) component projects. **No WireMock** unless a future test opts into Aspire. Runs even if Unit failed (after a successful Build) so the check stays visible.
+8. **Integration tests** — `run-level.sh integration`. Starts the WireMock-only Aspire AppHost, waits for `http://127.0.0.1:19091/__admin/health`, runs `Host.IntegrationTest`, tears down Aspire (SIGTERM → SIGKILL → `docker rm -f wiremock`).
+9. **Merge coverage** — `merge-coverage.sh` runs `reportgenerator` over `artifacts/testresults/**/coverage.cobertura.xml` into `artifacts/coverage/`. Include filter is the four product assemblies only.
+10. **Publish coverage summary** (`if: always()`) — appends `artifacts/coverage/SummaryGithub.md` to the GitHub step summary.
+11. **Upload artifacts** (`if: always()`) — `test-results-unit`, `test-results-component`, `test-results-integration`, and `coverage-report`.
 
 ## Local equivalents
 
@@ -32,7 +29,11 @@ The pipeline is a single PR gate that checks whitespace, builds with analyzers, 
 dotnet restore
 dotnet format whitespace smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
 dotnet build smooth-ai-stockanalysis.slnx -c Release --no-restore
-dotnet test  smooth-ai-stockanalysis.slnx
+
+bash .github/actions/test-with-coverage/run-level.sh unit
+bash .github/actions/test-with-coverage/run-level.sh component
+bash .github/actions/test-with-coverage/run-level.sh integration
+bash .github/actions/test-with-coverage/merge-coverage.sh
 ```
 
 ## .NET local tools
