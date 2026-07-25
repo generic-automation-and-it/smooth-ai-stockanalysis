@@ -112,12 +112,11 @@ public sealed class LayerBoundaryTests
     {
         // Mechanically checkable slice of "Host holds no persistence logic":
         // Host must not reference EF Core types directly (DbContext belongs in Infrastructure).
+        // NetArchTest matches dependencies by name prefix, so this one entry also covers
+        // Microsoft.EntityFrameworkCore.Relational and .Sqlite.
         NetArchTest.Rules.TestResult result = Types.InAssembly(HostAssembly)
             .ShouldNot()
-            .HaveDependencyOnAny(
-                "Microsoft.EntityFrameworkCore",
-                "Microsoft.EntityFrameworkCore.Relational",
-                "Microsoft.EntityFrameworkCore.Sqlite")
+            .HaveDependencyOn("Microsoft.EntityFrameworkCore")
             .GetResult();
 
         AssertNetArchSuccess(
