@@ -1,8 +1,13 @@
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using SmoothAiStockAnalysis.Application.Extensions;
 using SmoothAiStockAnalysis.Host.Configuration;
 using SmoothAiStockAnalysis.Host.Extensions;
 using SmoothAiStockAnalysis.Infrastructure.Extensions;
+
+// AUDIT PROBE (temporary, will be reverted): deliberately reference an EF Core type from
+// Host to verify LayerBoundaryTests.HostMustNotDependOnEntityFrameworkCoreTypes actually fails.
+var __auditProbe = new DbContextOptionsBuilder();
 
 var builder = WebApplication.CreateBuilder(args);
 
