@@ -38,7 +38,7 @@ sequenceDiagram
     participant Integ as Integration tests
     participant Cov as Merge coverage
 
-    PR->>Gate: push / pull_request (path-filtered)
+    PR->>Gate: push / pull_request (path-filtered) or manual workflow_dispatch
     Gate->>Gate: checkout + setup-dotnet + restore
     Gate->>Format: verify-no-changes
     Gate->>Build: Release + analyzers as errors
@@ -89,3 +89,4 @@ sequenceDiagram
 | 2026-07-25 | Review fixes: Format narrowed to `whitespace`; CA1711 via `allowed_suffixes`; `AnalysisLevel` pinned; LADR-019 | #82 / WT-10-01 |
 | 2026-07-25 | Per-level unit/component/integration steps, WireMock only on integration, NetArchTest architecture project, coverage Include narrowed, LADR-020 | #83 / WT-10-02 |
 | 2026-07-25 | Review fixes: WireMock pre-warm made opt-in (`PREWARM_WIREMOCK`) so every level runs container-free (NFR-074 reworded to match its Target); `!cancelled()` de-duplicated; parallel speed-up measured; `action.yml` orphan status recorded | #83 / WT-10-02 |
+| 2026-07-25 | ai-review PR #269: Aspire double-start guard, per-step `timeout-minutes`, build-gate invariant comment, dead Domain allow-list entries trimmed | #83 / PR #269 |

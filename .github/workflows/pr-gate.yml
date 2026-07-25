@@ -62,23 +62,33 @@ jobs:
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
 
       # Levels run even when a previous level failed so the PR checks stay distinguishable.
+      #
+      # INVARIANT: the gate is `steps.build.outcome == 'success'`, not "not failed".
+      # Every level runs `dotnet test --no-build`, so without a successful Build there is
+      # nothing to test and the levels would fail for a misleading reason. If you ever add
+      # an `if:` to the Build step, outcome becomes 'skipped' and the levels skip with it —
+      # that is deliberate. Do not relax this to `!= 'failure'`.
       - name: Unit tests
         id: unit
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 10
         run: bash .github/actions/test-with-coverage/run-level.sh unit
 
       - name: Component tests
         id: component
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 10
         run: bash .github/actions/test-with-coverage/run-level.sh component
 
       - name: Integration tests
         id: integration
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 15
         run: bash .github/actions/test-with-coverage/run-level.sh integration
 
       - name: Merge coverage
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 5
         run: bash .github/actions/test-with-coverage/merge-coverage.sh
 
       - name: Publish coverage summary

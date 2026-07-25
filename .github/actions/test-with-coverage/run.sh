@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Compatibility entry point: run all three levels then merge coverage.
 # Prefer run-level.sh for a single level. CI invokes levels as separate steps.
+#
+# No EXIT/INT/TERM trap here on purpose: each run-level.sh runs in its own subshell
+# and installs its own trap, so Aspire teardown is already owned one level down.
+# Adding a trap here would only duplicate that, and would fire after the child has
+# already cleaned up.
 
 set -euo pipefail
 

@@ -27,3 +27,4 @@ alwaysApply: false
 | Date | Change |
 |:-----|:-------|
 | 2026-07-23 | Restored WireMock-only Aspire orchestration and shared stubbing conventions. |
+| 2026-07-25 | Pre-warm is opt-in (`PREWARM_WIREMOCK`); `AspireFixture` starts WireMock on demand, so no test level requires it. |

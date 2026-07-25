@@ -195,11 +195,18 @@ cleanup_aspire() {
 }
 
 start_aspire_wiremock() {
+  # Refuse a second start. Both `aspire_pid` and the trap live in this function, so a
+  # second call would overwrite the pid and leak the first host — cleanup only ever
+  # sees the latest one. One level starts Aspire today; this keeps that true.
+  if [ -n "${aspire_pid}" ]; then
+    echo "ERROR: Aspire host already started with PID ${aspire_pid}; refusing to start a second."
+    return 1
+  fi
+
   export ASPNETCORE_URLS="http://localhost:19888"
   export ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL="http://localhost:19889"
   export ASPIRE_ALLOW_UNSECURED_TRANSPORT="true"
 
-  # shellcheck disable=SC2064
   trap cleanup_aspire EXIT INT TERM
 
   dotnet run \

@@ -19,18 +19,12 @@ public sealed class LayerBoundaryTests
     private static readonly Assembly InfrastructureAssembly = typeof(SmoothAiStockAnalysisDbContext).Assembly;
     private static readonly Assembly HostAssembly = typeof(Program).Assembly;
 
+    // NodaTime is the only entry that can ever be reached: the filter below already drops
+    // every `System.*` facade, and a net10.0 library references neither `mscorlib` nor
+    // `netstandard`. Domain's actual reference set today is exactly NodaTime + System.Runtime.
     private static readonly HashSet<string> DomainAllowedExternalAssemblies = new(StringComparer.Ordinal)
     {
         "NodaTime",
-        // BCL facades commonly referenced by net10 class libraries.
-        "System.Runtime",
-        "System.Collections",
-        "System.Linq",
-        "System.Threading",
-        "System.Threading.Tasks",
-        "System.Private.CoreLib",
-        "netstandard",
-        "mscorlib",
     };
 
     [Fact]
@@ -112,7 +106,7 @@ public sealed class LayerBoundaryTests
     {
         // Mechanically checkable slice of "Host holds no persistence logic":
         // Host must not reference EF Core types directly (DbContext belongs in Infrastructure).
-        // NetArchTest matches dependencies by name prefix, so this one entry also covers
+        // NetArchTest matches dependencies by namespace prefix, so this one entry also covers
         // Microsoft.EntityFrameworkCore.Relational and .Sqlite.
         NetArchTest.Rules.TestResult result = Types.InAssembly(HostAssembly)
             .ShouldNot()
@@ -132,7 +126,8 @@ public sealed class LayerBoundaryTests
         InfrastructureAssembly.GetName().Name.ShouldBe("SmoothAiStockAnalysis.Infrastructure");
         HostAssembly.GetName().Name.ShouldBe("SmoothAiStockAnalysis.Host");
 
-        // Touch an Infrastructure extension type so the reference is not trimmed as unused.
+        // Touch an Infrastructure type so this test proves the assembly is actually loaded into
+        // the test host — NetArchTest can only see dependency edges on assemblies it can load.
         typeof(ServiceCollectionExtensions).Assembly.ShouldBe(InfrastructureAssembly);
     }
 

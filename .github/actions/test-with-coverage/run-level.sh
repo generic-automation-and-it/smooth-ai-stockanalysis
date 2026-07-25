@@ -33,7 +33,7 @@ case "${level}" in
   integration)
     if is_prewarm_requested; then
       echo "Level — integration (pre-warmed Aspire WireMock + isolated SQLite)..."
-      start_aspire_wiremock
+      start_aspire_wiremock || exit 1
       run_level_projects "${level_results_directory}" "${integration_projects[@]}"
       ensure_aspire_alive
     else
