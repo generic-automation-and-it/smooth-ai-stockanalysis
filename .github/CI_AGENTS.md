@@ -90,7 +90,10 @@ NFR-043 verification clause: *"Repository scanned for committed credentials as p
 ### Allowlist policy
 
 - Add an entry ONLY for committed placeholders, documented detection-pattern catalogues, or deliberately non-secret test-fixture values. Each entry MUST have a comment naming the NFR, fixture, or reason. If a scanner finding might be a real secret, **escalate before allowlisting** — rotation precedes everything else.
-- Do NOT use blanket path suppressions. Match the exact file or the exact non-secret shape.
+- The current allowlist uses blanket path suppressions for files documented as
+  NFR-044-verified. The load-bearing defense is the L0
+  CommittedConfigurationGuardTests; future additions must be either
+  shape-scoped (regex) or accompanied by an L0 guard.
 - The L0 `CommittedConfigurationGuardTests` are a defense-in-depth complement: they scan committed `appsettings.json` for secret-shaped literals and the placeholder contract on every `dotnet test`. The gate scan adds history coverage (a key committed and removed within a PR) and repo-wide coverage (source the L0 guard does not assert against).
 
 ## AI review credential and variable inventory

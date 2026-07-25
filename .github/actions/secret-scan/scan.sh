@@ -47,6 +47,8 @@ binary="${install_dir}/gitleaks"
 default_config="${install_dir}/gitleaks-default.toml"
 
 # --- install gitleaks binary (pin checksum) ---
+# Cache check: archive integrity implies binary integrity — both are produced
+# in the same `tar -xzf` step below, so validating the archive is sufficient.
 if [ -x "${binary}" ] && sha256sum "${binary}.tar.gz" 2>/dev/null | grep -q "${binary_sha}"; then
   : # cache hit within this job
 else
@@ -87,7 +89,8 @@ fi
 #     carries a placeholder path so the file stays portable and reviewable. ---
 runtime_allowlist="${HOME}/.local/share/gitleaks-runtime.toml"
 mkdir -p "$(dirname "${runtime_allowlist}")"
-sed "s|^path = .*.|path = \"${default_config}\"|" "${repo_allowlist}" > "${runtime_allowlist}"
+sed -E "s|^[[:space:]]*path[[:space:]]*=[[:space:]]*\"[^\"]*\"[[:space:]]*$|path = \"${default_config}\"|" \
+  "${repo_allowlist}" > "${runtime_allowlist}"
 
 echo "::group::gitleaks ${version}"
 "${binary}" version

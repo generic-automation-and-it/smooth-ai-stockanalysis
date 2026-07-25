@@ -49,11 +49,10 @@ regexes = [
   # Env-var-mirroring placeholder committed in appsettings.json
   # (Credentials:OpenAi:ApiKey). The real OpenAI API key arrives at deploy time
   # from CREDENTIALS__OPENAI__APIKEY (NFR-080). Not a secret; rejected by
-  # CredentialsOptions.Validate (NFR-047).
+  # CredentialsOptions.Validate (NFR-047). The braced {{...}} form is already
+  # matched upstream by gitleaks 8.27.2's default [allowlist].regexes
+  # (^\\{\\{...}}$), so the bare form alone is sufficient here.
   '''CREDENTIALS__OPENAI__APIKEY''',
-
-  # Full placeholder token block committed in appsettings.json, braces and all.
-  '''\{\{CREDENTIALS__OPENAI__APIKEY\}\}''',
 ]
 
 # --- paths: suppress everything under files that are documented fixtures ---
