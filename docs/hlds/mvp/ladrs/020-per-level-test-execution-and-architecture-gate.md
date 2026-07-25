@@ -10,9 +10,9 @@ NFR-069 requires three test levels (unit, component, integration) that are disti
 ## Decision
 
 1. **Per-level scripts** under `.github/actions/test-with-coverage/` (`run-level.sh unit|component|integration`, `merge-coverage.sh`, shared `common.sh`). The same scripts are the local and CI entry points.
-2. **One PR-gate job, three named test steps** (Unit → Component → Integration) plus a Merge coverage step. Later levels still run when an earlier level fails (`if: always() && !cancelled()` after a successful Build) so the checks stay distinguishable.
-3. **WireMock/Aspire starts only for the integration level.** Unit never touches it. Component stays container-free until a test opts into `AspireCollection`.
-4. **Parallel-within-level** project execution (catalogue pattern), safe because `SqliteTestDatabase` uses a Guid path per process.
+2. **One PR-gate job, three named test steps** (Unit → Component → Integration) plus a Merge coverage step. Later levels still run when an earlier level fails (`if: !cancelled() && steps.build.outcome == 'success'`) so the checks stay distinguishable.
+3. **No level starts WireMock by default.** `AspireFixture` probes the well-known endpoint and starts its own AppHost when nothing answers, so pre-warming is an optimisation, never a requirement. `run-level.sh integration` pre-warms only when `PREWARM_WIREMOCK=1`; CI leaves it unset while no integration test opts into `AspireCollection`. All three levels therefore run with no container runtime present (NFR-074).
+4. **Parallel-within-level** project execution (catalogue pattern), safe because `SqliteTestDatabase` uses a Guid path per process. Measured on the unit level: **9.3 s sequential → 3.5 s parallel (~2.6×)**, and the sequential baseline excluded coverage collection, so the real margin is wider.
 5. **L0 `Architecture.UnitTest`** project with `NetArchTest.Rules` 1.3.2 enforces inward layer edges and Domain's NodaTime-only external package rule.
 6. **Coverage Include** narrowed to the four product assemblies so test/architecture projects are not instrumented as product code.
 
@@ -26,11 +26,14 @@ NFR-069 requires three test levels (unit, component, integration) that are disti
 
 **Keep integration-first order with WireMock always on.** Rejected: contradicts freeing L0 from containers (NFR-069/074 intent).
 
-**Skip parallel-within-level.** Rejected after confirming SQLite isolation is per-process unique; parallel matches the proven catalogue pattern. On 2-core runners the win may be modest; correctness does not depend on it.
+**Pre-warm WireMock unconditionally for the integration level.** Rejected: no integration test opts into `AspireCollection`, so this provisions a container for zero consumers and makes L2 fail outright on a machine without Docker — the same objection that removed WireMock from L0, applied one level down. Because `AspireFixture` probes before starting, the pre-warm buys latency and not capability, so making it opt-in has no silent failure mode: forget the flag and the fixture starts WireMock itself, slightly slower.
+
+**Skip parallel-within-level.** Rejected after confirming SQLite isolation is per-process unique; parallel matches the proven catalogue pattern and measured ~2.6× on the unit level.
 
 ## Consequences
 
-- Developers run one level with one documented command; L0 works with `DOCKER_HOST=unix:///nonexistent`.
+- Developers run one level with one documented command; **all three** pass with `DOCKER_HOST=unix:///nonexistent` today.
+- When the first WireMock-consuming test lands it works with no CI change; setting `PREWARM_WIREMOCK=1` on the Integration step then becomes a speed optimisation to weigh, not a correctness fix.
 - PR checks expose Unit / Component / Integration as separate step names and upload per-level test-result artifacts.
 - A Domain → Infrastructure reference fails the unit level with a rule-named message.
 - WT-10-03/04 continue to extend the same job; they must not collapse the three test steps back into one.

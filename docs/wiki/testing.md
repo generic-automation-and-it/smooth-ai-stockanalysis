@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|---|
 | L0 | Unit | `*.UnitTest`, `Architecture.UnitTest` | In-process logic, pure domain, fakes | Network, disk I/O as product behaviour, containers | **None** | `bash .github/actions/test-with-coverage/run-level.sh unit` |
 | L1 | Component | `Application.ComponentTest`, `Infrastructure.ComponentTest` | One layer end-to-end; EF in-memory (Application) or isolated SQLite files (Infrastructure) | Live providers, shared DB servers | No container runtime today | `bash .github/actions/test-with-coverage/run-level.sh component` |
-| L2 | Integration | `Host.IntegrationTest` | Full Host via `WebApplicationFactory` + isolated SQLite | Live providers | Aspire WireMock when a test opts into HTTP stubs; CI pre-warms WireMock for this level | `bash .github/actions/test-with-coverage/run-level.sh integration` |
+| L2 | Integration | `Host.IntegrationTest` | Full Host via `WebApplicationFactory` + isolated SQLite | Live providers | **None today.** A test that opts into `AspireCollection` starts WireMock itself; CI can pre-warm it with `PREWARM_WIREMOCK=1` | `bash .github/actions/test-with-coverage/run-level.sh integration` |
 
 The three levels are **distinguishable and separately runnable** (NFR-069). CI reports each as its own named step and uploads a per-level test-results artifact. See [LADR-020](../hlds/mvp/ladrs/020-per-level-test-execution-and-architecture-gate.md).
 
@@ -68,8 +68,11 @@ DOCKER_HOST=unix:///nonexistent bash .github/actions/test-with-coverage/run-leve
 # L1 component tests — no WireMock
 bash .github/actions/test-with-coverage/run-level.sh component
 
-# L2 integration tests — starts Aspire WireMock, stops it on exit
-bash .github/actions/test-with-coverage/run-level.sh integration
+# L2 integration tests — also container-free, until a test opts into AspireCollection
+DOCKER_HOST=unix:///nonexistent bash .github/actions/test-with-coverage/run-level.sh integration
+
+# ...optionally with WireMock pre-warmed (starts Aspire, stops it on exit)
+PREWARM_WIREMOCK=1 bash .github/actions/test-with-coverage/run-level.sh integration
 
 # Merge cobertura into artifacts/coverage/ (after any combination of levels)
 bash .github/actions/test-with-coverage/merge-coverage.sh
