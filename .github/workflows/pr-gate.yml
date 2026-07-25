@@ -6,6 +6,10 @@ on:
       - main
     paths:
       - Directory.Packages.props
+      - Directory.Build.props
+      - .editorconfig
+      - .config/dotnet-tools.json
+      - "*.slnx"
       - src/**
       - tests/**
       - .github/actions/**
@@ -15,6 +19,10 @@ on:
       - main
     paths:
       - Directory.Packages.props
+      - Directory.Build.props
+      - .editorconfig
+      - .config/dotnet-tools.json
+      - "*.slnx"
       - src/**
       - tests/**
       - .github/actions/**
@@ -43,6 +51,9 @@ jobs:
 
       - name: Restore
         run: dotnet restore
+
+      - name: Format
+        run: dotnet format smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
 
       - name: Build
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
