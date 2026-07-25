@@ -28,5 +28,5 @@ NFR-023 exists because multiple providers cover overlapping ground by design —
 
 ## Related
 
-- `docs/adr/013-abstracted-ai-reasoning-provider.md`
+- `docs/hlds/mvp/ladrs/013-abstracted-ai-reasoning-provider.md`
 - BR-4 (never analyse twice), BR-43 (failover)

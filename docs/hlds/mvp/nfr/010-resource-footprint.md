@@ -29,6 +29,6 @@ NFR-060 corrects a plausible mistake. Reducing card wear by holding the database
 
 ## Related
 
-- `docs/adr/002-on-disk-sqlite-over-in-memory-snapshots.md`
-- `docs/adr/003-defer-managed-workflow-orchestration.md`
-- `docs/adr/011-memory-only-caching.md`
+- `docs/hlds/mvp/ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md`
+- `docs/hlds/mvp/ladrs/003-defer-managed-workflow-orchestration.md`
+- `docs/hlds/mvp/ladrs/011-memory-only-caching.md`

@@ -31,4 +31,4 @@ NFR-077 is the practical definition of unattended. Domestic hardware loses power
 ## Related
 
 - BR-38 (own hardware, no hosting cost), BR-40 (manual trigger)
-- `docs/adr/006-one-time-fork-of-template.md`
+- `docs/hlds/mvp/ladrs/006-one-time-fork-of-template.md`

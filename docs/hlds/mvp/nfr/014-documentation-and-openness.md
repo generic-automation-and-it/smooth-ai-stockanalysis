@@ -29,5 +29,5 @@ NFR-087 is the reason the documentation folder was made visible rather than hidd
 
 ## Related
 
-- `docs/adr/007-visible-docs-folder.md`
+- `docs/hlds/mvp/ladrs/007-visible-docs-folder.md`
 - BR-49, BR-50

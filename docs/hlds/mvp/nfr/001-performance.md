@@ -28,6 +28,6 @@ NFR-003 follows from the funnel: expensive per-company work only ever runs on a 
 
 ## Related
 
-- `docs/adr/002-on-disk-sqlite-over-in-memory-snapshots.md`
-- `docs/adr/011-memory-only-caching.md`
+- `docs/hlds/mvp/ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md`
+- `docs/hlds/mvp/ladrs/011-memory-only-caching.md`
 - BR-41 (stage caps)
