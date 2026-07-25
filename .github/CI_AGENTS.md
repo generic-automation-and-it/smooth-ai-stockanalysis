@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-The PR gate is a single-job workflow that restores, checks whitespace, builds with .NET analyzers as errors, then runs **unit → component → integration** as three named steps (no level needs a container runtime today), merges coverage, and uploads per-level test-result artifacts plus the merged coverage report.
+The PR gate is a single-job workflow that restores, checks whitespace, builds with .NET analyzers as errors, runs a **secret scan** (gitleaks, PR commit range) that fails on a detected credential, then runs **unit → component → integration** as three named steps (no level needs a container runtime today), merges coverage, and uploads per-level test-result artifacts, the merged coverage report, and the `secret-scan-report` artifact.
 
 ## Non-Negotiables
 
@@ -70,6 +70,70 @@ sequenceDiagram
 - **Aspire cleanup.** When pre-warming is enabled the integration level traps EXIT/INT/TERM, SIGTERM→wait→SIGKILL, then sweeps leftovers with `docker ps -aq --filter name=^wiremock`. Match by **prefix**: Aspire names the resource `wiremock-<suffix>`, so the previous fixed `docker rm -f wiremock` never matched anything and the safety net was a silent no-op. Every path that starts Aspire must still stop it — including `AspireFixture`, which disposes the AppHost it created.
 - **`action.yml` has no caller.** `pr-gate.yml` invokes the scripts directly; the composite is retained only because a public repository's composite actions can be consumed cross-repo. It is not exercised by this repository's CI, so treat changes to it as untested and prefer editing the scripts it wraps.
 
+## Secret scanning
+
+NFR-043 verification clause: *"Repository scanned for committed credentials as part of the build."* The gate satisfies it with a named **Secret scan** step (implemented by `.github/actions/secret-scan/scan.sh`, configured by `.gitleaks.toml`) placed after Build and before the test levels, so a credential fails fast before the test levels spend their time. The step is optional only in the sense that it honours the same Build gate as the test levels (`steps.build.outcome == 'success'`); once Build succeeds it is mandatory.
+
+### Tool and pinning
+
+- **gitleaks 8.27.2**, installed by pinned SHA-256 (`GITLEAKS_SHA256`). The binary is fetched from the upstream release and checksum-verified; an upstream tamper or proxy swap fails the step rather than running a dodgy scanner.
+- **Ruleset resolution gotcha (important).** The moment gitleaks is given a config file (via `--config` or auto-discovered `.gitleaks.toml`) the binary's built-in default ruleset is **replaced, not extended**. `useSystem = true` only loads a system-installed config (e.g. `/etc/gitleaks/`), which the CI runner does not have — so it silently yields an **empty ruleset** and nothing is ever flagged. To keep the full upstream ruleset while adding only this repo's allowlist, `scan.sh` also fetches the upstream default `gitleaks.toml` at the SAME pinned tag, checksum-verifies it (`GITLEAKS_CONFIG_SHA256`), and the committed `.gitleaks.toml` extends it by path. The runtime copy of `.gitleaks.toml` has its `[extend] path` rewritten to the absolute fetched location so the committed file stays portable.
+- The step **consumes no secrets**, so `pull_request` runs from forks are scanned identically to same-repo PRs. GitHub's native push protection / secret scanning is **complementary, not a substitute** for this build clause.
+
+### Scan scope and known blind spots
+
+- The scan runs against the **PR commit range**, not the full repository history: `--log-opts` resolves to `base..head` SHAs for `pull_request`, `before..after` for `push`, and empty (full history) for `workflow_dispatch`. `actions/checkout` uses `fetch-depth: 0` so gitleaks can resolve the range via `git log`.
+- **Blind spot A — pre-PR history.** A key committed to `main` before a PR's merge base is not re-scanned on every PR. Closing it would mean scanning the full history every run; that is too slow for the gate. History is instead covered by a one-off full scan (see PR body for the WT-10-03 verification scan) and by GitHub's native secret scanning, which scans `main` continuously.
+- **Blind spot B — path filter.** `pr-gate.yml`'s `paths:` blocks mean the gate does not run for every file change. A credential committed to a path outside the filter (`docs/**`, `.agents/**`, `.context/**`) would **not** be scanned. Broadening the filters or moving the scan to a separate always-on workflow is WT-10-04's responsibility (see Migration Plans). Do not broaden the filter here without measuring the gate-runtime impact across every image.
+- **Blind spot C — allowlist suppression.** `.gitleaks.toml` is the reviewable suppression surface. Every allowlist entry carries a comment saying why it is safe; an unexplained entry is how a real key gets ignored. A real credential that happens to land in a path-matched file would still be caught (the path allowlist suppresses the file only when the upstream rule matches a *known-safe* shape — e.g. a high-entropy fake committed to `appsettings.json` is still flagged because it does not match the placeholder regex).
+
+### Allowlist policy
+
+- Add an entry ONLY for committed placeholders, documented detection-pattern catalogues, or deliberately non-secret test-fixture values. Each entry MUST have a comment naming the NFR, fixture, or reason. If a scanner finding might be a real secret, **escalate before allowlisting** — rotation precedes everything else.
+- Do NOT use blanket path suppressions. Match the exact file or the exact non-secret shape.
+- The L0 `CommittedConfigurationGuardTests` are a defense-in-depth complement: they scan committed `appsettings.json` for secret-shaped literals and the placeholder contract on every `dotnet test`. The gate scan adds history coverage (a key committed and removed within a PR) and repo-wide coverage (source the L0 guard does not assert against).
+
+## AI review credential and variable inventory
+
+Authoritative inventory for the AI review pipelines (root `AGENTS.md` repeats the names; the failure details live here so they do not drift from the workflow files). `secrets: inherit` in `pipeline-code-review-report.yml` resolves against the CALLER repo **and** its organization, so a secret provisioned at the org level satisfies the caller even though it is invisible to `gh secret list` at the repo level. Direct verification with the token available in this environment returns HTTP 403 for both `gh secret list` and `gh variable list` ("Resource not accessible by integration"); provisioning is therefore verified **indirectly** (see Provisioning status below).
+
+### Provisioning status (measured 2026-07-25)
+
+- Direct `gh secret list` / `gh variable list` → **HTTP 403** ("Resource not accessible by integration"). The token cannot enumerate secrets, so direct verification is not available. This is expected; it is NOT evidence that secrets are missing.
+- Indirect evidence the required configuration is provisioned and operational: the most recent `PR Code Review Report` runs (ids 30157760529, 30157611535 — 2026-07-25 12:18, 12:13 UTC) and `PR AI Analyse (Self-Fix)` runs (30157903065, 30157658241 — 12:23, 12:15 UTC) all concluded `success`. A missing `OPENCODE_OPENAI_API_KEY` or any required variable would have failed them before the review was generated. The review report generator was observed resolving the `OPENAI` provider against `OPENCODE_OPENAI_API_KEY` in the run logs (run 30157760529) without a missing-credential error, and a review was posted to PR #269 (APPROVED at 12:23 UTC).
+- **Conclusion:** the required secret and variables are provisioned and operational. The optional provider keys and the optional push token are not exercised by the current (OpenAI) configuration, so their provisioning state is unknown and is listed in the owner actions below.
+
+### Secrets
+
+| Name | Required? | Consumer workflow | Scope | Missing-credential failure |
+|---|---|---|---|---|
+| `OPENCODE_OPENAI_API_KEY` | **Required** | `pipeline-code-review-report.yml` (via `secrets: inherit`) | repo or org | Review report job fails early at provider resolution: the OpenAI provider is selected but the key is empty/missing; no review is posted and the run concludes `failure`. Observed: when present, the run proceeds and posts a review. |
+| `OPENCODE_GEMINI_API_KEY` | Optional | `pipeline-code-review-report.yml` | repo or org | Only read when `OPENCODE_REVIEW_REPORT_PROVIDER=GEMINI` (not the current default). Missing it is silent under the OpenAI default; selecting GEMINI without it fails at provider resolution. |
+| `OPENCODE_COPILOT_API_KEY` | Optional | `pipeline-code-review-report.yml` | repo or org | Only read when `OPENCODE_REVIEW_REPORT_PROVIDER=COPILOT`. Same failure shape as GEMINI above. |
+| `OPENCODE_ANTHROPIC_API_KEY` | Optional | `pipeline-code-review-report.yml` | repo or org | Only read when `OPENCODE_REVIEW_REPORT_PROVIDER=ANTHROPIC`. Same failure shape as GEMINI above. |
+| `OPENCODE_OPENROUTER_API_KEY` | Optional | `pipeline-code-review-report.yml` | repo or org | Only read when `OPENCODE_REVIEW_REPORT_PROVIDER=OPEN_ROUTER`. Same failure shape as GEMINI above. |
+| `OPENCODE_ANALYSE_GH_TOKEN` | Optional | `pipeline-ai-analyse.yml` | repo or org | PAT with `workflow` scope, used to push self-fixes. Only needed when an autonomous fix touches `.github/workflows/**`. When missing AND a fix needs to commit a workflow change, the push step fails with a `403`/permission error and that fix cycle is recorded as failed (the run itself can still conclude success if no workflow-path fix was attempted). Under the current OpenAI default, fixes stay out of `.github/workflows/**`, so this token is not exercised. |
+
+### Variables
+
+| Name | Required? | Consumer | Default / expected | Missing-credential failure |
+|---|---|---|---|---|
+| `OPENCODE_REVIEW_REPORT_PROVIDER` | **Required** | `pipeline-code-review-report.yml` | `OPENAI` | The provider case statement falls back to `GEMINI` when unset; review generation then fails at `OPENCODE_GEMINI_API_KEY` resolution unless that key is also provisioned. The repo sets `OPENAI` to match the provisioned key. |
+| `OPENCODE_REVIEW_REPORT_OPENAI_URL` | **Required (non-empty)** | `pipeline-code-review-report.yml` | `https://api.openai.com/v1` | Empty/unset → the OpenAI gateway URL resolves to empty and the provider call fails before posting a review. |
+| `OPENCODE_REVIEW_REPORT_MODEL_PRIMARY` | **Required** | `pipeline-code-review-report.yml` | (model id, e.g. `gpt-5.5`) | Empty → the review request is rejected by the provider; the run fails to post a review. |
+| `OPENCODE_REVIEW_REPORT_MODEL_SECONDARY` | **Required** | `pipeline-code-review-report.yml` | (model id) | Empty → runs that delegate to the secondary model fail; primary-only runs are unaffected. |
+| `OPENCODE_REVIEW_REPORT_MODEL_ORCHESTRATOR` | **Required** | `pipeline-code-review-report.yml` | (model id) | Empty → orchestrator steps fail; the review may still post a partial result but the run records the error. |
+| `OPENCODE_REVIEW_REPORT_DISABLE_CLAUDE_CODE` | **Required** | `pipeline-code-review-report.yml` | `1` | When unset, Claude Code support defaults on and may conflict with the opencode directory layout; review generation can error on directory collisions. The repo pins `1` to keep the layout deterministic. |
+| `OPENCODE_ANALYSE_MAX_INCREMENTAL` | Optional | `pipeline-ai-analyse.yml` | `3` | Unset → the guard falls back to `3` auto-fix cycles. No failure; just a tighter cap. |
+| `SMOOTH_AI_REVIEW_TOOLS_REF` | Optional | both review workflows | (upstream ref) | Unset → the workflows fetch the upstream default (`main`). No failure; a looser supply-chain pin. See root `AGENTS.md` CI/CD for the supply-chain trade-off. |
+
+### Owner action list (provisioning is a human action — the agent cannot create or rotate secrets)
+
+- **None required** for the OpenAI default to keep working: the required secret and required variables are provisioned and operational (proven indirectly 2026-07-25).
+- **Recommended** (not blocking this worktask): the owner may want to confirm at Settings → Secrets and variables → Actions that `OPENCODE_OPENAI_API_KEY` exists at repo or org level, and rotate it on a schedule. The token in this environment cannot list secrets (403), so the indirect evidence above is all the verification available here.
+- **Required before switching providers**: to use a non-OpenAI provider, the corresponding `OPENCODE_<PROVIDER>_API_KEY` must be provisioned and `OPENCODE_REVIEW_REPORT_PROVIDER` updated to match; otherwise review generation fails at provider resolution.
+- **Required before autonomous workflow-path fixes**: if `pipeline-ai-analyse.yml` should push changes under `.github/workflows/**`, a PAT with `workflow` scope must be provisioned as `OPENCODE_ANALYSE_GH_TOKEN`; without it those specific fix cycles fail the push.
+
 ## Quality Constraints
 
 - Format, analyzer, and each test level must be runnable locally (NFR-069).
@@ -78,8 +142,8 @@ sequenceDiagram
 
 ## Migration Plans
 
-- WT-10-03 adds secret scanning to the gate.
-- WT-10-04 may make the gate always-run (remove or broaden path filters) and closes story #10.
+- WT-10-03 added secret scanning to the gate (gitleaks, PR commit range). The scan inherits the gate's path filter, so docs-only and `.agents`/`.context` paths are a blind spot until WT-10-04.
+- WT-10-04 may make the gate always-run (remove or broaden path filters — closing Blind spot B above — possibly move the scan into a separate always-on workflow) and closes story #10.
 
 ## Changelog
 
@@ -90,3 +154,4 @@ sequenceDiagram
 | 2026-07-25 | Per-level unit/component/integration steps, WireMock only on integration, NetArchTest architecture project, coverage Include narrowed, LADR-020 | #83 / WT-10-02 |
 | 2026-07-25 | Review fixes: WireMock pre-warm made opt-in (`PREWARM_WIREMOCK`) so every level runs container-free (NFR-074 reworded to match its Target); `!cancelled()` de-duplicated; parallel speed-up measured; `action.yml` orphan status recorded | #83 / WT-10-02 |
 | 2026-07-25 | ai-review PR #269: Aspire double-start guard, per-step `timeout-minutes`, build-gate invariant comment, dead Domain allow-list entries trimmed | #83 / PR #269 |
+| 2026-07-25 | Secret scan step (gitleaks 8.27.2, pinned by SHA, PR commit range) added after Build; `.gitleaks.toml` allowlist (every entry commented); `fetch-depth: 0`; `secret-scan-report` artifact; full AI review credential + variable inventory with scope and missing-credential failure symptoms; scoping note (`secrets: inherit` resolves org-level); Blind spots A/B/C documented; NFR-043 verification clause satisfied. Closes #85 | #85 / WT-10-03 |

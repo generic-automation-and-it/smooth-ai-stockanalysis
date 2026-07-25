@@ -31,7 +31,7 @@ Phase 3 introduces sign-in and role-based access control. Because user identity 
 
 - Isolation tested by querying user-owned data as a different user.
 - Shared data asserted *not* to be filtered — the inverse test matters as much as the direct one.
-- Repository scanned for committed credentials as part of the build.
+- Repository scanned for committed credentials as part of the build — implemented as a named **Secret scan** step in the PR gate (`gitleaks`, scan.sh, `.gitleaks.toml`). The scan covers the **PR commit range**, not the full repository history on every run (a key committed and removed within the same PR is still caught); pre-PR history and paths outside the gate's path filter are a documented blind spot covered by a one-off full scan and GitHub's native secret scanning. See `.github/CI_AGENTS.md` "Secret scanning" for the tool, pinning, scope, and blind spots; the scan's allowlist is reviewable in `.gitleaks.toml` (every entry commented). The L0 `CommittedConfigurationGuardTests` complement it by scanning committed `appsettings.json` for secret-shaped literals on every `dotnet test`.
 
 ## Related
 
