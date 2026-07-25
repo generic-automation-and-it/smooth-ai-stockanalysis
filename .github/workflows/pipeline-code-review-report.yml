@@ -5,9 +5,18 @@
 # in `uses:` below. The local repo copies only the `/ai-review` consumer skill
 # (.agents/skills/ai-review/); the report *generator* stays remote.
 #
-# Pinned at @main: the upstream repo publishes no tags yet (no @v1), so this
-# tracks the upstream default branch. Swap to an exact tag/SHA for stricter
-# supply-chain control once upstream cuts a release.
+# Tracks upstream @main, deliberately — see LADR-021.
+#
+# Do NOT "fix" this by switching to @v1. Upstream DOES publish a `v1` tag, but
+# it is a floating major tag that upstream's own update-major-tag.yml force-moves
+# to the default-branch head on every push (measured 2026-07-25: v1 and main are
+# the same commit). @v1 is @main under another name; only a commit SHA is a pin.
+#
+# Fastest incident response is not this line: `vars.SMOOTH_AI_REVIEW_TOOLS_REF`
+# outranks `tools_ref` in the callee's resolution order, so setting that Variable
+# to a known-good SHA pins the executed review scripts for BOTH pipelines with no
+# file change. Editing this `uses:` ref pins the workflow YAML (whose inline
+# `run:` blocks also execute). A complete pin needs both.
 #
 # Required configuration in THIS repo/org (provider = OpenAI):
 #   Secret   — OPENCODE_OPENAI_API_KEY                      (your OpenAI API key; passed via secrets: inherit)

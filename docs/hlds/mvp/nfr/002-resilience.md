@@ -30,6 +30,6 @@ NFR-011 interacts with BR-33: publishing nothing is always a legitimate outcome,
 
 ## Related
 
-- `docs/adr/003-defer-managed-workflow-orchestration.md`
-- `docs/adr/013-abstracted-ai-reasoning-provider.md`
+- `docs/hlds/mvp/ladrs/003-defer-managed-workflow-orchestration.md`
+- `docs/hlds/mvp/ladrs/013-abstracted-ai-reasoning-provider.md`
 - BR-43 (provider failover), BR-33 (publish nothing)

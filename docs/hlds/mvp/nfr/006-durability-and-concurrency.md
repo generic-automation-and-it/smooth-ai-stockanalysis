@@ -29,6 +29,6 @@ NFR-036 draws a deliberate line. Full persistence safety was declared non-critic
 
 ## Related
 
-- `docs/adr/003-defer-managed-workflow-orchestration.md`
-- `docs/adr/002-on-disk-sqlite-over-in-memory-snapshots.md`
+- `docs/hlds/mvp/ladrs/003-defer-managed-workflow-orchestration.md`
+- `docs/hlds/mvp/ladrs/002-on-disk-sqlite-over-in-memory-snapshots.md`
 - BR-39 (skip if previous incomplete)

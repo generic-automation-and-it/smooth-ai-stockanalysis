@@ -29,5 +29,5 @@ NFR-029 and NFR-030 exist to keep the free-first posture honest. Without recorde
 ## Related
 
 - `docs/brd.md` §8 (subscription strategy and paid upgrade analysis)
-- `docs/adr/003-defer-managed-workflow-orchestration.md`
+- `docs/hlds/mvp/ladrs/003-defer-managed-workflow-orchestration.md`
 - BR-41, BR-42, BR-44

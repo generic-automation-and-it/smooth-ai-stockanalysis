@@ -1,37 +1,35 @@
 name: PR Gate
 
-# NOTE: path lists for `push` and `pull_request` are intentionally duplicated;
-# GitHub Actions does not support YAML anchors in `on: paths:` lists, so the
-# entries must be repeated verbatim when both triggers need the same filter.
+# INVARIANT: no `paths:` filter. The gate runs on EVERY pull request and every
+# push to main. Two independent reasons, either one sufficient — do not re-add
+# the filters (they were inherited verbatim from the builder-catalogue port, and
+# that repository has the same blind spot):
+#
+#   1. `build-and-test` is a REQUIRED status check in this repository's ruleset
+#      (along with `review / open-code-review-report` and `CodeQL`). A workflow
+#      skipped by a path filter never creates its check run, so the requirement
+#      stays permanently unreported and the pull request is unmergeable. This is
+#      not hypothetical: PR #272 (`.agents/**` only) sat with no `build-and-test`
+#      check at all.
+#   2. The Secret scan step below is the NFR-043 verification clause. A filter
+#      means a credential committed under `docs/**`, `.agents/**` or `.context/**`
+#      is never scanned. On a public repository that is the single most likely
+#      security incident this project can have.
+#
+# The cost normally argued against always-running does not apply: this repository
+# is public, so GitHub-hosted runner minutes are unmetered — and the whole gate
+# runs in ~75 s. The decision and its rejected alternative (a companion job that
+# reports `build-and-test` green WITHOUT running the Secret scan) are recorded in
+# `.github/CI_AGENTS.md` under "Always-run gate over a path-filtered gate with a
+# skip job". (LADR-021 is a different decision — the upstream AI review call —
+# and does not cover this one.)
 on:
   push:
     branches:
       - main
-    paths:
-      - Directory.Packages.props
-      - Directory.Build.props
-      - .editorconfig
-      - .config/dotnet-tools.json
-      - "*.slnx"
-      - src/**
-      - tests/**
-      - .github/actions/**
-      - .github/workflows/pr-gate.yml
-      - .gitleaks.toml
   pull_request:
     branches:
       - main
-    paths:
-      - Directory.Packages.props
-      - Directory.Build.props
-      - .editorconfig
-      - .config/dotnet-tools.json
-      - "*.slnx"
-      - src/**
-      - tests/**
-      - .github/actions/**
-      - .github/workflows/pr-gate.yml
-      - .gitleaks.toml
   workflow_dispatch:
 
 jobs:
@@ -80,8 +78,10 @@ jobs:
 
       # Secret scan runs after a successful Build so a credential fails fast
       # before the test levels spend their time. It scans the PR commit range
-      # (origin/main..HEAD), not the full history; the blind spot is documented
-      # in .github/CI_AGENTS.md and closed by WT-10-04's always-runs gate.
+      # (origin/main..HEAD), not the full history — that remaining blind spot
+      # (pre-merge-base history) is documented in .github/CI_AGENTS.md. The
+      # path blind spot is gone: this workflow no longer filters on `paths:`,
+      # so every changed file in a pull request reaches this step.
       # INVARIANT: like the test levels, this step honours the Build gate — it
       # runs only when Build succeeded. Do not relax to `!= 'failure'`.
       #
