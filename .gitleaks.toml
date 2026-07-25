@@ -54,7 +54,7 @@ regexes = [
   # CredentialsOptions.Validate (NFR-047). This bare form is NOT matched by the
   # upstream default (which matches ^\{\{...}}$), so it is the live entry; the
   # braced form was dropped as redundant with the upstream default.
-  '''CREDENTIALS__OPENAI__APIKEY''',
+  '''^CREDENTIALS__OPENAI__APIKEY$''',
 ]
 
 # --- paths: suppress everything under files that are documented fixtures ---

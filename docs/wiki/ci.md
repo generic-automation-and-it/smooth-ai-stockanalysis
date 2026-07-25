@@ -36,6 +36,7 @@ Requires bash (Linux/macOS/WSL or Git Bash on Windows). On Windows without bash,
 dotnet restore
 dotnet format whitespace smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
 dotnet build smooth-ai-stockanalysis.slnx -c Release --no-restore
+bash .github/actions/secret-scan/scan.sh
 
 bash .github/actions/test-with-coverage/run-level.sh unit
 bash .github/actions/test-with-coverage/run-level.sh component

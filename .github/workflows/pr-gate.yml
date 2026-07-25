@@ -1,5 +1,8 @@
 name: PR Gate
 
+# NOTE: path lists for `push` and `pull_request` are intentionally duplicated;
+# GitHub Actions does not support YAML anchors in `on: paths:` lists, so the
+# entries must be repeated verbatim when both triggers need the same filter.
 on:
   push:
     branches:

@@ -65,6 +65,10 @@ mv /tmp/gitleaks "${binary}"
 chmod +x "${binary}"
 echo "::endgroup::"
 
+# Note: ${HOME}/.local/bin is not in $PATH on ubuntu-latest; the binary is
+# invoked by absolute path below, so this is fine — recorded for future
+# maintainers who may reach for `command -v gitleaks` or similar.
+
 # --- fetch upstream default config at the SAME pinned tag (pin checksum) ---
 if [ -f "${default_config}" ] && sha256sum "${default_config}" 2>/dev/null | grep -q "${config_sha}"; then
   : # cache hit
@@ -132,10 +136,6 @@ fi
 # --no-banner keeps the log readable; -v prints each finding inline so a red
 # step shows what was caught before the JSON report is uploaded. --redact keeps
 # secret material out of the log.
-#
-# `detect` is the deprecated alias for `gitleaks git` (since v8.19.0); it is
-# still available on the pinned 8.27.2 and kept here for alias stability. A
-# follow-up can switch to the `git` subcommand when the pin moves upstream.
 set +e
 if [ -n "${log_opts}" ]; then
   "${binary}" detect \

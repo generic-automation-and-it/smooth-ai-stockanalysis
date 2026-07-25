@@ -87,9 +87,9 @@ NFR-043 verification clause: *"Repository scanned for committed credentials as p
 - **Blind spot B — path filter.** `pr-gate.yml`'s `paths:` blocks mean the gate does not run for every file change. A credential committed to a path outside the filter (`docs/**`, `.agents/**`, `.context/**`) would **not** be scanned. Broadening the filters or moving the scan to a separate always-on workflow is WT-10-04's responsibility (see Migration Plans). Do not broaden the filter here without measuring the gate-runtime impact across every image.
 - **Blind spot C — allowlist suppression.** `.gitleaks.toml` is the reviewable suppression surface. Every allowlist entry carries a comment saying why it is safe; an unexplained entry is how a real key gets ignored. **A real credential in a path-matched file is suppressed wholesale** — the global `[allowlist]` defaults to `condition = "OR"`, so a path match alone drops the finding regardless of whether the matched secret has any relationship to a known-safe shape. Empirical verification of that behaviour is **per-file**, not a single demo:
 
-  | File | Empirically verified? | L0 second line of defense | Review-time only? |
+  | File | Empirically verified (gate-scan-silent)? | L0 second line of defense | Review-time only? |
   |---|---|---|---|
-  | `src/SmoothAiStockAnalysis.Host/appsettings.json` | **Yes** (synthetic OpenAI key silently allowed by gate scan, flagged only by upstream default) | `CommittedConfigurationGuardTests` scans committed `appsettings.json` for secret-shaped literals on every `dotnet test` | No |
+  | `src/SmoothAiStockAnalysis.Host/appsettings.json` | **Yes** (synthetic OpenAI key silently allowed by gate scan — file is in the path allowlist) | covered by L0 `CommittedConfigurationGuardTests` (the actual second line of defense) | No |
   | `src/SmoothAiStockAnalysis.Host/HOST_AGENTS.md` | No | **None** | **Yes** |
   | `src/SmoothAiStockAnalysis.Application/CONFIGURATION_AGENTS.md` | No | **None** | **Yes** |
   | `src/SmoothAiStockAnalysis.Host/Configuration/CredentialsOptions.cs` | No | **None** | **Yes** |
