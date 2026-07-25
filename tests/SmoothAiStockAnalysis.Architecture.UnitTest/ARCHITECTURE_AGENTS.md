@@ -35,7 +35,7 @@ flowchart LR
 | Domain's only non-BCL external assembly is NodaTime | Assembly reference allow-list on `DomainAssembly.GetReferencedAssemblies()` |
 | Application ↛ Infrastructure, Host | NetArchTest |
 | Infrastructure ↛ Host | NetArchTest |
-| Host ↛ EF Core assemblies (no direct `DbContext` usage) | NetArchTest `HaveDependencyOnAny("Microsoft.EntityFrameworkCore"*)` |
+| Host ↛ EF Core assemblies (no direct `DbContext` usage) | `NetArchTest.Rules.Types.InAssembly(HostAssembly).ShouldNot().HaveDependencyOn("Microsoft.EntityFrameworkCore")` (NetArchTest's `NamespaceTree` matches by namespace segment, so this also covers `Microsoft.EntityFrameworkCore.Relational` and `.Sqlite`) |
 
 ### Not mechanically enforced
 

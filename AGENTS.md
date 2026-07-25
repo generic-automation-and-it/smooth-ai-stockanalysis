@@ -88,8 +88,8 @@ bash .github/actions/test-with-coverage/run-level.sh unit
 bash .github/actions/test-with-coverage/run-level.sh component
 bash .github/actions/test-with-coverage/run-level.sh integration
 bash .github/actions/test-with-coverage/merge-coverage.sh
-
-dotnet test smooth-ai-stockanalysis.slnx                   # full solution (Aspire opt-in tests need a container runtime)
+# Container-free local default; only AspireCollection opt-in tests need a container runtime
+dotnet test smooth-ai-stockanalysis.slnx
 ```
 
 Target a single test project directly when needed (e.g. `dotnet test tests/SmoothAiStockAnalysis.Domain.UnitTest`); `ls tests/` lists them — no Trait annotations required. Architecture boundary tests live in `tests/SmoothAiStockAnalysis.Architecture.UnitTest` and run in the unit level.
@@ -98,7 +98,7 @@ Target a single test project directly when needed (e.g. `dotnet test tests/Smoot
 
 xunit.v3 · Shouldly · Bogus. Three tiers (the distinction is non-obvious and drives where a test belongs):
 
-- **L0** unit — `*.UnitTest` plus `Architecture.UnitTest` (NetArchTest layer rules). No I/O, all in-process, **no container runtime**.
+- **L0** unit — `*.UnitTest` plus `Architecture.UnitTest` (NetArchTest layer rules). No I/O, all in-process; must stay runnable on every CI matrix image (Linux + Windows) without a container runtime.
 - **L1** component — `Application.ComponentTest` uses in-memory EF Core; `Infrastructure.ComponentTest` uses a real isolated SQLite file. No WireMock unless a test opts into Aspire.
 - **L2** integration — `Host.IntegrationTest` full Host stack with an isolated local SQLite file; CI starts Aspire WireMock only for this level.
 
