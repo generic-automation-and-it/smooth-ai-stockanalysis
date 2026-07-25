@@ -141,7 +141,7 @@ NFR-043 verification clause: *"Repository scanned for committed credentials as p
 
 ## Catalogue port inventory (T-036 closure evidence)
 
-T-036 said "port continuous integration workflows from the reference catalogue repository". That repository is `generic-automation-and-it/builder-catalogue`, and the port is **complete and provable** because its entire CI surface is small and fully enumerable. Verified against the live repository 2026-07-25 (`gh api .../git/trees/main?recursive=1`): under `.github/workflows/` and `.github/actions/` there is exactly **one workflow** (`pr-gate.yml`) and **one composite action** (`aspire-test-with-coverage/{action.yml,run.sh}`). The remaining `.github/` entries are `CODEOWNERS`, a PR template, and two symlinks out to `.agents/`. There is no third workflow hiding upstream.
+T-036 said "port continuous integration workflows from the reference catalogue repository". That repository is `generic-automation-and-it/builder-catalogue`, and the port is **complete and provable** because its entire CI surface is small and fully enumerable. Verified against the live repository 2026-07-25 (`gh api .../git/trees/main?recursive=1`): under `.github/workflows/` and `.github/actions/` there is exactly **one workflow** (`pr-gate.yml`) and **one composite action** (`aspire-test-with-coverage/{action.yml,run.sh}`). The remaining `.github/` entries are `CODEOWNERS`, a PR template, and two 16/17-byte pointer files (`instructions`, `skills`) whose content is a relative path into `.agents/` — committed with mode `100644`, so they are ordinary files rather than git symlinks (`120000`). There is no third workflow hiding upstream.
 
 | Artifact | Status here | Deliberate divergence |
 |---|---|---|
