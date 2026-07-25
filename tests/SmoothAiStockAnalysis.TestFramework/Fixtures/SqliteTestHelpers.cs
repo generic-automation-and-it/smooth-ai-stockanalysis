@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Globalization;
 
 namespace SmoothAiStockAnalysis.TestFramework.Fixtures;
 
@@ -25,6 +26,6 @@ public static class SqliteTestHelpers
         {
             throw new InvalidOperationException("The SQL command returned no value.");
         }
-        return (T)Convert.ChangeType(result, typeof(T));
+        return (T)Convert.ChangeType(result, typeof(T), CultureInfo.InvariantCulture);
     }
 }

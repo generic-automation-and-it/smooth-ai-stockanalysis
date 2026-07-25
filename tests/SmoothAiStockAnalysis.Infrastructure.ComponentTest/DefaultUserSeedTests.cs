@@ -156,7 +156,7 @@ public sealed class DefaultUserSeedTests : IAsyncDisposable
         visible.ShouldNotContain(user => user.Id == seededUserId);
     }
 
-    private async Task RunInitializerAsync(ServiceProvider provider)
+    private static async Task RunInitializerAsync(ServiceProvider provider)
     {
         var initializer = new SqliteDatabaseInitializer(
             provider.GetRequiredService<IServiceScopeFactory>(),

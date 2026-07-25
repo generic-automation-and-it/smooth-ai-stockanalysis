@@ -38,7 +38,7 @@ public sealed class PriorityOrderer : ITestCaseOrderer
         return ordered;
     }
 
-    private static TValue GetOrCreate<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key)
+    private static TValue GetOrCreate<TKey, TValue>(SortedDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : notnull
         where TValue : new()
     {

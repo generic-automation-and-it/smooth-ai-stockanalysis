@@ -107,7 +107,7 @@ Human-facing reviewer documentation lives in `docs/wiki/`. Detailed high-level d
 
 ## CI/CD
 
-PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → build (Release) → start WireMock through the Aspire AppHost → test with coverage via the local action `.github/actions/test-with-coverage` → publish + upload the coverage report. SQLite remains local and container-free. Full step list and local .NET tools: `docs/wiki/ci.md`.
+PR gate — `.github/workflows/pr-gate.yml` (triggers: `pull_request` → `main`, `push` → `main`, `workflow_dispatch`): restore → format (`dotnet format whitespace --verify-no-changes`) → build (Release, SDK analyzers + code style as errors) → start WireMock through the Aspire AppHost → test with coverage via the local action `.github/actions/test-with-coverage` → publish + upload the coverage report. SQLite remains local and container-free. Authoritative agent context: [`.github/CI_AGENTS.md`](.github/CI_AGENTS.md). Full step list and local .NET tools: `docs/wiki/ci.md`.
 
 AI review pipelines — `.github/workflows/pipeline-code-review-report.yml` is a thin caller that generates PR review reports through the reusable workflow in `generic-automation-and-it/smooth-ai-report-review`; `.github/workflows/pipeline-ai-analyse.yml` follows successful reports with a bounded, same-repository low/medium self-fix loop. Only the local `/ai-review` consumer skill is vendored. The generator and `ai-analyse` tooling stay upstream and are fetched at runtime.
 

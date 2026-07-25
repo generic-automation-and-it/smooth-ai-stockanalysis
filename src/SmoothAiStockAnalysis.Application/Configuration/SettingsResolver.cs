@@ -34,17 +34,17 @@ public sealed class SettingsResolver(
     }
 
     /// <inheritdoc />
-    public EffectiveSettings Resolve(IApplicationDefaults applicationDefaults, UserMetadata metadata)
+    public EffectiveSettings Resolve(IApplicationDefaults defaults, UserMetadata metadata)
     {
-        ArgumentNullException.ThrowIfNull(applicationDefaults);
+        ArgumentNullException.ThrowIfNull(defaults);
         ArgumentNullException.ThrowIfNull(metadata);
 
-        AnalysisSettings analysis = ResolveAnalysis(applicationDefaults, metadata);
-        CostCapSettings costCaps = ResolveCostCaps(applicationDefaults, metadata);
-        FxSettings fx = ResolveFx(applicationDefaults, metadata);
-        CycleSettings cycle = ResolveCycle(applicationDefaults, metadata);
-        ProviderSettings provider = ResolveProvider(applicationDefaults, metadata);
-        DeliveryWindow deliveryWindow = ResolveDeliveryWindow(applicationDefaults, metadata);
+        AnalysisSettings analysis = ResolveAnalysis(defaults, metadata);
+        CostCapSettings costCaps = ResolveCostCaps(defaults, metadata);
+        FxSettings fx = ResolveFx(defaults, metadata);
+        CycleSettings cycle = ResolveCycle(defaults, metadata);
+        ProviderSettings provider = ResolveProvider(defaults, metadata);
+        DeliveryWindow deliveryWindow = ResolveDeliveryWindow(defaults, metadata);
 
         return new EffectiveSettings(analysis, costCaps, fx, cycle, provider, deliveryWindow);
     }

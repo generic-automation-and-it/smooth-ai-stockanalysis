@@ -30,3 +30,4 @@ NFR-094 exists because this system contains several decisions whose reasoning is
 
 - `docs/adr/001-clean-architecture-with-vertical-slices.md`
 - `docs/adr/` (all records)
+- `docs/hlds/mvp/ladrs/019-direct-ilogger-calls-over-loggermessage.md` — CA1848 (`LoggerMessage`) kept at suggestion severity as an NFR-092 interpretation for low-volume logging

@@ -5,6 +5,7 @@ using SmoothAiStockAnalysis.Application.Common.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence;
 using SmoothAiStockAnalysis.Infrastructure.Persistence.Entities;
 using SmoothAiStockAnalysis.TestFramework.Fixtures;
+using System.Globalization;
 
 namespace SmoothAiStockAnalysis.Host.IntegrationTest;
 
@@ -129,6 +130,6 @@ public sealed class DataAccessScopeIntegrationTests(HostWebAppFixture fixture)
         id.Value = uniqueIdentifier.ToString();
         command.Parameters.Add(id);
         object? result = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt64(result);
+        return Convert.ToInt64(result, CultureInfo.InvariantCulture);
     }
 }

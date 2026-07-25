@@ -14,7 +14,7 @@ namespace SmoothAiStockAnalysis.Application.UnitTest;
 /// </summary>
 public sealed class EffectiveSettingsTests
 {
-    private static readonly IApplicationDefaults Defaults = new TestDefaults(
+    private static readonly TestDefaults Defaults = new TestDefaults(
         Analysis: new AnalysisDefaults(
             CompanySizeFloor: 250_000_000m,
             MinAverageDailyVolume: 100_000m,

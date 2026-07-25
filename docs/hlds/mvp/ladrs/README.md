@@ -37,6 +37,7 @@ Each record carries a status, the context that forced a choice, the decision its
 | [LADR-016](016-snake-case-relational-naming-via-efcore-namingconventions.md) | lower_snake_case relational naming via EFCore.NamingConventions | Accepted |
 | [LADR-017](017-explicit-data-access-scopes-and-global-user-isolation-filter.md) | Explicit data-access scopes and global user-isolation filter | Accepted |
 | [LADR-018](018-startup-default-user-seed-from-deployment-configuration.md) | Startup default-user seed from deployment configuration | Completed |
+| [LADR-019](019-direct-ilogger-calls-over-loggermessage.md) | Direct ILogger calls over LoggerMessage delegates | Accepted |
 
 ## Related documents
 

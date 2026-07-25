@@ -424,7 +424,7 @@ public sealed class CatalogueOptionsTests
             new ProviderOptions());
     }
 
-    private static IServiceProvider AddConfigurationForTest(IConfiguration configuration)
+    private static ServiceProvider AddConfigurationForTest(IConfiguration configuration)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configuration);
