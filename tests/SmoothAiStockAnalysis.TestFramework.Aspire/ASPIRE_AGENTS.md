@@ -14,7 +14,7 @@ Aspire test AppHost that provisions WireMock for external-API tests. Persistence
 
 - `WireMockTestDependency` is the public resource-name, port, and default-URL contract shared with the reusable test fixture.
 - `DistributedApplicationBuilderExtensions.AddWireMockTestDependency` declares the `wiremock/wiremock` container from that shared contract.
-- CI does **not** start this AppHost by default. `run-level.sh integration` pre-warms it only when `PREWARM_WIREMOCK=1`, which CI leaves unset while no test opts into `AspireCollection` (LADR-020). Pre-warming waits for `http://127.0.0.1:19091/__admin/health` and terminates the AppHost afterwards; skipping it is safe because `AspireFixture` probes that endpoint and starts its own AppHost when nothing answers.
+- CI does **not** start this AppHost by default. Pre-warm is opt-in, gated by `PREWARM_WIREMOCK=1`; today no test consumes the `AspireCollection`, so the default path does not need a container runtime (LADR-020). Pre-warming waits for `http://127.0.0.1:19091/__admin/health` and terminates the AppHost afterwards; skipping it is safe because `AspireFixture` probes that endpoint and starts its own AppHost when nothing answers.
 - Tests can opt into `AspireFixture` when they need the WireMock endpoint or admin client; tests without external HTTP dependencies remain container-free.
 
 ## Changelog

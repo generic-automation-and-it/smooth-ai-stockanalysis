@@ -14,7 +14,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 overall_failures=0
 
 run_one() {
-  local level=$1
+  local level="$1"
   if ! bash "${script_dir}/run-level.sh" "${level}"; then
     overall_failures=$((overall_failures + 1))
   fi

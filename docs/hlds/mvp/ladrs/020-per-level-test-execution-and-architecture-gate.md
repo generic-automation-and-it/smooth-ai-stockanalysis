@@ -12,9 +12,11 @@ NFR-069 requires three test levels (unit, component, integration) that are disti
 1. **Per-level scripts** under `.github/actions/test-with-coverage/` (`run-level.sh unit|component|integration`, `merge-coverage.sh`, shared `common.sh`). The same scripts are the local and CI entry points.
 2. **One PR-gate job, three named test steps** (Unit → Component → Integration) plus a Merge coverage step. Later levels still run when an earlier level fails (`if: !cancelled() && steps.build.outcome == 'success'`) so the checks stay distinguishable.
 3. **No level starts WireMock by default.** `AspireFixture` probes the well-known endpoint and starts its own AppHost when nothing answers, so pre-warming is an optimisation, never a requirement. `run-level.sh integration` pre-warms only when `PREWARM_WIREMOCK=1`; CI leaves it unset while no integration test opts into `AspireCollection`. All three levels therefore run with no container runtime present (NFR-074).
-4. **Parallel-within-level** project execution (catalogue pattern), safe because `SqliteTestDatabase` uses a Guid path per process. Measured on the unit level: **9.3 s sequential → 3.5 s parallel (~2.6×)**, and the sequential baseline excluded coverage collection, so the real margin is wider.
-5. **L0 `Architecture.UnitTest`** project with `NetArchTest.Rules` 1.3.2 enforces inward layer edges (NetArchTest) and Domain's NodaTime-only external rule (assembly-reference allow-list on `DomainAssembly.GetReferencedAssemblies()`).
+4. **Parallel-within-level** project execution (catalogue pattern), safe because `SqliteTestDatabase` uses a Guid path per process. Measured on the unit level: **9.3 s sequential → 3.5 s parallel (~2.6×)**, and the sequential baseline excluded coverage collection, so the real margin is wider.[^perf]
+5. **L0 `Architecture.UnitTest`** project runs two distinct mechanisms: (a) `NetArchTest.Rules 1.3.2` enforces the inward layer-dependency edges (Domain ← Application ← Infrastructure ← Host) and forbids Domain depending on any non-allow-listed package; (b) a hand-rolled assembly-reference allow-list on `DomainAssembly.GetReferencedAssemblies()` enforces Domain package purity (rejected `OnlyHaveDependenciesOn` was too brittle on BCL facades — see "Alternatives considered").
 6. **Coverage Include** narrowed to the four product assemblies so test/architecture projects are not instrumented as product code.
+
+[^perf]: Measured 2026-07-25 on `ubuntu-latest`, 2 vCPU, 7 GB RAM.
 
 ## Alternatives considered
 

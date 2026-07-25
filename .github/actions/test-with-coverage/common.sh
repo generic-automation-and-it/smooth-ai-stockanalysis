@@ -52,6 +52,7 @@ record_failure() {
   local message="$1"
   failures+=("${message}")
   echo "ERROR: ${message}"
+  return 1
 }
 
 fail_if_any() {
