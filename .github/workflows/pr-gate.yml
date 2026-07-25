@@ -14,6 +14,7 @@ on:
       - tests/**
       - .github/actions/**
       - .github/workflows/pr-gate.yml
+      - .gitleaks.toml
   pull_request:
     branches:
       - main
@@ -27,6 +28,7 @@ on:
       - tests/**
       - .github/actions/**
       - .github/workflows/pr-gate.yml
+      - .gitleaks.toml
   workflow_dispatch:
 
 jobs:
@@ -41,10 +43,22 @@ jobs:
       DOTNET_VERSION: 10.0.x
       ARTIFACTS_ROOT: artifacts
       DEPENDENCY_TIMEOUT_SECONDS: "120"
+      # Secret scanner (WT-10-03, NFR-043 verification clause). Pinned by SHA so
+      # the step runs identically on fork PRs (no secrets consumed) and the
+      # installed binary + upstream default config are reviewable. See
+      # .github/actions/secret-scan/scan.sh and .github/CI_AGENTS.md.
+      GITLEAKS_VERSION: "8.27.2"
+      GITLEAKS_SHA256: "141c3b2dede46d8b3a53b47116da756bd223decc0374797559a6b50ecba5590c"
+      GITLEAKS_CONFIG_SHA256: "057620c6a131fe413c7f1ca949ad32c9d86765238cc70fa70a7aa235068bcfd3"
 
     steps:
       - name: Checkout
+        # fetch-depth 0 so gitleaks can resolve the PR commit range via
+        # --log-opts "origin/main..HEAD". A shallow clone would miss the merge
+        # base and silently scan zero commits.
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@v4
@@ -60,6 +74,25 @@ jobs:
       - name: Build
         id: build
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
+
+      # Secret scan runs after a successful Build so a credential fails fast
+      # before the test levels spend their time. It scans the PR commit range
+      # (origin/main..HEAD), not the full history; the blind spot is documented
+      # in .github/CI_AGENTS.md and closed by WT-10-04's always-runs gate.
+      # INVARIANT: like the test levels, this step honours the Build gate — it
+      # runs only when Build succeeded. Do not relax to `!= 'failure'`.
+      - name: Secret scan
+        id: secret-scan
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          # Resolve the scan range from the event so it works on forks (where the
+          # PR head ref is not a local branch) and on push to main. For
+          # pull_request use base..head SHAs; for push use the before..after SHAs
+          # (before = 0000...0000 on a new branch → scan the whole pushed range);
+          # workflow_dispatch leaves it blank so scan.sh scans full history.
+          SCAN_LOG_OPTS: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || github.event_name == 'push' && format('{0}..{1}', github.event.before, github.event.after) || '' }}
+        run: bash .github/actions/secret-scan/scan.sh
 
       # Levels run even when a previous level failed so the PR checks stay distinguishable.
       #
@@ -128,4 +161,12 @@ jobs:
         with:
           name: coverage-report
           path: artifacts/coverage/
+          if-no-files-found: warn
+
+      - name: Upload secret-scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secret-scan-report
+          path: artifacts/secret-scan/report.json
           if-no-files-found: warn
