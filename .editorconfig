@@ -38,10 +38,12 @@ dotnet_diagnostic.CA1716.severity = warning
 # Rejected alternative: adopt LoggerMessage across Infrastructure call sites.
 dotnet_diagnostic.CA1848.severity = suggestion
 
-# CA1711 (incorrect suffix): off.
+# CA1711 (incorrect suffix): enforced, with "Collection" allowed.
 # xUnit [CollectionDefinition] types conventionally end in "Collection" (e.g. AspireCollection).
-# Enforcing CA1711 would fight the test-framework naming pattern.
-dotnet_diagnostic.CA1711.severity = none
+# Narrowing the rule keeps it live for production type names — turning it off entirely
+# would silence Queue/Stack/Ex/Impl suffixes across src/ to accommodate one test fixture.
+dotnet_diagnostic.CA1711.severity = warning
+dotnet_code_quality.CA1711.allowed_suffixes = Collection
 
 [*.{csproj,props,targets,slnx}]
 indent_size = 2

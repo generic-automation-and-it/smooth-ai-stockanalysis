@@ -53,7 +53,7 @@ jobs:
         run: dotnet restore
 
       - name: Format
-        run: dotnet format smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
+        run: dotnet format whitespace smooth-ai-stockanalysis.slnx --verify-no-changes --no-restore
 
       - name: Build
         run: dotnet build --configuration "$BUILD_CONFIGURATION" --no-restore
