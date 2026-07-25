@@ -37,6 +37,7 @@ The companion `.github/workflows/pipeline-ai-analyse.yml` runs after `PR Code Re
 
 | Date | Change | Ref |
 |:-----|:-------|:----|
+| 2026-07-25 | Synced the vendored `ai-review` skill with upstream `smooth-ai-report-review` commit `fc2c2037`; adopted the non-Copilot skip-bullets requirement, the safer Copilot detect error handling, and the flattened review-thread JSON contract. The previous local final-empty-commit delta is now upstream. | #271 |
 | 2026-06-20 | Vendored `/ai-review` consumer skill from smooth-ai-report-review; generator kept remote via thin caller workflow. | |
 | 2026-07-05 | Documented the companion self-fix workflow that consumes low/medium review findings and posts an auto-fix summary. | |
 | 2026-07-23 | Vendored the consumer skill and companion workflows into `smooth-ai-stockanalysis`. | #248 |
