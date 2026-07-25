@@ -74,7 +74,7 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
     }
 
     /// <summary>Override to inject app-specific configuration (connection strings, etc.).</summary>
-    protected virtual Task EnrichConfigurationAsync(Dictionary<string, string?> overrides) => Task.CompletedTask;
+    protected virtual Task EnrichConfigurationAsync(Dictionary<string, string?> configurationOverrides) => Task.CompletedTask;
 
     /// <summary>Override to replace application services for an isolated integration test.</summary>
     protected virtual void ConfigureTestServices(IServiceCollection services)
@@ -94,5 +94,6 @@ public abstract class WebAppFixture<TProgram> : IAsyncLifetime
         }
 
         await _database.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 }

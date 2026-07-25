@@ -39,7 +39,7 @@ public sealed class HostWebAppFixture : WebAppFixture<HostApp::Program>
     /// Sets the OpenAI API key environment variable before the factory is created so
     /// <c>Program.cs</c> can read it during <c>WebApplication.CreateBuilder</c>.
     /// </summary>
-    protected override Task EnrichConfigurationAsync(Dictionary<string, string?> overrides)
+    protected override Task EnrichConfigurationAsync(Dictionary<string, string?> configurationOverrides)
     {
         Environment.SetEnvironmentVariable(
             HostApp::SmoothAiStockAnalysis.Host.Configuration.CredentialsOptions.OpenAiApiKeyEnvironmentVariable,

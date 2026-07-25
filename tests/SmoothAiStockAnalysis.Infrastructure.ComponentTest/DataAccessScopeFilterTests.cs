@@ -73,7 +73,7 @@ public sealed class DataAccessScopeFilterTests : IAsyncDisposable
         second.Select(r => r.Id).ShouldBe([userBId]);
     }
 
-    private async Task<IReadOnlyList<UserRecord>> QueryUsersAsAsync(ServiceProvider provider, DataAccessScope scope)
+    private static async Task<IReadOnlyList<UserRecord>> QueryUsersAsAsync(ServiceProvider provider, DataAccessScope scope)
     {
         await using AsyncServiceScope diScope = provider.CreateAsyncScope();
         diScope.ServiceProvider.GetRequiredService<IDataAccessScopeSetter>().SetScope(scope);
@@ -81,7 +81,7 @@ public sealed class DataAccessScopeFilterTests : IAsyncDisposable
         return await context.Users().ToListAsync(TestContext.Current.CancellationToken);
     }
 
-    private async Task<(long UserAId, long UserBId)> SeedTwoUsersAsync(ServiceProvider provider)
+    private static async Task<(long UserAId, long UserBId)> SeedTwoUsersAsync(ServiceProvider provider)
     {
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
         // Seeding uses the deliberate system scope (shared ingestion path), not a user scope.
