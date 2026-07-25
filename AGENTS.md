@@ -83,7 +83,10 @@ All rules live under `.agents/rules/` as `*.instructions.md` files and are auto-
 dotnet build smooth-ai-stockanalysis.slnx -c Release       # build
 dotnet run --project src/SmoothAiStockAnalysis.Host        # run the API
 
-# Per-level test runs (same scripts CI uses; NFR-069)
+# Per-level test runs (same scripts CI uses; NFR-069).
+# Requires bash (Linux/macOS/WSL or Git Bash on Windows). On Windows PowerShell:
+#   bash .github/actions/test-with-coverage/run-level.sh unit
+# Cross-platform without bash: dotnet test <project|slnx> (below).
 bash .github/actions/test-with-coverage/run-level.sh unit
 bash .github/actions/test-with-coverage/run-level.sh component
 bash .github/actions/test-with-coverage/run-level.sh integration

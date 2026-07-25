@@ -57,7 +57,7 @@ public sealed class ExternalApiTests(AspireFixture aspire)
 
 ## Running tests
 
-Prefer the per-level scripts (same path CI uses). Build Release first when using `--no-build` inside the scripts after a local `dotnet build -c Release`.
+Prefer the per-level scripts (same path CI uses; requires bash — Linux/macOS/WSL or Git Bash on Windows). Build Release first when using `--no-build` inside the scripts after a local `dotnet build -c Release`. On Windows without bash, use `dotnet test` against a project or the solution instead.
 
 ```bash
 dotnet build smooth-ai-stockanalysis.slnx -c Release
