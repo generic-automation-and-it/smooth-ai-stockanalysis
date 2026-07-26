@@ -7,7 +7,7 @@ Vendored copy of the `/ai-review` consumer skill from `generic-automation-and-it
 ## Non-Negotiables
 
 - **Do not hand-edit the skill logic here to fix bugs.** This is a downstream copy. Changes made locally diverge from upstream and are lost on the next sync. File the fix in the upstream repo, then re-copy.
-- **Only the `ai-review` consumer skill is installed.** The review *generator* (`ai-review-report` skill + its scripts) is intentionally NOT copied — it runs remotely via the reusable GitHub Actions workflow (`.github/workflows/pipeline-code-review-report.yml`, pinned to the upstream reusable workflow commit recorded in that file). Do not copy the generator tree in to "complete" the install.
+- **Only the `ai-review` consumer skill is installed.** The review *generator* (`ai-review-report` skill + its scripts) is intentionally NOT copied — it runs remotely via the reusable GitHub Actions workflow (`.github/workflows/pipeline-code-review-report.yml`) at whatever upstream ref that caller currently declares. Do not copy the generator tree in to "complete" the install.
 - **Script-path duality:** `SKILL.md` references `.agents/skills/ai-review/scripts/copilot-review.sh` for this copy-install. The `${CLAUDE_PLUGIN_ROOT}/...` variant in `SKILL.md` applies only when the skill runs from the upstream Claude Code plugin (`smooth-ai-review`) — not here. Keep the copy-install path permitted in `.agents/settings.json`.
 
 ## System Context
@@ -15,7 +15,7 @@ Vendored copy of the `/ai-review` consumer skill from `generic-automation-and-it
 ```mermaid
 C4Context
   System(consumer, "ai-review (this skill)", "Parses a posted review; applies fix/skip; routes results")
-  System_Ext(gha, "pipeline-code-review-report.yml@<pinned-sha>", "Remote reusable GHA that GENERATES the review on a PR")
+  System_Ext(gha, "pipeline-code-review-report.yml@<caller-configured-ref>", "Remote reusable GHA that GENERATES the review on a PR")
   System_Ext(analyse, "pipeline-ai-analyse.yml", "Companion low/medium self-fix loop")
   System_Ext(gh, "GitHub PR", "Review threads / PR description / comments")
   Rel(gha, gh, "posts AI review")
@@ -38,7 +38,7 @@ The companion `.github/workflows/pipeline-ai-analyse.yml` runs after `PR Code Re
 
 | Date | Change | Ref |
 |:-----|:-------|:----|
-| 2026-07-26 | Synced follow-up upstream `ai-review` changes from `smooth-ai-report-review` main: Critical/High fix commits now require `/ai-review` in the commit body, and the thin caller workflow pin/model-preset list moved to upstream commit `aa59e70564e6ec0cbca7a0d73d9b193498de9aa5`. | #271 |
+| 2026-07-26 | Synced follow-up upstream `ai-review` changes from `smooth-ai-report-review` main: Critical/High fix commits now require `/ai-review` in the commit body. During the later merge from `main`, this context was generalized so the skill no longer assumes the caller workflow is pinned to a SHA. | #271 |
 | 2026-07-25 | Synced the vendored `ai-review` skill with upstream `smooth-ai-report-review` commit `fc2c2037`; adopted the non-Copilot skip-bullets requirement, the safer Copilot detect error handling, and the flattened review-thread JSON contract. The previous local final-empty-commit delta is now upstream. | #271 |
 | 2026-06-20 | Vendored `/ai-review` consumer skill from smooth-ai-report-review; generator kept remote via thin caller workflow. | |
 | 2026-07-05 | Documented the companion self-fix workflow that consumes low/medium review findings and posts an auto-fix summary. | |
