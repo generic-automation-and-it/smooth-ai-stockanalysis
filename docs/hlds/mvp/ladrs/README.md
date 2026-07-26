@@ -39,6 +39,7 @@ Each record carries a status, the context that forced a choice, the decision its
 | [LADR-018](018-startup-default-user-seed-from-deployment-configuration.md) | Startup default-user seed from deployment configuration | Completed |
 | [LADR-019](019-direct-ilogger-calls-over-loggermessage.md) | Direct ILogger calls over LoggerMessage delegates | Accepted |
 | [LADR-020](020-per-level-test-execution-and-architecture-gate.md) | Per-level test execution and architecture gate | Accepted |
+| [LADR-021](021-live-upstream-call-for-ai-review-tooling.md) | Live upstream call for the AI review tooling | Accepted |
 
 ## Related documents
 

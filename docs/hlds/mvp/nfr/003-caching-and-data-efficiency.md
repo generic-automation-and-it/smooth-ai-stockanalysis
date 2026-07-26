@@ -28,6 +28,6 @@ NFR-015 is a hardware constraint, not tidiness. On a 1 GB device an unbounded ca
 
 ## Related
 
-- `docs/adr/011-memory-only-caching.md`
-- `docs/adr/010-user-identity-from-first-release.md`
+- `docs/hlds/mvp/ladrs/011-memory-only-caching.md`
+- `docs/hlds/mvp/ladrs/010-user-identity-from-first-release.md`
 - BR-45 (reuse infrequently-changing data), BR-48 (shared reference data)

@@ -42,4 +42,4 @@ Where a requirement follows from a recorded decision, the decision record is lin
 
 - `docs/brd.md` — business requirements and delivery milestones
 - `docs/wiki/hld.md` — high level design
-- `docs/adr/` — architecture decision records
+- `docs/hlds/mvp/ladrs/` — architecture decision records
