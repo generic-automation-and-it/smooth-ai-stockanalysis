@@ -43,7 +43,7 @@
 
 ### One-time AI-agent setup
 
-The repository drives four AI coding agents from a single `.agents/` directory via symlinks (`.claude`, `.codex`, `.cursor` → `.agents`, and `CLAUDE.md`/`GEMINI.md` → `AGENTS.md`). Run the setup script once after cloning so the agents can discover skills, hooks, and rules:
+The repository drives four AI coding agents from a single `.agents/` directory via committed symlinks (`.claude`, `.codex`, `.cursor` → `.agents`, and `CLAUDE.md`/`GEMINI.md` → `AGENTS.md`) — available immediately after clone. The setup script is optional, for recreating a symlink that was removed locally:
 
 ```bash
 # Mac/Linux
