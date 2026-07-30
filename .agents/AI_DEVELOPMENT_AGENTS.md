@@ -22,8 +22,6 @@ This is a unified AI development experience folder that centralizes skills, prom
 | Path | Purpose |
 | :---- | :---- |
 | `.agents/` | Root folder for all AI development tooling |
-| `.agents/prompts/` | Reusable prompt templates (code review, architecture analysis) |
-| `.agents/roles/` | Multi-agent role instructions (PO, Architect, QA, Backend/Frontend Engineer, Heimdall Reviewer) |
 | `.agents/rules/` | Enforced AI development rules (workflow rules, coding standards) |
 | `.agents/settings.json` | Claude Code config — tool permissions, compile/test commands, hook registrations; every script in `.agents/hooks/` MUST be registered here or it silently never fires (#32) |
 | `.agents/config.toml` | OpenAI Codex config (read via the `.codex` symlink) — the Codex counterpart of `settings.json`. Mirrors what Codex's TOML schema supports: `approval_policy`/`sandbox_mode` (Codex has no per-command ACLs or hooks), root-doc fallback, web search |
@@ -31,6 +29,7 @@ This is a unified AI development experience folder that centralizes skills, prom
 | `.agents/skills/agile-github-task-from-diff/` | Create a GitHub Task (sub-issue) from the current git diff vs main |
 | `.agents/skills/ai-brain-dump/` | Listen-first capture session; synthesize on request |
 | `.agents/skills/ai-mansplain/` | Reformat this turn's reply into terse, high-density output with a TL;DR |
+| `.agents/skills/ai-review/` | Analyse a posted AI PR review and execute fix/skip decisions |
 | `.agents/skills/ai-template-sync/` | UPSERT the smooth-ai-stockanalysis agentic scaffold into an existing repo |
 | `.agents/skills/context-load-context/` | Load or create functional `*AGENTS.md` context files |
 | `.agents/skills/context-load-agents-context/` | Load ancestor AGENTS.md context for a target file |
@@ -47,7 +46,7 @@ This is a unified AI development experience folder that centralizes skills, prom
 | `.cursor` → `.agents` | Symbolic link for Cursor AI compatibility |
 | `CLAUDE.md` → `AGENTS.md` | Symbolic link alias for Claude-compatible root context discovery |
 | `GEMINI.md` → `AGENTS.md` | Symbolic link alias for Gemini-compatible root context discovery |
-| `.github/instructions` → `../.agents/rules` | Symbolic link exposing rule files at `.github/instructions/**.instructions.md` for GitHub Copilot path-specific instructions |
+| `.github/instructions/` | Real directory — rule files physically live here (LADR-004); `.agents/rules` symlinks to `../.github/instructions`. Copilot reads `*.instructions.md` natively |
 
 ### Tool Compatibility Matrix
 
@@ -140,3 +139,4 @@ ls -la | grep -E '(\.claude|\.codex|\.cursor)'
 | 2026-05-30 | Initial version. | |
 | 2026-06-10 | Registered orphaned `UserPromptSubmit` hooks (`worktask-create.sh`, `agentmd-create-update.sh`, `knowledge-rule-enforce.sh`) in `settings.json` — they existed on disk but never fired. | #32 |
 | 2026-07-23 | Added the vendored `git-commit-review-push` skill to the shared `.agents` / `.codex` skill inventory. | |
+| 2026-07-30 | Audited the agent port (T-048). Committed `.cursor` and `GEMINI.md` symlinks. Removed non-existent `.agents/prompts/` and `.agents/roles/` from the folder-structure table. Added missing `ai-review` skill row. Corrected the `.github/instructions` row to reflect the LADR-004 symlink inversion. Removed dead-weight `.agents/hooks.json`. 14 rule files registered in root `AGENTS.md`. | #12 |

@@ -27,3 +27,14 @@ The template is a productivity accelerator for day one, not a shared platform.
 - **This decision unlocks LADR-002 and LADR-007.** Both would be questionable under upstream tracking.
 - Upstream improvements and fixes will not arrive automatically. Anything worth having must be ported deliberately.
 - The template is placeholder-named throughout its solution and project files, so a rename pass is a real first task rather than a detail.
+- **Port completed 2026-07-30** — reconciled 14 rule files / 14 SKILL.md files / 7 hook files / 3 templates against on-disk state; ref #275.
+- **Symlinks added** — `.cursor → .agents` and `GEMINI.md → AGENTS.md` joined the existing `.claude`, `.codex`, `CLAUDE.md` set.
+- **Not vendored: `ai-review-report`** — generation stays upstream per LADR-021 (caller fetches at runtime; @v1 force-moves to default-branch head).
+- **Not vendored: `ai-analyse`** — same upstream-runtime rationale.
+- **Not vendored: agent-internal LLM prompts** — agent-platform owned, not product configuration.
+
+## Changelog
+
+| Date | Change | Ref |
+|---|---|---|
+| 2026-07-30 | Deliberate port of the agent configuration catalogue completed (14/14/7/3 reconciled). | #275 |
