@@ -25,7 +25,7 @@ This guide explains how to create and maintain `*AGENTS.md` context files for AI
 │   │   └── mvp/
 │   │       ├── ladrs/                         # Lightweight ADRs
 │   │       └── nfr/                           # Non-Functional Requirements
-│   │           └── {CONCERN}_AGENTS.md        # Security, performance, etc.
+│       │           └── {CONCERN}_AGENTS.md        # (if/when needed) per-feature agent context
 │   └── wiki/                                  # Human-facing documentation
 │
 ├── .agents/

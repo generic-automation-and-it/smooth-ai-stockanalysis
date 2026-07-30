@@ -830,14 +830,14 @@ These carry a dependency on owner input or an explicit decision. Surface them wh
 
 | ID | Task | Status |
 |---|---|---|
-| T-099 | Nordic and UK currency multipliers | Owner to supply values |
-| T-158 | Short-horizon weighting distribution | Owner to supply values |
-| T-167 | Routing gateway versus dual provider SDKs | Decision required before M9 |
-| T-010 | NodaTime on SQLite — spike | Outcome shapes the schema |
-| T-015 | Structured-document columns on SQLite — spike | Outcome shapes user metadata storage |
-| T-036 | Port CI workflows | Source repository content not yet reviewed |
-| T-048 | Port agent rules | Resolved 2026-07-30 — reference-catalogue port reconciled (WT-12-01, #279) |
-| T-190 | Re-verify provider pricing | Supplier rebrand in progress |
+| T-099 | Nordic and UK currency multipliers | Blocked — owner to supply values |
+| T-158 | Short-horizon weighting distribution | Blocked — owner to supply values |
+| T-167 | Routing gateway versus dual provider SDKs | Blocked — decision required before M9 |
+| T-010 | NodaTime on SQLite — spike | Blocked — spike outcome shapes the schema |
+| T-015 | Structured-document columns on SQLite — spike | Blocked — spike outcome shapes user metadata storage |
+| T-036 | Port CI workflows | Blocked — source repository content not yet reviewed |
+| T-048 | Port agent rules | Resolved 2026-07-30 (WT-12-01, #279) |
+| T-190 | Re-verify provider pricing | In progress — supplier rebrand |
 
 ---
 
