@@ -836,7 +836,7 @@ These carry a dependency on owner input or an explicit decision. Surface them wh
 | T-010 | NodaTime on SQLite — spike | Outcome shapes the schema |
 | T-015 | Structured-document columns on SQLite — spike | Outcome shapes user metadata storage |
 | T-036 | Port CI workflows | Source repository content not yet reviewed |
-| T-048 | Port agent rules | Source repository content not yet reviewed |
+| T-048 | Port agent rules | Resolved 2026-07-30 — reference-catalogue port reconciled (WT-12-01, #279) |
 | T-190 | Re-verify provider pricing | Supplier rebrand in progress |
 
 ---
