@@ -18,7 +18,7 @@ This guide explains how to create and maintain `*AGENTS.md` context files for AI
 │   └── Entities/
 │       └── DOMAIN_MODEL_AGENTS.md           # ERD and entity changes
 │
-├── .docs/
+├── docs/
 │   ├── adr/                                 # Architecture Decision Records
 │   ├── nfr/                                 # Non-Functional Requirements
 │   │   └── {CONCERN}_AGENTS.md              # Security, performance, etc.
@@ -41,8 +41,8 @@ Each pull request must either:
 
 This ensures AI context stays synchronized with code changes.
 
-### Rule 2: Non-Functional Concerns → `.docs/nfr/`
-Place infrastructure and cross-cutting concerns in `.docs/nfr/{CONCERN}_AGENTS.md`:
+### Rule 2: Non-Functional Concerns → `docs/hlds/mvp/nfr/`
+Place infrastructure and cross-cutting concerns in `docs/hlds/mvp/nfr/{CONCERN}_AGENTS.md`:
 - Security configurations
 - Performance requirements
 - Logging/monitoring setup
@@ -84,4 +84,4 @@ The Gemini CLI Code Review workflow validates AGENTS.md requirements:
 - **Naming**: Must follow `UPPER_SNAKE_CASE_AGENTS.md` pattern
 - **Template sections**: New files must include required sections
 
-See `.agents/rules/knowledge-conventional-contexts-quality.instructions.md` for full standards.
+See `.agents/rules/meta/knowledge-conventional-contexts-quality.instructions.md` for full standards.

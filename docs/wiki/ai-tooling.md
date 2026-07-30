@@ -6,18 +6,21 @@ This project is built with AI coding agents and reviewed by one on every pull re
 
 The solution deliberately demonstrates an AI-agnostic approach to developer tooling. The goal was not to pick a favourite — it was to understand what each tool and its underlying models are genuinely best suited for across a real delivery.
 
-| Tool | Primary Role |
-|---|---|
-| **Claude Code** (Anthropic) | Spec-driven generation, architectural reasoning, primary code authoring |
-| **OpenAI Codex** | Code generation, pull request workflow automation, agentic task execution |
-| **GitHub Copilot** (web agent) | In-editor assistance, agentic task execution, pull request participation |
+| Tool | Access Method | Status |
+|---|---|---|
+| **Claude Code** (Anthropic) | Via `.claude` symlink | Active |
+| **OpenAI Codex** | Via `.codex` symlink | Active |
+| **GitHub Copilot** (web agent) | Reads `.github/instructions/` directly | Active |
+| **Cursor AI** | Via `.cursor` symlink | Active |
+| **Gemini** | Via `GEMINI.md` symlink | Compatible |
+| **Aider** | Direct `.agents` access (CLI) | Compatible |
 
-All three share one source of truth. Rules, conventions and prompt templates live in `.agents/` and are surfaced to each tool through symlinks and path references (`.github/instructions`, Cursor and Copilot equivalents), so a convention is written once rather than per tool. Two kinds of context load automatically:
+All tools share one source of truth. Rule files physically live in `.github/instructions/` and are surfaced to each tool through committed symlinks (`.claude`, `.codex`, `.cursor`, `.agents/rules`) and path references, so a convention is written once rather than per tool. Two kinds of context load automatically:
 
 - **Rules** — `.agents/rules/**/*.instructions.md`, scoped per file via frontmatter, so backend rules attach when a C# file is opened. The Rule Categories table in the root `AGENTS.md` lists each one.
 - **Contextual knowledge** — `AGENTS.md` and `*AGENTS.md` files, layered domain → sub-domain → feature → technology. The file nearest the code being changed is the most authoritative.
 
-Run the setup script after cloning to recreate the symlink aliases:
+Symlinks (`.claude`, `.codex`, `.cursor`, `CLAUDE.md`, `GEMINI.md`, `.agents/rules`) are committed to git and available immediately after clone. The setup script is optional — run it only to recreate a symlink that was removed locally:
 
 ```bash
 # Mac / Linux
