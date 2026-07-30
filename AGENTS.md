@@ -51,6 +51,12 @@ First-party agent skills live under `.agents/skills/` and are registered in `.ag
 
 - **`ai-review`** — consumes a posted AI pull-request review, recommends per-finding fix/skip decisions, and routes processed results back to GitHub review threads or the PR description. It does not generate reviews; generation and autonomous low/medium remediation are delegated to `generic-automation-and-it/smooth-ai-report-review`.
 
+## Conductor Workspace
+
+`.conductor/settings.toml` and `.conductor/scripts/` are committed and shared. Conductor's `setup` script (runs once, on workspace creation) starts the SmoothLlmImposter Docker container and wires `code-review-graph` into AI-coding platforms; `restart-imposter` is an on-demand trigger to recreate the container. Authoritative agent context: [`.conductor/AGENTS.md`](.conductor/AGENTS.md).
+
+**Prerequisites** (set as Conductor workspace/environment variables — not committed): `OPENCODE_API_KEY` and `OPENROUTER_API_KEY`.
+
 ## Repository Layout (Navigation)
 
 | Layer | Path | Purpose |
