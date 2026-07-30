@@ -836,7 +836,14 @@ These carry a dependency on owner input or an explicit decision. Surface them wh
 | T-010 | NodaTime on SQLite — spike | Blocked — spike outcome shapes the schema |
 | T-015 | Structured-document columns on SQLite — spike | Blocked — spike outcome shapes user metadata storage |
 | T-036 | Port CI workflows | Blocked — source repository content not yet reviewed |
-| T-048 | Port agent rules | Resolved 2026-07-30 (WT-12-01, #279) |
+| T-048 | Port agent rules | Resolved 2026-07-30 — reference catalogue port (WT-12-01, #279) |
+
+### In flight
+
+Active work driven by external progress rather than owner input or a decision.
+
+| ID | Task | Status |
+|---|---|---|
 | T-190 | Re-verify provider pricing | In progress — supplier rebrand |
 
 ---
