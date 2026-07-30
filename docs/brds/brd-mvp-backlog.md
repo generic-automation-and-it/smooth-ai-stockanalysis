@@ -828,7 +828,7 @@ The lowest-weight, least reliable signal. It adjusts confidence and never change
 
 These carry a dependency on owner input or an explicit decision. Surface them when created.
 
-| ID | Task | Blocked on |
+| ID | Task | Status |
 |---|---|---|
 | T-099 | Nordic and UK currency multipliers | Owner to supply values |
 | T-158 | Short-horizon weighting distribution | Owner to supply values |

@@ -146,3 +146,9 @@ This repository is hosted on **GitHub** at `https://github.com/generic-automatio
 | Catalyst | A market event that may justify evaluating an investment opportunity |
 | Candidate | A company or instrument progressing through the analysis funnel |
 | Analysis cycle | One complete, resumable run of catalyst detection, filtering, evaluation, and notification |
+
+## Changelog
+
+| Date | Change | Ref |
+|---|---|---|
+| 2026-07-30 | Rule catalogue reconciled with `.github/instructions/` (14 rule files); `skill-secret-handling` row added. | #275 |

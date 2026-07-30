@@ -83,6 +83,7 @@ When AI agents make code changes, they MUST update the corresponding `*AGENTS.md
 
 > AI loading note: Skip this section during routine task execution. Use it only when updating this rule file.
 
-| Date | Change |
-|:-----|:-------|
-| 2026-05-30 | Initial version. |
+| Date | Change | Ref |
+|:-----|:-------|:----|
+| 2026-05-30 | Initial version. | — |
+| 2026-07-30 | Reworded Quality Constraints baseline reference from non-existent `.agents/rules/non-functional-requirements.instructions.md` to existing `docs/hlds/mvp/nfr/`. | #275 |

@@ -19,11 +19,19 @@ This guide explains how to create and maintain `*AGENTS.md` context files for AI
 │       └── DOMAIN_MODEL_AGENTS.md           # ERD and entity changes
 │
 ├── docs/
-│   ├── adr/                                 # Architecture Decision Records
-│   ├── nfr/                                 # Non-Functional Requirements
-│   │   └── {CONCERN}_AGENTS.md              # Security, performance, etc.
-│   ├── TEMPLATE_AGENTS.md                   # Template for new AGENTS.md
-│   └── TEMPLATE_README.md                   # This file
+│   ├── brds/                                  # Business Requirements
+│   ├── contextual-knowledge/                  # Shared knowledge assets
+│   ├── hlds/
+│   │   └── mvp/
+│   │       ├── ladrs/                         # Lightweight ADRs
+│   │       └── nfr/                           # Non-Functional Requirements
+│   │           └── {CONCERN}_AGENTS.md        # Security, performance, etc.
+│   └── wiki/                                  # Human-facing documentation
+│
+├── .agents/
+│   └── templates/
+│       ├── TEMPLATE_AGENTS.md
+│       └── TEMPLATE_README.md
 │
 ├── .github/
 │   └── workflows/
