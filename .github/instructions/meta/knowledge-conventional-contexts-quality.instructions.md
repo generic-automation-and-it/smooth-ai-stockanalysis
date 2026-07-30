@@ -43,7 +43,7 @@ Use exactly these sections, in this order. Omit any section (other than Changelo
 4. **Architecture Decisions** — LADR format (LADR-NNN, Date, Status, Context, Decision, Consequences). Only decisions where the rejected alternative would look reasonable to an AI coder. A decision is NOT trivial if: the alternative has real trade-offs, the reasoning isn't obvious from code, or getting it wrong has non-obvious consequences (e.g., production failures, data corruption, silent sync issues).
 5. **Key Behaviors** — Non-obvious behaviors, edge cases, cross-cutting concerns NOT apparent from source code.
 6. **Test References** — Test tier (L0/L1) and sub-folder path within test projects. Backend only — frontend tests are co-located and don't need this. Omit if no tests exist. Must be updated when tests are added or modified.
-7. **Quality Constraints** — Feature-specific non-functional requirements that go beyond the project-wide baseline in `.agents/rules/non-functional-requirements.instructions.md`. Only include constraints that would change how code is written. Omit if none exist.
+7. **Quality Constraints** — Feature-specific non-functional requirements that go beyond the project-wide baseline in `docs/hlds/mvp/nfr/`. Only include constraints that would change how code is written. Omit if none exist.
 8. **Migration Plans** — Planned migrations, deprecations, or technical debt that affects how new code should be written. Include what's changing, the target state, and what to avoid building on. Omit if none exist.
 9. **Changelog** — Always include the header, even if empty. One-line rows: `| Date | Change | Ref |`. Keep bug/gotcha/pitfall entries. Remove cosmetic-only entries.
 
