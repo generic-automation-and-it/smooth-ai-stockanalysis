@@ -62,6 +62,8 @@ First-party agent skills live under `.agents/skills/` and are registered in `.ag
 
 **Settings catalogue (F-004):** application defaults and two-layer resolution live under Host `Configuration/` + Application `Configuration/` (`ISettingsResolver`, `EffectiveSettings`). Authoritative agent context: [`HOST_AGENTS.md`](src/SmoothAiStockAnalysis.Host/HOST_AGENTS.md), [`CONFIGURATION_AGENTS.md`](src/SmoothAiStockAnalysis.Application/CONFIGURATION_AGENTS.md), Domain preference shape in [`DOMAIN_AGENTS.md`](src/SmoothAiStockAnalysis.Domain/DOMAIN_AGENTS.md).
 
+**Conductor workspace scripts:** `.conductor/settings.toml` + `.conductor/scripts/` start the SmoothLlmImposter Docker container and wire `code-review-graph` on every teammate's workspace. Authoritative agent context: [`.conductor/AGENTS.md`](.conductor/AGENTS.md).
+
 Detailed backend coding rules are maintained in `.agents/rules/backend/` and scoped per-file via frontmatter (see Rules section).
 
 ## Rules
@@ -151,4 +153,5 @@ This repository is hosted on **GitHub** at `https://github.com/generic-automatio
 
 | Date | Change | Ref |
 |---|---|---|
+| 2026-07-31 | Added `.conductor/` workspace scripts (settings.toml + scripts/) following smooth-llm-imposter pattern; reference added to Repository Layout. | — |
 | 2026-07-30 | Rule catalogue reconciled with `.github/instructions/` (14 rule files); `skill-secret-handling` row added. | #275 |
