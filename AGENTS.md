@@ -45,6 +45,10 @@ Keep `*AGENTS.md` files synchronised with code and documentation changes. Functi
 
 All planned work is tracked as worktasks under `.context/work-tasks/` (gitignored — local only). Use `/create worktask` to scaffold a new one from the template.
 
+## Dev Tooling
+
+The repo ships a shared **Conductor kit** (`.conductor/`) that brings up the SmoothLlmImposter Docker container for local AI-agent testing and wires `code-review-graph` into four AI-coding platforms. Shared settings are in `settings.toml`; machine-local overrides live in `settings.local.toml` (gitignored, never shared). The kit's lifecycle scripts handle setup, container restart, and log retrieval. The root `.gitignore` ignores `code-review-graph` output (`.code-review-graph/`, `.github/code-review-graph.instruction.md`).
+
 ## AI Skills
 
 First-party agent skills live under `.agents/skills/` and are registered in `.agents/skills/README.md`.
@@ -151,4 +155,5 @@ This repository is hosted on **GitHub** at `https://github.com/generic-automatio
 
 | Date | Change | Ref |
 |---|---|---|
+| 2026-08-02 | Added Conductor kit context and code-review-graph gitignore entries; fixed Dev Tooling section to comply with AGENTS.md quality standards (no cross-references, no file-path listings). | #277 |
 | 2026-07-30 | Rule catalogue reconciled with `.github/instructions/` (14 rule files); `skill-secret-handling` row added. | #275 |

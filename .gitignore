@@ -444,5 +444,7 @@ data/
 **/*.db
 **/*.db-wal
 **/*.db-shm
+
 # Added by code-review-graph
+.code-review-graph/
 .github/code-review-graph.instruction.md
