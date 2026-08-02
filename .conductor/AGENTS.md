@@ -243,7 +243,7 @@ providers, so matched routes stamp `session_id` and `x-opencode-session`. The sh
 default as-is. To stop OpenCode session token usage, uncomment the two exports, add both names to
 `--preserve-env`, and add the two `-e` flags to the `docker run`.
 
-### Changelog
+## Changelog
 
 | Date | Change | Ref |
 | :---- | :---- | :---- |
