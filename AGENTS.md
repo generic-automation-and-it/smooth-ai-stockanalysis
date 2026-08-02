@@ -47,15 +47,7 @@ All planned work is tracked as worktasks under `.context/work-tasks/` (gitignore
 
 ## Dev Tooling
 
-The repo ships a shared **Conductor kit** (`.conductor/`) that brings up the SmoothLlmImposter Docker container for local AI-agent testing and wires `code-review-graph` into four AI-coding platforms.
-
-- **Shared config** — `.conductor/settings.toml` is committed and shared (points at `.conductor/scripts/`).
-- **Machine-local config** — `.conductor/settings.local.toml` is gitignored and never reaches teammates.
-- **Scripts** — `setup.sh` (one-time, wires code-review-graph), `restart-imposter.sh`, `imposter-container.sh`, `imposter-logs.sh`.
-- **Installer** — `.conductor/install.sh` vendors the kit from a release tarball; stamps `.conductor/.kit-version`.
-- **Kit docs** — `.conductor/AGENTS.md` is the authoritative kit reference; read it when working inside `.conductor/`.
-
-The root `.gitignore` ignores `code-review-graph` output (`.code-review-graph/`, `.github/code-review-graph.instruction.md`).
+The repo ships a shared **Conductor kit** (`.conductor/`) that brings up the SmoothLlmImposter Docker container for local AI-agent testing and wires `code-review-graph` into four AI-coding platforms. Shared settings are in `settings.toml`; machine-local overrides live in `settings.local.toml` (gitignored, never shared). The kit's lifecycle scripts handle setup, container restart, and log retrieval. The root `.gitignore` ignores `code-review-graph` output (`.code-review-graph/`, `.github/code-review-graph.instruction.md`).
 
 ## AI Skills
 
@@ -163,5 +155,5 @@ This repository is hosted on **GitHub** at `https://github.com/generic-automatio
 
 | Date | Change | Ref |
 |---|---|---|
-| 2026-08-02 | Added Conductor kit (`.conductor/`) for SmoothLlmImposter and code-review-graph wiring; updated `.gitignore` with code-review-graph artifacts. | #277 |
+| 2026-08-02 | Added Conductor kit context and code-review-graph gitignore entries; fixed Dev Tooling section to comply with AGENTS.md quality standards (no cross-references, no file-path listings). | #277 |
 | 2026-07-30 | Rule catalogue reconciled with `.github/instructions/` (14 rule files); `skill-secret-handling` row added. | #275 |
