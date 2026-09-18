@@ -519,11 +519,15 @@ Brief by intent. Each expands into its own design document when it is scheduled.
 
 **M6 — Sector context.** Introduces sector aggregates as shared, reusable reference data, computed once and read by every candidate in that sector. Serves both relative scale and sector-relative profitability measures — two requirements, one piece of shared work.
 
+*Semantic alias mapping.* When normalising cross-provider data, ambiguous or colloquial terms (symbols, sector names, region labels) resolve inconsistently. Uber's Finch data agent stores natural-language aliases for column names and values and uses them for fuzzy matching, which fixes the weak spot of wrong WHERE-clause binding in LLM-driven queries. If the reasoning layer ever issues a query against our normalisation layer, an alias-mapping table is the pattern that prevents wrong joins. Low priority; only relevant once the agentic layer (M9) touches normalised cross-provider data.
+
 **M7 — Timing confirmation.** Adds indicator computation over price history already held. No provider, no cost, no new external dependency. The clearest expression of P1.
 
 **M8 — Corroboration.** Adds analyst signals, news sentiment, insider activity and the forward calendar. Broadens inputs without changing the structure.
 
 **M9 — Recommendation engine.** Adds the reasoning layer, the deterministic baseline scoring beneath it, the horizon-adjusted weightings, and the spend ceiling. The first milestone with a genuinely non-deterministic component, and therefore the first requiring judgement rather than assertion to accept.
+
+*Golden-query regression.* Because the reasoning layer is non-deterministic and provider-abstracted (LADR-013), prompt or model drift is silent — it degrades output without failing. Borrowing the pattern Uber uses to evaluate its Finch data agent, keep a small regression suite: past analysis cycles re-run against stored expected outputs after any prompt or provider change, to detect accuracy drift before deployment. This is the first concrete quality mechanism for the agentic layer, and it applies from M9 forward. See [LADR-013](ladrs/013-abstracted-ai-reasoning-provider.md).
 
 **M10 — Reporting and alerting.** Adds report composition, publication thresholds, ad-hoc alerting and failure notification. Output quality becomes a design concern in its own right rather than a by-product.
 
